@@ -26,6 +26,7 @@
                 <button class="nav-btn" data-page="extreme" onclick="showPage('extreme')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Extreme</span></button>
                 <button class="nav-btn" data-page="disks" onclick="showPage('disks')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>Disks</span></button>
                 <button class="nav-btn" data-page="developer" onclick="showPage('developer')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Developer</span></button>
+                <button class="nav-btn" data-page="toolbox" onclick="showPage('toolbox')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>Toolbox</span></button>
             </nav>
             <div class="sidebar-footer"><div class="os-pill" id="osBadge">Detecting...</div></div>
         </aside>
@@ -103,6 +104,41 @@
             <section class="page" id="page-developer"><header class="page-head"><div><h1>Developer Tools</h1><p class="sub">Clean build caches, npm, pip, git, Docker</p></div></header>
                 <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('developer')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><h3>Developer Cleanup</h3><p>npm/pip cache, pycache, git gc, Docker prune, IDE cache, build artifacts</p><div class="tag-row"><span class="tag">npm</span><span class="tag">pip</span><span class="tag">Git</span><span class="tag">Docker</span><span class="tag">IDE</span></div><button class="btn sm">Clean Dev Cache</button></div></div>
                 <div class="panel" id="developerResults" style="display:none"><div class="result-list" id="developerResultsList"></div></div></section>
+
+            <!-- TOOLBOX -->
+            <section class="page" id="page-toolbox"><header class="page-head"><div><h1>Toolbox</h1><p class="sub">System utilities, DNS, network, power, and more</p></div></header>
+                <div class="panel-grid">
+                    <div class="panel"><h3>DNS Server</h3><p>Switch DNS provider instantly</p>
+                        <div class="tool-row"><button class="btn sm" onclick="setDNS('cloudflare')">Cloudflare</button><button class="btn sm" onclick="setDNS('google')">Google</button><button class="btn sm" onclick="setDNS('opendns')">OpenDNS</button><button class="btn sm" onclick="setDNS('quad9')">Quad9</button><button class="btn sm" onclick="setDNS('adguard')">AdGuard</button></div>
+                    </div>
+                    <div class="panel"><h3>Network Tools</h3><p>Ping, DNS flush, latency test</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxAction('flush-dns')">Flush DNS</button><button class="btn sm" onclick="toolboxPing()">Ping 8.8.8.8</button></div>
+                        <div id="pingResult" class="ping-output" style="display:none"></div>
+                    </div>
+                    <div class="panel"><h3>Windows Update</h3><p>Enable or disable automatic updates</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxPost('windows-update',{enable:true})">Enable Updates</button><button class="btn sm" onclick="toolboxPost('windows-update',{enable:false})">Disable Updates</button></div>
+                    </div>
+                    <div class="panel"><h3>Windows Defender</h3><p>Toggle real-time protection</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxPost('defender',{enable:true})">Enable Defender</button><button class="btn sm" onclick="toolboxPost('defender',{enable:false})">Disable Defender</button></div>
+                    </div>
+                    <div class="panel"><h3>Power Plan</h3><p>Switch system power profile</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxPost('power-plan',{plan:'high'})">High Performance</button><button class="btn sm" onclick="toolboxPost('power-plan',{plan:'ultimate'})">Ultimate</button><button class="btn sm" onclick="toolboxPost('power-plan',{plan:'balanced'})">Balanced</button></div>
+                    </div>
+                    <div class="panel"><h3>Context Menu</h3><p>Windows 11 classic right-click menu</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxPost('context-menu',{enable:true})">Classic Menu</button><button class="btn sm" onclick="toolboxPost('context-menu',{enable:false})">New Menu</button></div>
+                    </div>
+                    <div class="panel"><h3>Office Telemetry</h3><p>Disable Microsoft Office tracking</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxAction('office-telemetry')">Disable Office Telemetry</button></div>
+                    </div>
+                    <div class="panel"><h3>HPET</h3><p>High Precision Event Timer - disable for lower latency</p>
+                        <div class="tool-row"><button class="btn sm" onclick="toolboxAction('hpet')">Disable HPET</button></div>
+                    </div>
+                    <div class="panel"><h3>Hardware Info</h3><p>CPU, GPU, RAM, Disk details</p>
+                        <div class="tool-row"><button class="btn sm" onclick="loadHardwareInfo()">Show Hardware</button></div>
+                        <div id="hwInfo" class="hw-output" style="display:none"></div>
+                    </div>
+                </div>
+                <div class="panel" id="toolboxResults" style="display:none"><div class="result-list" id="toolboxResultsList"></div></div></section>
 
             <!-- LOADER -->
             <div class="loader-overlay" id="loader" style="display:none"><div class="loader-ring-container"><div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div></div><p class="loader-text" id="loaderText">Optimizing...</p></div>

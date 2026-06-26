@@ -187,4 +187,30 @@ function showResults(cat,results){
 function showLoader(text){const o=document.getElementById('loader');const t=document.getElementById('loaderText');if(o)o.style.display='flex';if(t)t.textContent=text||'Optimizing...'}
 function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
+// === TOOLBOX ===
+async function setDNS(provider){
+    showLoader('Setting DNS to '+provider+'...');
+    try{const r=await fetch('/api/toolbox/dns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
+}
+async function toolboxAction(action){
+    showLoader(action+'...');
+    try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
+}
+async function toolboxPost(action,data){
+    showLoader(action+'...');
+    try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
+}
+async function toolboxPing(){
+    showLoader('Pinging 8.8.8.8...');
+    try{const r=await fetch('/api/toolbox/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:'8.8.8.8'})});const d=await r.json();hideLoader();const el=document.getElementById('pingResult');if(el){el.style.display='block';el.textContent=d.output||d.message||'No result'}}catch(e){hideLoader()}
+}
+async function loadHardwareInfo(){
+    try{const r=await fetch('/api/toolbox/hardware');const d=await r.json();const el=document.getElementById('hwInfo');if(el&&d.info){el.style.display='block';el.innerHTML=Object.entries(d.info).map(([k,v])=>`<div class="hw-row"><span class="hw-key">${k}</span><span class="hw-val">${v}</span></div>`).join('')}}catch(e){}
+}
+function showToolboxResult(r){
+    const c=document.getElementById('toolboxResultsList');const s=document.getElementById('toolboxResults');if(!c||!s)return;s.style.display='block';
+    const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';
+    c.innerHTML=`<div class="result-item ${cls}">${icon} ${r.message||'Done'}</div>`;
+}
+
 document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,5000)});

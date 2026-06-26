@@ -256,6 +256,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg-0);color:var(--text);f
 .err{color:var(--c-red);font-size:.85rem;padding:10px}
 .loader-mini{width:24px;height:24px;border:3px solid var(--bg-4);border-top-color:var(--c-purple);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto}
 
+/* Toolbox */
+.tool-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ping-output,.hw-output{margin-top:10px;padding:10px;background:var(--bg-0);border-radius:var(--r);font-size:.75rem;color:var(--text-2);white-space:pre-wrap;max-height:200px;overflow-y:auto;font-family:monospace}
+.hw-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:.78rem}
+.hw-key{color:var(--c-purple);font-weight:600;text-transform:uppercase;font-size:.7rem}
+.hw-val{color:var(--text)}
+
 /* Responsive */
 @media(max-width:1024px){
     .meter-row{grid-template-columns:repeat(2,1fr)}

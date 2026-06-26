@@ -174,6 +174,96 @@ def remove_bloatware():
         return jsonify({"error": str(e)}), 500
 
 
+# === TOOLBOX ENDPOINTS ===
+@app.route("/api/toolbox/dns", methods=["POST"])
+def toolbox_dns():
+    data = request.get_json() or {}
+    provider = data.get("provider", "cloudflare")
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.set_dns(provider))
+
+
+@app.route("/api/toolbox/ping", methods=["POST"])
+def toolbox_ping():
+    data = request.get_json() or {}
+    host = data.get("host", "8.8.8.8")
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.ping_host(host))
+
+
+@app.route("/api/toolbox/flush-dns", methods=["POST"])
+def toolbox_flush_dns():
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.flush_dns())
+
+
+@app.route("/api/toolbox/windows-update", methods=["POST"])
+def toolbox_windows_update():
+    data = request.get_json() or {}
+    enable = data.get("enable", False)
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.toggle_windows_update(enable))
+
+
+@app.route("/api/toolbox/defender", methods=["POST"])
+def toolbox_defender():
+    data = request.get_json() or {}
+    enable = data.get("enable", False)
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.toggle_defender(enable))
+
+
+@app.route("/api/toolbox/context-menu", methods=["POST"])
+def toolbox_context_menu():
+    data = request.get_json() or {}
+    enable = data.get("enable", True)
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.set_classic_context_menu(enable))
+
+
+@app.route("/api/toolbox/power-plan", methods=["POST"])
+def toolbox_power_plan():
+    data = request.get_json() or {}
+    plan = data.get("plan", "high")
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.set_power_plan(plan))
+
+
+@app.route("/api/toolbox/office-telemetry", methods=["POST"])
+def toolbox_office_telemetry():
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.disable_office_telemetry())
+
+
+@app.route("/api/toolbox/hpet", methods=["POST"])
+def toolbox_hpet():
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.disable_hpet())
+
+
+@app.route("/api/toolbox/hardware")
+def toolbox_hardware():
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.get_hardware_info())
+
+
+@app.route("/api/toolbox/hosts")
+def toolbox_hosts():
+    from core.toolbox import Toolbox
+    tb = Toolbox(os_type)
+    return jsonify(tb.get_hosts())
+
+
 @app.route("/api/optimize/<category>", methods=["POST"])
 def optimize(category):
     try:
