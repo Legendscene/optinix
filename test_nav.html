@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><style>
+body{margin:0;background:#09090b;color:#fff;font-family:system-ui;display:flex;height:100vh}
+.sidebar{width:200px;background:#0f0f12;padding:20px;flex-shrink:0}
+.btn{display:block;padding:10px;margin:5px 0;background:#18181b;border:1px solid #27272a;color:#fff;border-radius:8px;cursor:pointer;width:100%;text-align:left;font-size:14px}
+.btn:hover{background:#27272a}
+.btn.active{background:#7c3aed;border-color:#7c3aed}
+.main{flex:1;padding:30px;overflow-y:auto}
+.page{display:none}.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+h1{font-size:24px;margin-bottom:10px}
+p{color:#a1a1aa}
+</style></head><body>
+<div class="sidebar">
+<h3 style="margin-bottom:20px">Optinix</h3>
+<button class="btn active" onclick="show('a',this)">Dashboard</button>
+<button class="btn" onclick="show('b',this)">Cleanup</button>
+<button class="btn" onclick="show('c',this)">Network</button>
+<button class="btn" onclick="show('d',this)">Performance</button>
+<button class="btn" onclick="show('e',this)">Gaming</button>
+<button class="btn" onclick="show('f',this)">Services</button>
+<button class="btn" onclick="show('g',this)">Settings</button>
+</div>
+<div class="main">
+<div class="page active" id="a"><h1>Dashboard</h1><p>If you can see this and click sidebar buttons, navigation works!</p></div>
+<div class="page" id="b"><h1>Cleanup</h1><p>Navigation works! You clicked Cleanup.</p></div>
+<div class="page" id="c"><h1>Network</h1><p>Navigation works! You clicked Network.</p></div>
+<div class="page" id="d"><h1>Performance</h1><p>Navigation works! You clicked Performance.</p></div>
+<div class="page" id="e"><h1>Gaming</h1><p>Navigation works! You clicked Gaming.</p></div>
+<div class="page" id="f"><h1>Services</h1><p>Navigation works! You clicked Services.</p></div>
+<div class="page" id="g"><h1>Settings</h1><p>Navigation works! You clicked Settings.</p></div>
+</div>
+<script>
+function show(id,btn){
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+    document.querySelectorAll('.btn').forEach(function(b){b.classList.remove('active')});
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+}
+</script></body></html>
