@@ -1,208 +1,60 @@
-let prevCpu=null;
-function showPage(page){
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
-    const el=document.getElementById('page-'+page);
-    const nav=document.querySelector('[data-page="'+page+'"]');
-    if(el)el.classList.add('active');
-    if(nav)nav.classList.add('active');
-    if(page==='dashboard')loadSystemInfo();
-    if(page==='services')loadServices();
-    if(page==='startup')loadStartup();
-    if(page==='disks')loadDisks();
-}
+function showPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));const e=document.getElementById('page-'+p);const n=document.querySelector('[data-page="'+p+'"]');if(e)e.classList.add('active');if(n)n.classList.add('active');if(p==='dashboard')loadSystemInfo();if(p==='services')loadServices();if(p==='startup')loadStartup();if(p==='disks')loadDisks()}
 
-async function loadSystemInfo(){
-    try{
-        const r=await fetch('/api/system-info');
-        const d=await r.json();
+async function loadSystemInfo(){try{const r=await fetch('/api/system-info');const d=await r.json();
+// CPU
+const cpuPct=Math.round(d.cpu.percent||0);setEl('cpuValue',cpuPct+'%');setBar('cpuBar',cpuPct);setEl('cpuInfo',(d.cpu.physical||'?')+' cores / '+(d.cpu.logical||'?')+' threads');
+// RAM
+const ramPct=Math.round(d.memory.percent||0);setEl('ramValue',ramPct+'%');setBar('ramBar',ramPct);setEl('ramInfo',(d.memory.used_gb||0)+'GB / '+(d.memory.total_gb||0)+'GB');
+// Disk
+if(d.disk&&d.disk.length){const dk=d.disk[0];setEl('diskValue',Math.round(dk.percent)+'%');setBar('diskBar',dk.percent);setEl('diskInfo',fmtBytes(dk.free)+' free / '+fmtBytes(dk.total))}
+// Net
+const up=fmtSpeed(d.network.speed_up),dn=fmtSpeed(d.network.speed_down);setEl('netValue','<span class="speed-up">\u2191'+up+'</span> <span class="speed-down">\u2193'+dn+'</span>',true);setEl('netInfo','Sent: '+fmtBytes(d.network.bytes_sent)+' | Recv: '+fmtBytes(d.network.bytes_recv));const netBar=document.getElementById('netBar');if(netBar)netBar.style.width=Math.min(100,Math.max(d.network.speed_up,d.network.speed_down,1)/1048576*100)+'%';
+// GPU
+if(d.gpu){setEl('gpuValue',d.gpu.usage+'%');setBar('gpuBar',d.gpu.usage);let gt=d.gpu.name||'N/A';if(d.gpu.temperature)gt+=' | '+d.gpu.temperature+'\u00b0C';if(d.gpu.memory_total)gt+=' | '+fmtBytes(d.gpu.memory_used*1048576)+'/'+fmtBytes(d.gpu.memory_total);setEl('gpuName',gt)}
+// System
+if(d.system){setEl('uptimeValue',d.system.uptime);setEl('sysInfo',d.system.os+' | '+d.system.processor)}
+// Temp
+if(d.cpu&&d.cpu.temperature)setEl('tempValue',d.cpu.temperature+'\u00b0C');
+// OS badge
+if(d.os){const b=document.getElementById('osBadge');if(b)b.textContent=d.os.os_name}
+}catch(e){console.error(e)}}
 
-        // CPU
-        const cpuPct=d.cpu.percent||0;
-        animate('cpuValue',Math.round(cpuPct),'%');
-        bar('cpuBar',cpuPct);
-
-        // RAM
-        const ramPct=d.memory.percent||0;
-        animate('ramValue',Math.round(ramPct),'%');
-        bar('ramBar',ramPct);
-
-        // Disk
-        if(d.disk&&d.disk.length){
-            animate('diskValue',Math.round(d.disk[0].percent),'%');
-            bar('diskBar',d.disk[0].percent);
-        }
-
-        // Network speed
-        const netEl=document.getElementById('netValue');
-        if(netEl){
-            const up=fmtSpeed(d.network.speed_up);
-            const down=fmtSpeed(d.network.speed_down);
-            netEl.innerHTML='<span class="speed-up">&uarr;'+up+'</span> <span class="speed-down">&darr;'+down+'</span>';
-        }
-        const netBar=document.getElementById('netBar');
-        if(netBar){
-            const maxSpd=Math.max(d.network.speed_up||0,d.network.speed_down||0,1);
-            const pct=Math.min(100,maxSpd/1048576*100);
-            netBar.style.width=pct+'%';
-        }
-
-        // GPU
-        if(d.gpu){
-            const gpuEl=document.getElementById('gpuValue');
-            const gpuBarEl=document.getElementById('gpuBar');
-            const gpuNameEl=document.getElementById('gpuName');
-            if(gpuEl)gpuEl.textContent=d.gpu.usage+'%';
-            if(gpuBarEl)gpuBarEl.style.width=d.gpu.usage+'%';
-            if(gpuNameEl){
-                let gpuText=d.gpu.name||'N/A';
-                if(d.gpu.temperature)gpuText+=' | '+d.gpu.temperature+'C';
-                if(d.gpu.memory_total)gpuText+=' | '+fmtBytes(d.gpu.memory_used*1048576)+'/'+fmtBytes(d.gpu.memory_total);
-                gpuNameEl.textContent=gpuText;
-            }
-        }
-
-        // System
-        if(d.os){
-            const b=document.getElementById('osBadge');
-            if(b)b.textContent=d.os.os_name;
-        }
-        if(d.system){
-            const uptimeEl=document.getElementById('uptimeValue');
-            if(uptimeEl)uptimeEl.textContent=d.system.uptime;
-        }
-
-        // Disk info
-        const diskInfoEl=document.getElementById('diskInfo');
-        if(diskInfoEl&&d.disk&&d.disk.length){
-            diskInfoEl.textContent=fmtBytes(d.disk[0].free)+' free / '+fmtBytes(d.disk[0].total);
-        }
-    }catch(e){console.error('System info error:',e)}
-}
-
-function animate(id,target,suffix){
-    const el=document.getElementById(id);if(!el)return;
-    el.textContent=target+suffix;
-}
-function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},50)}
-function fmt(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
-function fmtSpeed(bps){if(!bps||bps<1)return'0 B/s';const k=1024,s=['B/s','KB/s','MB/s','GB/s'];const i=Math.floor(Math.log(bps)/Math.log(k));return parseFloat((bps/Math.pow(k,i)).toFixed(1))+s[i]}
+function setEl(id,v,html){const e=document.getElementById(id);if(e){if(html)e.innerHTML=v;else e.textContent=v}}
+function setBar(id,pct){const e=document.getElementById(id);if(e)e.style.width=pct+'%'}
 function fmtBytes(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
+function fmtSpeed(bps){if(!bps||bps<1)return'0 B/s';const k=1024,s=['B/s','KB/s','MB/s','GB/s'];const i=Math.floor(Math.log(bps)/Math.log(k));return parseFloat((bps/Math.pow(k,i)).toFixed(1))+s[i]}
 
-async function runOptimizer(cat){
-    showLoader(cat+'...');
-    try{const r=await fetch('/api/optimize/'+cat,{method:'POST'});const d=await r.json();hideLoader();showResults(cat,d.results||d)}
-    catch(e){hideLoader();showResults(cat,[{success:false,message:'Error: '+e.message}])}
-}
+async function runOptimizer(c){showLoader(c+'...');try{const r=await fetch('/api/optimize/'+c,{method:'POST'});const d=await r.json();hideLoader();showResults(c,d.results||d)}catch(e){hideLoader();showResults(c,[{success:false,message:e.message}]})}
 
-async function runAllOptimizations(){
-    showLoader('Running all optimizers...');
-    try{
-        const r=await fetch('/api/optimize/all',{method:'POST'});
-        const d=await r.json();
-        hideLoader();
-        let all=[];
-        Object.entries(d).forEach(([cat,res])=>{if(Array.isArray(res))res.forEach(r=>all.push({...r,category:cat}))});
-        const c=document.getElementById('dashResultsList');
-        const s=document.getElementById('dashResults');
-        if(c&&s){s.style.display='block';c.innerHTML=all.map(r=>{
-            const cls=r.success?'result-ok':'result-fail';
-            const icon=r.success?'&#10003;':'&#10007;';
-            const pre=r.category?'<strong>['+r.category.toUpperCase()+']</strong> ':'';
-            return'<div class="result-item '+cls+'">'+icon+' '+pre+r.message+'</div>';
-        }).join('')}
-    }catch(e){hideLoader();showResults('dashboard',[{success:false,message:'Error: '+e.message}])}
-}
+async function runAllOptimizations(){showLoader('Running all...');try{const r=await fetch('/api/optimize/all',{method:'POST'});const d=await r.json();hideLoader();let a=[];Object.entries(d).forEach(([c,r])=>{if(Array.isArray(r))r.forEach(x=>a.push({...x,category:c}))});const el=document.getElementById('dashResultsList');const s=document.getElementById('dashResults');if(el&&s){s.style.display='block';el.innerHTML=a.map(r=>'<div class="result-item '+(r.success?'result-ok':'result-fail')+'">'+(r.success?'&#10003;':'&#10007;')+' <strong>['+r.category.toUpperCase()+']</strong> '+r.message+'</div>').join('')}}catch(e){hideLoader()}}
 
-async function runExtremeTuning(){
-    showLoader('Applying extreme mode...');
-    try{const r=await fetch('/api/tuning/extreme',{method:'POST'});const d=await r.json();hideLoader();showResults('extreme',d.results||[])}
-    catch(e){hideLoader();showResults('extreme',[{success:false,message:'Error: '+e.message}])}
-}
+async function runExtremeTuning(){showLoader('Extreme mode...');try{const r=await fetch('/api/tuning/extreme',{method:'POST'});const d=await r.json();hideLoader();showResults('extreme',d.results||[])}catch(e){hideLoader();showResults('extreme',[{success:false,message:e.message}])}}
 
 // SERVICES
-async function loadServices(){
-    const list=document.getElementById('servicesList');if(!list)return;
-    list.innerHTML='<div class="loader-mini"></div>';
-    try{
-        const r=await fetch('/api/services');const d=await r.json();const services=d.services||[];
-        list.innerHTML=services.map(s=>`<div class="svc-row"><div class="svc-info"><span class="svc-name">${s.name}</span><span class="svc-desc">${s.desc}</span>${s.safe?'<span class="svc-badge safe">Safe</span>':'<span class="svc-badge warn">Critical</span>'}</div><label class="toggle"><input type="checkbox" ${s.running?'checked':''} ${!s.safe?'disabled':''} onchange="toggleService('${s.name}',this.checked)"><span class="slider"></span></label></div>`).join('');
-    }catch(e){list.innerHTML='<p class="err">Failed to load services</p>'}
-}
-async function toggleService(name,enable){try{await fetch('/api/services/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})})}catch(e){}}
+async function loadServices(){const l=document.getElementById('servicesList');if(!l)return;l.innerHTML='<div class="loader-mini"></div>';try{const r=await fetch('/api/services');const d=await r.json();l.innerHTML=(d.services||[]).map(s=>'<div class="svc-row"><div class="svc-info"><span class="svc-name">'+s.name+'</span><span class="svc-desc">'+s.desc+'</span>'+(s.safe?'<span class="svc-badge safe">Safe</span>':'<span class="svc-badge warn">Critical</span>')+'</div><label class="toggle"><input type="checkbox" '+(s.running?'checked':'')+' '+(s.safe?'':'disabled')+' onchange="toggleService(\''+s.name+'\',this.checked)"><span class="slider"></span></label></div>').join('')}catch(e){l.innerHTML='<p class="err">Failed to load</p>'}}
+async function toggleService(n,e){try{await fetch('/api/services/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,enable:e})})}catch(x){}}
 
 // STARTUP
-async function loadStartup(){
-    const list=document.getElementById('startupList');if(!list)return;
-    list.innerHTML='<div class="loader-mini"></div>';
-    try{
-        const r=await fetch('/api/startup');const d=await r.json();const apps=d.apps||[];
-        list.innerHTML=apps.map(a=>`<div class="svc-row"><div class="svc-info"><span class="svc-name">${a.name}</span><span class="svc-desc">${a.desc}</span></div><label class="toggle"><input type="checkbox" checked onchange="toggleStartup('${a.name}',this.checked)"><span class="slider"></span></label></div>`).join('');
-    }catch(e){list.innerHTML='<p class="err">Failed to load startup apps</p>'}
-}
-async function toggleStartup(name,enable){try{await fetch('/api/startup/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})})}catch(e){}}
+async function loadStartup(){const l=document.getElementById('startupList');if(!l)return;l.innerHTML='<div class="loader-mini"></div>';try{const r=await fetch('/api/startup');const d=await r.json();l.innerHTML=(d.apps||[]).map(a=>'<div class="svc-row"><div class="svc-info"><span class="svc-name">'+a.name+'</span><span class="svc-desc">'+a.desc+'</span></div><label class="toggle"><input type="checkbox" checked onchange="toggleStartup(\''+a.name+'\',this.checked)"><span class="slider"></span></label></div>').join('')}catch(e){l.innerHTML='<p class="err">Failed to load</p>'}}
+async function toggleStartup(n,e){try{await fetch('/api/startup/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,enable:e})})}catch(x){}}
 
 // DISKS
-async function loadDisks(){
-    const list=document.getElementById('diskList');if(!list)return;
-    list.innerHTML='<div class="loader-mini"></div>';
-    try{
-        const r=await fetch('/api/external-disk');const d=await r.json();const disks=d.disks||[];
-        list.innerHTML=disks.map(dk=>`<div class="svc-row disk-row"><div class="svc-info"><span class="svc-name">${dk.device} <span class="svc-desc">${dk.mountpoint}</span></span><span class="svc-desc">${dk.fstype} | ${fmtBytes(dk.used)} / ${fmtBytes(dk.total)} (${dk.percent}%) ${dk.is_external?'<span class="svc-badge safe">External</span>':''}</span><div class="disk-bar"><div class="disk-fill" style="width:${dk.percent}%"></div></div></div><button class="btn sm" onclick="optimizeDisk('${dk.device}')">Optimize</button></div>`).join('');
-    }catch(e){list.innerHTML='<p class="err">Failed to load disks</p>'}
-}
-async function optimizeDisk(device){
-    showLoader('Optimizing '+device+'...');
-    try{const r=await fetch('/api/external-disk/optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device})});const d=await r.json();hideLoader();showResults('disk',Array.isArray(d)?d:d.results||[])}
-    catch(e){hideLoader();showResults('disk',[{success:false,message:'Error: '+e.message}])}
-}
+async function loadDisks(){const l=document.getElementById('diskList');if(!l)return;l.innerHTML='<div class="loader-mini"></div>';try{const r=await fetch('/api/external-disk');const d=await r.json();l.innerHTML=(d.disks||[]).map(dk=>'<div class="svc-row"><div class="svc-info"><span class="svc-name">'+dk.device+' <span class="svc-desc">'+dk.mountpoint+'</span></span><span class="svc-desc">'+dk.fstype+' | '+fmtBytes(dk.used)+'/'+fmtBytes(dk.total)+' ('+dk.percent+'%) '+(dk.is_external?'<span class="svc-badge safe">External</span>':'')+'</span><div class="disk-bar"><div class="disk-fill" style="width:'+dk.percent+'%"></div></div></div><button class="btn sm" onclick="optimizeDisk(\''+dk.device+'\')">Optimize</button></div>').join('')}catch(e){l.innerHTML='<p class="err">Failed to load</p>'}}
+async function optimizeDisk(d){showLoader('Optimizing '+d+'...');try{const r=await fetch('/api/external-disk/optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:d})});const x=await r.json();hideLoader();showResults('disk',Array.isArray(x)?x:x.results||[])}catch(e){hideLoader();showResults('disk',[{success:false,message:e.message}])}}
 
 // DRIVERS
-async function loadDrivers(){
-    const list=document.getElementById('driversList');if(!list)return;
-    list.innerHTML='<div class="loader-mini"></div>';
-    try{
-        const r=await fetch('/api/drivers/scan');const d=await r.json();const drivers=d.drivers||[];
-        const missing=await fetch('/api/drivers/missing');const md=await missing.json();const missingList=md.missing||[];
-
-        let html='';
-        if(missingList.length>0){
-            html+='<div class="svc-header"><h3 style="color:var(--c-red)">Missing/Broken Drivers ('+missingList.length+')</h3></div>';
-            html+=missingList.map(m=>`<div class="svc-row" style="border-left:3px solid var(--c-red)"><div class="svc-info"><span class="svc-name">${m.name}</span><span class="svc-desc">${m.class} | Status: ${m.status}</span></div></div>`).join('');
-            html+='<div style="margin:10px 0"><div class="svc-header"><h3 style="color:var(--c-teal)">Driver Download Links</h3></div>';
-            html+=`<div class="tool-row"><a class="btn sm" href="https://www.nvidia.com/Download/index.aspx" target="_blank">NVIDIA</a><a class="btn sm" href="https://www.amd.com/en/support" target="_blank">AMD</a><a class="btn sm" href="https://www.intel.com/content/www/us/en/download-center/home.html" target="_blank">Intel</a><a class="btn sm" href="https://www.realtek.com/en/component/zoo/category/pc-audio-codecs-high-definition-audio-codecs-software" target="_blank">Realtek Audio</a></div></div>`;
-        }
-
-        html+='<div class="svc-header"><h3 style="color:var(--c-teal)">Installed Drivers ('+drivers.length+')</h3></div>';
-        html+=drivers.slice(0,30).map(d=>{
-            const url=d.download_url||'';
-            return`<div class="svc-row"><div class="svc-info"><span class="svc-name">${d.name}</span><span class="svc-desc">${d.manufacturer||''} | v${d.version||'N/A'} | ${d.class||''}</span></div>${url?'<a class="btn sm" href="'+url+'" target="_blank">Download</a>':''}</div>`;
-        }).join('');
-
-        list.innerHTML=html;
-    }catch(e){list.innerHTML='<p class="err">Failed to load drivers</p>'}
-}
+async function loadDrivers(){const l=document.getElementById('driversList');if(!l)return;l.innerHTML='<div class="loader-mini"></div>';try{const r=await fetch('/api/drivers/scan');const d=await r.json();const m=await fetch('/api/drivers/missing');const md=await m.json();const ml=md.missing||[];let h='';if(ml.length){h+='<div class="svc-header"><h3 style="color:var(--rd)">Missing ('+ml.length+')</h3></div>';h+=ml.map(x=>'<div class="svc-row" style="border-left:2px solid var(--rd)"><div class="svc-info"><span class="svc-name">'+x.name+'</span><span class="svc-desc">'+x.class+' | '+x.status+'</span></div></div>').join('');h+='<div class="tool-row" style="margin:8px 0"><a class="btn sm" href="https://www.nvidia.com/Download/index.aspx" target="_blank">NVIDIA</a><a class="btn sm" href="https://www.amd.com/en/support" target="_blank">AMD</a><a class="btn sm" href="https://www.intel.com/content/www/us/en/download-center/home.html" target="_blank">Intel</a></div>'}const dr=d.drivers||[];h+='<div class="svc-header"><h3 style="color:var(--t)">Installed ('+dr.length+')</h3></div>';h+=dr.slice(0,25).map(x=>'<div class="svc-row"><div class="svc-info"><span class="svc-name">'+x.name+'</span><span class="svc-desc">'+(x.manufacturer||'')+' | v'+(x.version||'N/A')+'</span></div>'+(x.download_url?'<a class="btn sm" href="'+x.download_url+'" target="_blank">Download</a>':'')+'</div>').join('');l.innerHTML=h}catch(e){l.innerHTML='<p class="err">Failed to load</p>'}}
 
 // TOOLBOX
-async function setDNS(provider){showLoader('Setting DNS to '+provider+'...');try{const r=await fetch('/api/toolbox/dns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
-async function toolboxAction(action){showLoader(action+'...');try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
-async function toolboxPost(action,data){showLoader(action+'...');try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
-async function toolboxPing(){showLoader('Pinging 8.8.8.8...');try{const r=await fetch('/api/toolbox/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:'8.8.8.8'})});const d=await r.json();hideLoader();const el=document.getElementById('pingResult');if(el){el.style.display='block';el.textContent=d.output||d.message||'No result'}}catch(e){hideLoader()}}
-async function loadHardwareInfo(){try{const r=await fetch('/api/toolbox/hardware');const d=await r.json();const el=document.getElementById('hwInfo');if(el&&d.info){el.style.display='block';el.innerHTML=Object.entries(d.info).map(([k,v])=>`<div class="hw-row"><span class="hw-key">${k}</span><span class="hw-val">${v}</span></div>`).join('')}}catch(e){}}
-function showToolboxResult(r){const c=document.getElementById('toolboxResultsList');const s=document.getElementById('toolboxResults');if(!c||!s)return;s.style.display='block';const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';c.innerHTML=`<div class="result-item ${cls}">${icon} ${r.message||'Done'}</div>`}
+async function setDNS(p){showLoader('DNS to '+p+'...');try{const r=await fetch('/api/toolbox/dns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:p})});const d=await r.json();hideLoader();showToolResult(d)}catch(e){hideLoader();showToolResult({success:false,message:e.message})}}
+async function toolboxAction(a){showLoader(a+'...');try{const r=await fetch('/api/toolbox/'+a,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();hideLoader();showToolResult(d)}catch(e){hideLoader();showToolResult({success:false,message:e.message})}}
+async function toolboxPost(a,d){showLoader(a+'...');try{const r=await fetch('/api/toolbox/'+a,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});const x=await r.json();hideLoader();showToolResult(x)}catch(e){hideLoader();showToolResult({success:false,message:e.message})}}
+async function toolboxPing(){showLoader('Pinging...');try{const r=await fetch('/api/toolbox/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:'8.8.8.8'})});const d=await r.json();hideLoader();const e=document.getElementById('pingResult');if(e){e.style.display='block';e.textContent=d.output||d.message||'No result'}}catch(e){hideLoader()}}
+async function loadHardwareInfo(){try{const r=await fetch('/api/toolbox/hardware');const d=await r.json();const e=document.getElementById('hwInfo');if(e&&d.info){e.style.display='block';e.innerHTML=Object.entries(d.info).map(([k,v])=>'<div class="hw-row"><span class="hw-key">'+k+'</span><span class="hw-val">'+v+'</span></div>').join('')}}catch(e){}}
+function showToolResult(r){const c=document.getElementById('toolboxResultsList');const s=document.getElementById('toolboxResults');if(!c||!s)return;s.style.display='block';c.innerHTML='<div class="result-item '+(r.success?'result-ok':'result-fail')+'">'+(r.success?'&#10003;':'&#10007;')+' '+(r.message||'Done')+'</div>'}
 
-function showResults(cat,results){
-    const c=document.getElementById(cat+'ResultsList');const s=document.getElementById(cat+'Results');
-    if(!c||!s)return;s.style.display='block';
-    if(Array.isArray(results)){c.innerHTML=results.map((r,i)=>{const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';return'<div class="result-item '+cls+'" style="animation-delay:'+i*0.04+'s">'+icon+' '+r.message+'</div>'}).join('')}
-}
-
-function showLoader(text){const o=document.getElementById('loader');const t=document.getElementById('loaderText');if(o)o.style.display='flex';if(t)t.textContent=text||'Optimizing...'}
+function showResults(cat,r){const c=document.getElementById(cat+'ResultsList');const s=document.getElementById(cat+'Results');if(!c||!s)return;s.style.display='block';if(Array.isArray(r))c.innerHTML=r.map((x,i)=>'<div class="result-item '+(x.success?'result-ok':'result-fail')+'" style="animation-delay:'+i*0.03+'s">'+(x.success?'&#10003;':'&#10007;')+' '+x.message+'</div>').join('')}
+function showLoader(t){const o=document.getElementById('loader');const l=document.getElementById('loaderText');if(o)o.style.display='flex';if(l)l.textContent=t||'Optimizing...'}
 function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
-document.addEventListener('DOMContentLoaded',()=>{
-    loadSystemInfo();
-    setInterval(loadSystemInfo,3000);
-    // Warm up CPU percent
-    fetch('/api/system-info').then(()=>{setTimeout(()=>fetch('/api/system-info'),1000)});
-});
+document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,2000);fetch('/api/system-info').then(()=>setTimeout(()=>fetch('/api/system-info'),500))});
