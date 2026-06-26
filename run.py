@@ -2,22 +2,47 @@ import threading
 import time
 import webbrowser
 import sys
+import os
 
-def start_server():
-    from app import app, PORT
-    app.run(host="127.0.0.1", port=PORT, debug=False, use_reloader=False)
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-print("Starting Optinix...")
-t = threading.Thread(target=start_server, daemon=True)
+print("=" * 40)
+print("   OPTINIX - PC Optimizer")
+print("=" * 40)
+print()
+print("Starting server...")
+
+from app import app, PORT
+
+def run():
+    app.run(host="127.0.0.1", port=PORT, debug=False, use_reloader=False, threaded=True)
+
+t = threading.Thread(target=run, daemon=True)
 t.start()
-time.sleep(2)
-url = "http://127.0.0.1:5420"
-print(f"Opening {url}")
+
+for i in range(10):
+    time.sleep(0.5)
+    try:
+        import urllib.request
+        urllib.request.urlopen(f"http://127.0.0.1:{PORT}/health", timeout=1)
+        break
+    except:
+        continue
+
+url = f"http://127.0.0.1:{PORT}"
+print(f"Server ready at {url}")
+print("Opening browser...")
+
 webbrowser.open(url)
-print("App running! Close this window to stop.")
+
+print()
+print("Browser opened! Use sidebar to navigate.")
+print("Press Ctrl+C to stop.")
+print()
+
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
-    print("Stopped.")
+    print("\nStopping...")
     sys.exit(0)
