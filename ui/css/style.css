@@ -25,7 +25,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* SIDEBAR */
 .sidebar{width:200px;min-width:200px;background:var(--bg-2);border-right:1px solid var(--bd);display:flex;flex-direction:column}
 .sidebar-brand{padding:18px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
-.brand-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--c),var(--t));animation:bpulse 3s ease-in-out infinite}
+.brand-logo{width:36px;height:36px;border-radius:10px;object-fit:cover;animation:bpulse 3s ease-in-out infinite}
 @keyframes bpulse{0%,100%{box-shadow:0 0 0 0 var(--c-g)}50%{box-shadow:0 0 16px 3px var(--c-g)}}
 .brand-name{font-weight:800;font-size:.85rem;letter-spacing:-.3px}
 
@@ -51,6 +51,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .page-head{margin-bottom:20px}
 .page-head h1{font-size:1.4rem;font-weight:800;letter-spacing:-.5px}
 .sub{color:var(--tx-3);font-size:.8rem;margin-top:2px}
+
+.dashboard-head{margin-bottom:20px}
+.dash-brand{display:flex;align-items:center;gap:14px}
+.dash-logo{width:48px;height:48px;border-radius:12px;object-fit:cover;box-shadow:0 4px 16px var(--c-g)}
 
 /* METERS */
 .meter-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}

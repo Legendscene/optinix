@@ -3,13 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Optinix</title>
+<title>Optinix - PC Optimizer</title>
+<link rel="icon" type="image/jpeg" href="/assets/logo.jfif">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="app">
 <aside class="sidebar">
-<div class="sidebar-brand"><div class="brand-mark"></div><span class="brand-name">Optinix</span></div>
+<div class="sidebar-brand">
+<img src="/assets/logo.jfif" alt="Optinix" class="brand-logo">
+<span class="brand-name">Optinix</span>
+</div>
 <nav class="sidebar-nav">
 <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Dashboard</span></button>
 <button class="nav-btn" data-page="cleanup" onclick="showPage('cleanup')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg><span>Cleanup</span></button>
@@ -34,7 +38,12 @@
 
 <!-- DASHBOARD -->
 <section class="page active" id="page-dashboard">
-<header class="page-head"><div><h1>Dashboard</h1><p class="sub">Real-time system monitoring</p></div></header>
+<header class="page-head dashboard-head">
+<div class="dash-brand">
+<img src="/assets/logo.jfif" alt="Optinix" class="dash-logo">
+<div><h1>Optinix</h1><p class="sub">Ultimate PC Optimizer</p></div>
+</div>
+</header>
 <div class="meter-row">
 <div class="meter-card"><div class="meter-head"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg><span>CPU</span></div><div class="meter-val" id="cpuValue">0%</div><div class="meter-bar"><div class="meter-fill cpu" id="cpuBar"></div></div><div class="meter-sub" id="cpuInfo">-- cores</div></div>
 <div class="meter-card"><div class="meter-head"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t)" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/></svg><span>RAM</span></div><div class="meter-val" id="ramValue">0%</div><div class="meter-bar"><div class="meter-fill ram" id="ramBar"></div></div><div class="meter-sub" id="ramInfo">--</div></div>
