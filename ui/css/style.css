@@ -217,6 +217,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg-0);color:var(--text);f
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-text{color:var(--text-2);font-weight:600;font-size:.85rem;margin-top:20px;letter-spacing:.3px}
 
+/* Speed indicators */
+.speed-up{color:var(--c-teal);font-weight:700}
+.speed-down{color:var(--c-pink);font-weight:700}
+.meter-val .speed-up,.meter-val .speed-down{font-size:.75rem;display:inline}
+
 /* Responsive */
 @media(max-width:1024px){
     .meter-row{grid-template-columns:repeat(2,1fr)}

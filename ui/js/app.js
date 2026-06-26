@@ -17,7 +17,10 @@ async function loadSystemInfo(){
         if(d.disk&&d.disk.length){animate('diskValue',d.disk[0].percent,'%');bar('diskBar',d.disk[0].percent)}
         bar('cpuBar',d.cpu.percent);
         bar('ramBar',d.memory.percent);
-        document.getElementById('netValue').textContent=fmt(d.network.bytes_recv);
+        const netEl=document.getElementById('netValue');
+        if(netEl)netEl.innerHTML='<span class="speed-up">&uarr;'+fmtSpeed(d.network.speed_up)+'</span> <span class="speed-down">&darr;'+fmtSpeed(d.network.speed_down)+'</span>';
+        const netBar=document.getElementById('netBar');
+        if(netBar){const maxSpd=Math.max(d.network.speed_up,d.network.speed_down,1);const pct=Math.min(100,maxSpd/1048576*100);netBar.style.width=pct+'%'}
         if(d.os){const b=document.getElementById('osBadge');if(b)b.textContent=d.os.os_name}
     }catch(e){console.error(e)}
 }
@@ -29,6 +32,7 @@ function animate(id,target,suffix){
 }
 function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},80)}
 function fmt(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
+function fmtSpeed(bps){if(!bps||bps<1)return'0 B/s';const k=1024,s=['B/s','KB/s','MB/s','GB/s'];const i=Math.floor(Math.log(bps)/Math.log(k));return parseFloat((bps/Math.pow(k,i)).toFixed(1))+s[i]}
 
 async function runOptimizer(cat){
     showLoader(cat+'...');

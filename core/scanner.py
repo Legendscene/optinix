@@ -1,9 +1,12 @@
 import psutil
+import time
 
 
 class SystemScanner:
     def __init__(self, os_type):
         self.os_type = os_type
+        self._prev_net = None
+        self._prev_net_time = None
 
     def full_scan(self):
         return {
@@ -47,19 +50,24 @@ class SystemScanner:
 
     def scan_network(self):
         stats = psutil.net_io_counters()
-        return {
-            "bytes_sent": stats.bytes_sent, "bytes_recv": stats.bytes_recv,
-            "packets_sent": stats.packets_sent, "packets_recv": stats.packets_recv
-        }
+        now = time.time()
+        speed_up = 0
+        speed_down = 0
 
-    def scan_processes(self, top_n=10):
-        procs = []
-        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
-            try:
-                info = p.info
-                if info['cpu_percent'] is not None:
-                    procs.append(info)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        procs.sort(key=lambda x: x.get('cpu_percent', 0), reverse=True)
-        return procs[:top_n]
+        if self._prev_net and self._prev_net_time:
+            dt = now - self._prev_net_time
+            if dt > 0:
+                speed_up = (stats.bytes_sent - self._prev_net.bytes_sent) / dt
+                speed_down = (stats.bytes_recv - self._prev_net.bytes_recv) / dt
+
+        self._prev_net = stats
+        self._prev_net_time = now
+
+        return {
+            "bytes_sent": stats.bytes_sent,
+            "bytes_recv": stats.bytes_recv,
+            "packets_sent": stats.packets_sent,
+            "packets_recv": stats.packets_recv,
+            "speed_up": round(speed_up),
+            "speed_down": round(speed_down)
+        }
