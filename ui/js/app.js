@@ -6,6 +6,9 @@ function showPage(page){
     if(el)el.classList.add('active');
     if(nav)nav.classList.add('active');
     if(page==='dashboard')loadSystemInfo();
+    if(page==='services')loadServices();
+    if(page==='startup')loadStartup();
+    if(page==='disks')loadDisks();
 }
 
 async function loadSystemInfo(){
@@ -33,6 +36,7 @@ function animate(id,target,suffix){
 function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},80)}
 function fmt(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 function fmtSpeed(bps){if(!bps||bps<1)return'0 B/s';const k=1024,s=['B/s','KB/s','MB/s','GB/s'];const i=Math.floor(Math.log(bps)/Math.log(k));return parseFloat((bps/Math.pow(k,i)).toFixed(1))+s[i]}
+function fmtBytes(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 
 async function runOptimizer(cat){
     showLoader(cat+'...');
@@ -41,10 +45,7 @@ async function runOptimizer(cat){
         const d=await r.json();
         hideLoader();
         showResults(cat,d.results||d);
-    }catch(e){
-        hideLoader();
-        showResults(cat,[{success:false,message:'Error: '+e.message}]);
-    }
+    }catch(e){hideLoader();showResults(cat,[{success:false,message:'Error: '+e.message}])}
 }
 
 async function runAllOptimizations(){
@@ -54,9 +55,7 @@ async function runAllOptimizations(){
         const d=await r.json();
         hideLoader();
         let all=[];
-        Object.entries(d).forEach(([cat,res])=>{
-            if(Array.isArray(res))res.forEach(r=>all.push({...r,category:cat}));
-        });
+        Object.entries(d).forEach(([cat,res])=>{if(Array.isArray(res))res.forEach(r=>all.push({...r,category:cat}))});
         const c=document.getElementById('dashResultsList');
         const s=document.getElementById('dashResults');
         if(c&&s){s.style.display='block';c.innerHTML=all.map(r=>{
@@ -66,6 +65,109 @@ async function runAllOptimizations(){
             return'<div class="result-item '+cls+'">'+icon+' '+pre+r.message+'</div>';
         }).join('')}
     }catch(e){hideLoader();showResults('dashboard',[{success:false,message:'Error: '+e.message}])}
+}
+
+async function runExtremeTuning(){
+    showLoader('Applying extreme mode...');
+    try{
+        const r=await fetch('/api/tuning/extreme',{method:'POST'});
+        const d=await r.json();
+        hideLoader();
+        showResults('extreme',d.results||[]);
+    }catch(e){hideLoader();showResults('extreme',[{success:false,message:'Error: '+e.message}])}
+}
+
+// SERVICES
+async function loadServices(){
+    const list=document.getElementById('servicesList');
+    if(!list)return;
+    list.innerHTML='<div class="loader-mini"></div>';
+    try{
+        const r=await fetch('/api/services');
+        const d=await r.json();
+        const services=d.services||[];
+        list.innerHTML=services.map(s=>`
+            <div class="svc-row">
+                <div class="svc-info">
+                    <span class="svc-name">${s.name}</span>
+                    <span class="svc-desc">${s.desc}</span>
+                    ${s.safe?'<span class="svc-badge safe">Safe to disable</span>':'<span class="svc-badge warn">System critical</span>'}
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" ${s.running?'checked':''} ${!s.safe?'disabled':''} onchange="toggleService('${s.name}',this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        `).join('');
+    }catch(e){list.innerHTML='<p class="err">Failed to load services</p>'}
+}
+
+async function toggleService(name,enable){
+    try{
+        await fetch('/api/services/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})});
+    }catch(e){}
+}
+
+// STARTUP
+async function loadStartup(){
+    const list=document.getElementById('startupList');
+    if(!list)return;
+    list.innerHTML='<div class="loader-mini"></div>';
+    try{
+        const r=await fetch('/api/startup');
+        const d=await r.json();
+        const apps=d.apps||[];
+        list.innerHTML=apps.map(a=>`
+            <div class="svc-row">
+                <div class="svc-info">
+                    <span class="svc-name">${a.name}</span>
+                    <span class="svc-desc">${a.desc}</span>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleStartup('${a.name}',this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        `).join('');
+    }catch(e){list.innerHTML='<p class="err">Failed to load startup apps</p>'}
+}
+
+async function toggleStartup(name,enable){
+    try{
+        await fetch('/api/startup/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})});
+    }catch(e){}
+}
+
+// DISKS
+async function loadDisks(){
+    const list=document.getElementById('diskList');
+    if(!list)return;
+    list.innerHTML='<div class="loader-mini"></div>';
+    try{
+        const r=await fetch('/api/external-disk');
+        const d=await r.json();
+        const disks=d.disks||[];
+        list.innerHTML=disks.map(dk=>`
+            <div class="svc-row disk-row">
+                <div class="svc-info">
+                    <span class="svc-name">${dk.device} <span class="svc-desc">${dk.mountpoint}</span></span>
+                    <span class="svc-desc">${dk.fstype} | ${fmtBytes(dk.used)} / ${fmtBytes(dk.total)} (${dk.percent}%) ${dk.is_external?'<span class="svc-badge safe">External</span>':''}</span>
+                    <div class="disk-bar"><div class="disk-fill" style="width:${dk.percent}%"></div></div>
+                </div>
+                <button class="btn sm" onclick="optimizeDisk('${dk.device}')">Optimize</button>
+            </div>
+        `).join('');
+    }catch(e){list.innerHTML='<p class="err">Failed to load disks</p>'}
+}
+
+async function optimizeDisk(device){
+    showLoader('Optimizing '+device+'...');
+    try{
+        const r=await fetch('/api/external-disk/optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device})});
+        const d=await r.json();
+        hideLoader();
+        showResults('disk',Array.isArray(d)?d:d.results||[]);
+    }catch(e){hideLoader();showResults('disk',[{success:false,message:'Error: '+e.message}])}
 }
 
 function showResults(cat,results){
@@ -82,12 +184,7 @@ function showResults(cat,results){
     }
 }
 
-function showLoader(text){
-    const o=document.getElementById('loader');
-    const t=document.getElementById('loaderText');
-    if(o)o.style.display='flex';
-    if(t)t.textContent=text||'Optimizing...';
-}
+function showLoader(text){const o=document.getElementById('loader');const t=document.getElementById('loaderText');if(o)o.style.display='flex';if(t)t.textContent=text||'Optimizing...'}
 function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
 document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,5000)});

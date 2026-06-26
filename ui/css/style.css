@@ -222,6 +222,40 @@ html,body{height:100%;overflow:hidden;background:var(--bg-0);color:var(--text);f
 .speed-down{color:var(--c-pink);font-weight:700}
 .meter-val .speed-up,.meter-val .speed-down{font-size:.75rem;display:inline}
 
+/* Toggle Switch */
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;inset:0;background:var(--bg-4);border-radius:22px;transition:.3s var(--ease)}
+.toggle .slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:var(--text-3);border-radius:50%;transition:.3s var(--ease)}
+.toggle input:checked+.slider{background:var(--c-purple)}
+.toggle input:checked+.slider::before{transform:translateX(18px);background:#fff}
+.toggle input:disabled+.slider{opacity:.4;cursor:not-allowed}
+
+/* Service / Startup rows */
+.svc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.svc-header h3{color:var(--c-teal);font-size:.9rem}
+.svc-list{display:flex;flex-direction:column;gap:6px;max-height:500px;overflow-y:auto}
+.svc-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border-radius:var(--r);
+    background:var(--bg-3);transition:background .2s;
+}
+.svc-row:hover{background:var(--bg-4)}
+.svc-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.svc-name{font-weight:600;font-size:.85rem}
+.svc-desc{font-size:.72rem;color:var(--text-3)}
+.svc-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;margin-left:8px}
+.svc-badge.safe{background:rgba(34,197,94,.15);color:var(--c-green)}
+.svc-badge.warn{background:rgba(239,68,68,.15);color:var(--c-red)}
+
+/* Disk bars */
+.disk-bar{height:4px;background:var(--bg-0);border-radius:2px;overflow:hidden;margin-top:6px;width:200px}
+.disk-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--c-teal),var(--c-purple))}
+.disk-row{gap:16px}
+
+.err{color:var(--c-red);font-size:.85rem;padding:10px}
+.loader-mini{width:24px;height:24px;border:3px solid var(--bg-4);border-top-color:var(--c-purple);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto}
+
 /* Responsive */
 @media(max-width:1024px){
     .meter-row{grid-template-columns:repeat(2,1fr)}

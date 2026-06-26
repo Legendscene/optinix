@@ -13,250 +13,99 @@
                 <div class="brand-mark"></div>
                 <span class="brand-name">Optinix</span>
             </div>
-
             <nav class="sidebar-nav">
-                <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                    <span>Dashboard</span>
-                </button>
-                <button class="nav-btn" data-page="cleanup" onclick="showPage('cleanup')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
-                    <span>Cleanup</span>
-                </button>
-                <button class="nav-btn" data-page="network" onclick="showPage('network')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
-                    <span>Network</span>
-                </button>
-                <button class="nav-btn" data-page="performance" onclick="showPage('performance')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                    <span>Performance</span>
-                </button>
-                <button class="nav-btn" data-page="gaming" onclick="showPage('gaming')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
-                    <span>Gaming</span>
-                </button>
-                <button class="nav-btn" data-page="services" onclick="showPage('services')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    <span>Services</span>
-                </button>
-                <button class="nav-btn" data-page="security" onclick="showPage('security')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Security</span>
-                </button>
-                <button class="nav-btn" data-page="overclock" onclick="showPage('overclock')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    <span>Overclock</span>
-                </button>
-                <button class="nav-btn" data-page="developer" onclick="showPage('developer')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    <span>Developer</span>
-                </button>
+                <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Dashboard</span></button>
+                <button class="nav-btn" data-page="cleanup" onclick="showPage('cleanup')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg><span>Cleanup</span></button>
+                <button class="nav-btn" data-page="network" onclick="showPage('network')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg><span>Network</span></button>
+                <button class="nav-btn" data-page="performance" onclick="showPage('performance')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Performance</span></button>
+                <button class="nav-btn" data-page="gaming" onclick="showPage('gaming')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg><span>Gaming</span></button>
+                <button class="nav-btn" data-page="services" onclick="showPage('services')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Services</span></button>
+                <button class="nav-btn" data-page="startup" onclick="showPage('startup')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Startup</span></button>
+                <button class="nav-btn" data-page="security" onclick="showPage('security')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Security</span></button>
+                <button class="nav-btn" data-page="overclock" onclick="showPage('overclock')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Overclock</span></button>
+                <button class="nav-btn" data-page="extreme" onclick="showPage('extreme')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Extreme</span></button>
+                <button class="nav-btn" data-page="disks" onclick="showPage('disks')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>Disks</span></button>
+                <button class="nav-btn" data-page="developer" onclick="showPage('developer')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Developer</span></button>
             </nav>
-
-            <div class="sidebar-footer">
-                <div class="os-pill" id="osBadge">Detecting...</div>
-            </div>
+            <div class="sidebar-footer"><div class="os-pill" id="osBadge">Detecting...</div></div>
         </aside>
 
         <main class="main">
             <!-- DASHBOARD -->
             <section class="page active" id="page-dashboard">
-                <header class="page-head">
-                    <div>
-                        <h1>Dashboard</h1>
-                        <p class="sub">System overview and quick actions</p>
-                    </div>
-                </header>
-
+                <header class="page-head"><div><h1>Dashboard</h1><p class="sub">System overview and quick actions</p></div></header>
                 <div class="meter-row">
-                    <div class="meter-card">
-                        <div class="meter-head">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-                            <span>CPU</span>
-                        </div>
-                        <div class="meter-val" id="cpuValue">--%</div>
-                        <div class="meter-bar"><div class="meter-fill cpu" id="cpuBar"></div></div>
-                    </div>
-                    <div class="meter-card">
-                        <div class="meter-head">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
-                            <span>RAM</span>
-                        </div>
-                        <div class="meter-val" id="ramValue">--%</div>
-                        <div class="meter-bar"><div class="meter-fill ram" id="ramBar"></div></div>
-                    </div>
-                    <div class="meter-card">
-                        <div class="meter-head">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                            <span>DISK</span>
-                        </div>
-                        <div class="meter-val" id="diskValue">--%</div>
-                        <div class="meter-bar"><div class="meter-fill disk" id="diskBar"></div></div>
-                    </div>
-                    <div class="meter-card">
-                        <div class="meter-head">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-pink)" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
-                            <span>NET</span>
-                        </div>
-                        <div class="meter-val" id="netValue">--</div>
-                        <div class="meter-bar"><div class="meter-fill net" id="netBar"></div></div>
-                    </div>
+                    <div class="meter-card"><div class="meter-head"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg><span>CPU</span></div><div class="meter-val" id="cpuValue">--%</div><div class="meter-bar"><div class="meter-fill cpu" id="cpuBar"></div></div></div>
+                    <div class="meter-card"><div class="meter-head"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg><span>RAM</span></div><div class="meter-val" id="ramValue">--%</div><div class="meter-bar"><div class="meter-fill ram" id="ramBar"></div></div></div>
+                    <div class="meter-card"><div class="meter-head"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>DISK</span></div><div class="meter-val" id="diskValue">--%</div><div class="meter-bar"><div class="meter-fill disk" id="diskBar"></div></div></div>
+                    <div class="meter-card"><div class="meter-head"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-pink)" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg><span>NET</span></div><div class="meter-val" id="netValue">--</div><div class="meter-bar"><div class="meter-fill net" id="netBar"></div></div></div>
                 </div>
-
                 <div class="action-row">
-                    <button class="btn primary" onclick="runAllOptimizations()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        Optimize Everything
-                    </button>
-                    <button class="btn" onclick="runOptimizer('cleanup')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-                        Quick Clean
-                    </button>
-                    <button class="btn" onclick="runOptimizer('network')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14 0"/><circle cx="12" cy="20" r="1"/></svg>
-                        Fix Network
-                    </button>
-                    <button class="btn" onclick="runOptimizer('performance')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                        Boost Speed
-                    </button>
+                    <button class="btn primary" onclick="runAllOptimizations()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Optimize Everything</button>
+                    <button class="btn" onclick="runOptimizer('cleanup')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Quick Clean</button>
+                    <button class="btn" onclick="runOptimizer('network')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14 0"/><circle cx="12" cy="20" r="1"/></svg>Fix Network</button>
+                    <button class="btn" onclick="runOptimizer('performance')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Boost Speed</button>
                 </div>
-
-                <div class="panel" id="dashResults" style="display:none">
-                    <h3>Results</h3>
-                    <div class="result-list" id="dashResultsList"></div>
-                </div>
+                <div class="panel" id="dashResults" style="display:none"><h3>Results</h3><div class="result-list" id="dashResultsList"></div></div>
             </section>
 
             <!-- CLEANUP -->
-            <section class="page" id="page-cleanup">
-                <header class="page-head"><div><h1>System Cleanup</h1><p class="sub">Remove junk files, cache, and bloat</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('cleanup')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></div>
-                        <h3>Full Cleanup</h3>
-                        <p>Temp files, browser cache, crash dumps, thumbnails, logs, DNS, recycle bin, Windows Update cache</p>
-                        <div class="tag-row"><span class="tag">Temp</span><span class="tag">Cache</span><span class="tag">Logs</span><span class="tag">DNS</span><span class="tag">Browser</span></div>
-                        <button class="btn sm">Run Cleanup</button>
-                    </div>
-                </div>
-                <div class="panel" id="cleanupResults" style="display:none"><div class="result-list" id="cleanupResultsList"></div></div>
-            </section>
+            <section class="page" id="page-cleanup"><header class="page-head"><div><h1>System Cleanup</h1><p class="sub">Remove junk files, cache, and bloat</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('cleanup')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></div><h3>Full Cleanup</h3><p>Temp files, browser cache, crash dumps, thumbnails, logs, DNS, recycle bin, Windows Update cache</p><div class="tag-row"><span class="tag">Temp</span><span class="tag">Cache</span><span class="tag">Logs</span><span class="tag">DNS</span><span class="tag">Browser</span></div><button class="btn sm">Run Cleanup</button></div></div>
+                <div class="panel" id="cleanupResults" style="display:none"><div class="result-list" id="cleanupResultsList"></div></div></section>
 
             <!-- NETWORK -->
-            <section class="page" id="page-network">
-                <header class="page-head"><div><h1>Network Optimization</h1><p class="sub">Maximize speed, reduce latency</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('network')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg></div>
-                        <h3>Full Network Tuning</h3>
-                        <p>TCP/IP stack, DNS (Cloudflare), Nagle off, buffer bloat, MTU, fast open, BBR congestion control, port range 65534</p>
-                        <div class="tag-row"><span class="tag">TCP</span><span class="tag">DNS</span><span class="tag">Nagle</span><span class="tag">MTU</span><span class="tag">BBR</span></div>
-                        <button class="btn sm">Optimize Network</button>
-                    </div>
-                </div>
-                <div class="panel" id="networkResults" style="display:none"><div class="result-list" id="networkResultsList"></div></div>
-            </section>
+            <section class="page" id="page-network"><header class="page-head"><div><h1>Network Optimization</h1><p class="sub">Maximize speed, reduce latency</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('network')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg></div><h3>Full Network Tuning</h3><p>TCP/IP stack, DNS (Cloudflare), Nagle off, buffer bloat, MTU, fast open, BBR congestion control</p><div class="tag-row"><span class="tag">TCP</span><span class="tag">DNS</span><span class="tag">Nagle</span><span class="tag">BBR</span></div><button class="btn sm">Optimize Network</button></div></div>
+                <div class="panel" id="networkResults" style="display:none"><div class="result-list" id="networkResultsList"></div></div></section>
 
             <!-- PERFORMANCE -->
-            <section class="page" id="page-performance">
-                <header class="page-head"><div><h1>Performance</h1><p class="sub">Kill bloat, boost CPU and RAM</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('performance')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-                        <h3>Full Performance Boost</h3>
-                        <p>Kill heavy processes, high performance power plan, virtual memory, CPU governor, kernel params</p>
-                        <div class="tag-row"><span class="tag">Startup</span><span class="tag">Power</span><span class="tag">RAM</span><span class="tag">CPU</span><span class="tag">VM</span></div>
-                        <button class="btn sm">Boost Performance</button>
-                    </div>
-                </div>
-                <div class="panel" id="performanceResults" style="display:none"><div class="result-list" id="performanceResultsList"></div></div>
-            </section>
+            <section class="page" id="page-performance"><header class="page-head"><div><h1>Performance</h1><p class="sub">Kill bloat, boost CPU and RAM</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('performance')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><h3>Full Performance Boost</h3><p>Kill heavy processes, high performance power plan, virtual memory, CPU governor</p><div class="tag-row"><span class="tag">Startup</span><span class="tag">Power</span><span class="tag">RAM</span><span class="tag">CPU</span></div><button class="btn sm">Boost Performance</button></div></div>
+                <div class="panel" id="performanceResults" style="display:none"><div class="result-list" id="performanceResultsList"></div></div></section>
 
             <!-- GAMING -->
-            <section class="page" id="page-gaming">
-                <header class="page-head"><div><h1>Gaming Mode</h1><p class="sub">Max FPS, zero input lag, GPU priority</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('gaming')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-pink)" stroke-width="1.5"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg></div>
-                        <h3>Gaming Optimization</h3>
-                        <p>Game mode, GPU priority, DVR off, fullscreen opt off, mouse accel off, shader cache, visual effects off</p>
-                        <div class="tag-row"><span class="tag">Game Mode</span><span class="tag">GPU</span><span class="tag">DVR</span><span class="tag">Input Lag</span></div>
-                        <button class="btn sm">Enable Gaming</button>
-                    </div>
-                </div>
-                <div class="panel" id="gamingResults" style="display:none"><div class="result-list" id="gamingResultsList"></div></div>
-            </section>
+            <section class="page" id="page-gaming"><header class="page-head"><div><h1>Gaming Mode</h1><p class="sub">Max FPS, zero input lag, GPU priority</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('gaming')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-pink)" stroke-width="1.5"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg></div><h3>Gaming Optimization</h3><p>Game mode, GPU priority, DVR off, fullscreen opt off, mouse accel off, shader cache</p><div class="tag-row"><span class="tag">Game Mode</span><span class="tag">GPU</span><span class="tag">DVR</span><span class="tag">Input Lag</span></div><button class="btn sm">Enable Gaming</button></div></div>
+                <div class="panel" id="gamingResults" style="display:none"><div class="result-list" id="gamingResultsList"></div></div></section>
 
             <!-- SERVICES -->
-            <section class="page" id="page-services">
-                <header class="page-head"><div><h1>Services Manager</h1><p class="sub">Toggle bloatware services and background tasks</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('services')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                        <h3>Service Optimization</h3>
-                        <p>Disable telemetry, Cortana, Xbox services, widgets, edge updates, scheduled tasks, startup apps</p>
-                        <div class="tag-row"><span class="tag">Telemetry</span><span class="tag">Cortana</span><span class="tag">Xbox</span><span class="tag">Widgets</span></div>
-                        <button class="btn sm">Optimize Services</button>
-                    </div>
-                </div>
-                <div class="panel" id="servicesResults" style="display:none"><div class="result-list" id="servicesResultsList"></div></div>
-            </section>
+            <section class="page" id="page-services"><header class="page-head"><div><h1>Services Manager</h1><p class="sub">Toggle bloatware services on/off</p></div></header>
+                <div class="panel" id="servicesPanel"><div class="svc-header"><h3>System Services</h3><button class="btn sm" onclick="loadServices()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button></div><div class="svc-list" id="servicesList"><div class="loader-mini"></div></div></div>
+                <div class="panel" id="servicesResults" style="display:none"><div class="result-list" id="servicesResultsList"></div></div></section>
+
+            <!-- STARTUP -->
+            <section class="page" id="page-startup"><header class="page-head"><div><h1>Startup Apps</h1><p class="sub">Manage apps that run at boot</p></div></header>
+                <div class="panel" id="startupPanel"><div class="svc-header"><h3>Startup Programs</h3><button class="btn sm" onclick="loadStartup()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button></div><div class="svc-list" id="startupList"><div class="loader-mini"></div></div></div>
+                <div class="panel" id="startupResults" style="display:none"><div class="result-list" id="startupResultsList"></div></div></section>
 
             <!-- SECURITY -->
-            <section class="page" id="page-security">
-                <header class="page-head"><div><h1>Security & Privacy</h1><p class="sub">Remove bloatware, harden system</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('security')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                        <h3>Security Hardening</h3>
-                        <p>Remove 17 bloatware apps, disable telemetry tasks, firewall harden, ad ID off, location off, Cortana off</p>
-                        <div class="tag-row"><span class="tag">Bloatware</span><span class="tag">Telemetry</span><span class="tag">Firewall</span><span class="tag">Privacy</span></div>
-                        <button class="btn sm">Harden System</button>
-                    </div>
-                </div>
-                <div class="panel" id="securityResults" style="display:none"><div class="result-list" id="securityResultsList"></div></div>
-            </section>
+            <section class="page" id="page-security"><header class="page-head"><div><h1>Security & Privacy</h1><p class="sub">Remove bloatware, harden system</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('security')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Security Hardening</h3><p>Remove 17 bloatware apps, disable telemetry, firewall harden, ad ID off, Cortana off</p><div class="tag-row"><span class="tag">Bloatware</span><span class="tag">Telemetry</span><span class="tag">Firewall</span><span class="tag">Privacy</span></div><button class="btn sm">Harden System</button></div></div>
+                <div class="panel" id="securityResults" style="display:none"><div class="result-list" id="securityResultsList"></div></div></section>
 
             <!-- OVERCLOCK -->
-            <section class="page" id="page-overclock">
-                <header class="page-head"><div><h1>Overclock & Tuning</h1><p class="sub">Push hardware to safe limits</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('overclock')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-                        <h3>Hardware Tuning</h3>
-                        <p>CPU timing, memory management, GPU scheduling, power limits, timer resolution, core parking, prefetch off</p>
-                        <div class="tag-row"><span class="tag">CPU</span><span class="tag">RAM</span><span class="tag">GPU</span><span class="tag">Power</span><span class="tag">Timer</span></div>
-                        <button class="btn sm">Tune Hardware</button>
-                    </div>
-                </div>
-                <div class="panel" id="overclockResults" style="display:none"><div class="result-list" id="overclockResultsList"></div></div>
-            </section>
+            <section class="page" id="page-overclock"><header class="page-head"><div><h1>Overclock & Tuning</h1><p class="sub">Push hardware to safe limits</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('overclock')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-amber)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><h3>Hardware Tuning</h3><p>CPU timing, memory management, GPU scheduling, power limits, timer resolution, core parking</p><div class="tag-row"><span class="tag">CPU</span><span class="tag">RAM</span><span class="tag">GPU</span><span class="tag">Power</span><span class="tag">Timer</span></div><button class="btn sm">Tune Hardware</button></div></div>
+                <div class="panel" id="overclockResults" style="display:none"><div class="result-list" id="overclockResultsList"></div></div></section>
+
+            <!-- EXTREME TUNING -->
+            <section class="page" id="page-extreme"><header class="page-head"><div><h1>Extreme Mode</h1><p class="sub">Force maximum performance - i3 to gaming PC</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runExtremeTuning()"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-red)" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Extreme Performance</h3><p>Force CPU 100% all cores, aggressive turbo, disable all throttling, RAM paging off, GPU max, timer precision, visual effects off, network max throughput</p><div class="tag-row"><span class="tag">CPU 100%</span><span class="tag">Turbo Max</span><span class="tag">No Throttle</span><span class="tag">RAM Direct</span><span class="tag">GPU Full</span></div><button class="btn sm primary">Enable Extreme Mode</button></div></div>
+                <div class="panel" id="extremeResults" style="display:none"><div class="result-list" id="extremeResultsList"></div></div></section>
+
+            <!-- DISKS -->
+            <section class="page" id="page-disks"><header class="page-head"><div><h1>Disk Manager</h1><p class="sub">Optimize internal and external disks</p></div></header>
+                <div class="panel" id="diskPanel"><div class="svc-header"><h3>All Disks</h3><button class="btn sm" onclick="loadDisks()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button></div><div class="svc-list" id="diskList"><div class="loader-mini"></div></div></div>
+                <div class="panel" id="diskResults" style="display:none"><div class="result-list" id="diskResultsList"></div></div></section>
 
             <!-- DEVELOPER -->
-            <section class="page" id="page-developer">
-                <header class="page-head"><div><h1>Developer Tools</h1><p class="sub">Clean build caches, npm, pip, git, Docker</p></div></header>
-                <div class="panel-grid">
-                    <div class="panel card-hover" onclick="runOptimizer('developer')">
-                        <div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-                        <h3>Developer Cleanup</h3>
-                        <p>npm/pip cache, pycache, git gc, Docker prune, IDE cache, build artifacts, node_modules</p>
-                        <div class="tag-row"><span class="tag">npm</span><span class="tag">pip</span><span class="tag">Git</span><span class="tag">Docker</span><span class="tag">IDE</span></div>
-                        <button class="btn sm">Clean Dev Cache</button>
-                    </div>
-                </div>
-                <div class="panel" id="developerResults" style="display:none"><div class="result-list" id="developerResultsList"></div></div>
-            </section>
+            <section class="page" id="page-developer"><header class="page-head"><div><h1>Developer Tools</h1><p class="sub">Clean build caches, npm, pip, git, Docker</p></div></header>
+                <div class="panel-grid"><div class="panel card-hover" onclick="runOptimizer('developer')"><div class="card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><h3>Developer Cleanup</h3><p>npm/pip cache, pycache, git gc, Docker prune, IDE cache, build artifacts</p><div class="tag-row"><span class="tag">npm</span><span class="tag">pip</span><span class="tag">Git</span><span class="tag">Docker</span><span class="tag">IDE</span></div><button class="btn sm">Clean Dev Cache</button></div></div>
+                <div class="panel" id="developerResults" style="display:none"><div class="result-list" id="developerResultsList"></div></div></section>
 
             <!-- LOADER -->
-            <div class="loader-overlay" id="loader" style="display:none">
-                <div class="loader-ring-container">
-                    <div class="loader-ring"></div>
-                    <div class="loader-ring"></div>
-                    <div class="loader-ring"></div>
-                </div>
-                <p class="loader-text" id="loaderText">Optimizing...</p>
-            </div>
+            <div class="loader-overlay" id="loader" style="display:none"><div class="loader-ring-container"><div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div></div><p class="loader-text" id="loaderText">Optimizing...</p></div>
         </main>
     </div>
     <script src="/js/app.js"></script>
