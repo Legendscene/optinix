@@ -264,6 +264,28 @@ def toolbox_hosts():
     return jsonify(tb.get_hosts())
 
 
+# === DRIVER ENDPOINTS ===
+@app.route("/api/drivers/scan")
+def drivers_scan():
+    from core.drivers import DriverManager
+    mgr = DriverManager(os_type)
+    return jsonify({"drivers": mgr.scan_drivers()[:50]})
+
+
+@app.route("/api/drivers/missing")
+def drivers_missing():
+    from core.drivers import DriverManager
+    mgr = DriverManager(os_type)
+    return jsonify({"missing": mgr.get_missing_drivers()})
+
+
+@app.route("/api/drivers/links")
+def drivers_links():
+    from core.drivers import DriverManager
+    mgr = DriverManager(os_type)
+    return jsonify(mgr.get_driver_links())
+
+
 @app.route("/api/optimize/<category>", methods=["POST"])
 def optimize(category):
     try:

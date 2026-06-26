@@ -1,3 +1,4 @@
+let prevCpu=null;
 function showPage(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
@@ -15,37 +16,83 @@ async function loadSystemInfo(){
     try{
         const r=await fetch('/api/system-info');
         const d=await r.json();
-        animate('cpuValue',d.cpu.percent,'%');
-        animate('ramValue',d.memory.percent,'%');
-        if(d.disk&&d.disk.length){animate('diskValue',d.disk[0].percent,'%');bar('diskBar',d.disk[0].percent)}
-        bar('cpuBar',d.cpu.percent);
-        bar('ramBar',d.memory.percent);
+
+        // CPU
+        const cpuPct=d.cpu.percent||0;
+        animate('cpuValue',Math.round(cpuPct),'%');
+        bar('cpuBar',cpuPct);
+
+        // RAM
+        const ramPct=d.memory.percent||0;
+        animate('ramValue',Math.round(ramPct),'%');
+        bar('ramBar',ramPct);
+
+        // Disk
+        if(d.disk&&d.disk.length){
+            animate('diskValue',Math.round(d.disk[0].percent),'%');
+            bar('diskBar',d.disk[0].percent);
+        }
+
+        // Network speed
         const netEl=document.getElementById('netValue');
-        if(netEl)netEl.innerHTML='<span class="speed-up">&uarr;'+fmtSpeed(d.network.speed_up)+'</span> <span class="speed-down">&darr;'+fmtSpeed(d.network.speed_down)+'</span>';
+        if(netEl){
+            const up=fmtSpeed(d.network.speed_up);
+            const down=fmtSpeed(d.network.speed_down);
+            netEl.innerHTML='<span class="speed-up">&uarr;'+up+'</span> <span class="speed-down">&darr;'+down+'</span>';
+        }
         const netBar=document.getElementById('netBar');
-        if(netBar){const maxSpd=Math.max(d.network.speed_up,d.network.speed_down,1);const pct=Math.min(100,maxSpd/1048576*100);netBar.style.width=pct+'%'}
-        if(d.os){const b=document.getElementById('osBadge');if(b)b.textContent=d.os.os_name}
-    }catch(e){console.error(e)}
+        if(netBar){
+            const maxSpd=Math.max(d.network.speed_up||0,d.network.speed_down||0,1);
+            const pct=Math.min(100,maxSpd/1048576*100);
+            netBar.style.width=pct+'%';
+        }
+
+        // GPU
+        if(d.gpu){
+            const gpuEl=document.getElementById('gpuValue');
+            const gpuBarEl=document.getElementById('gpuBar');
+            const gpuNameEl=document.getElementById('gpuName');
+            if(gpuEl)gpuEl.textContent=d.gpu.usage+'%';
+            if(gpuBarEl)gpuBarEl.style.width=d.gpu.usage+'%';
+            if(gpuNameEl){
+                let gpuText=d.gpu.name||'N/A';
+                if(d.gpu.temperature)gpuText+=' | '+d.gpu.temperature+'C';
+                if(d.gpu.memory_total)gpuText+=' | '+fmtBytes(d.gpu.memory_used*1048576)+'/'+fmtBytes(d.gpu.memory_total);
+                gpuNameEl.textContent=gpuText;
+            }
+        }
+
+        // System
+        if(d.os){
+            const b=document.getElementById('osBadge');
+            if(b)b.textContent=d.os.os_name;
+        }
+        if(d.system){
+            const uptimeEl=document.getElementById('uptimeValue');
+            if(uptimeEl)uptimeEl.textContent=d.system.uptime;
+        }
+
+        // Disk info
+        const diskInfoEl=document.getElementById('diskInfo');
+        if(diskInfoEl&&d.disk&&d.disk.length){
+            diskInfoEl.textContent=fmtBytes(d.disk[0].free)+' free / '+fmtBytes(d.disk[0].total);
+        }
+    }catch(e){console.error('System info error:',e)}
 }
 
 function animate(id,target,suffix){
     const el=document.getElementById(id);if(!el)return;
-    let cur=0;const step=Math.max(1,Math.floor(target/25));
-    const iv=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(iv)}el.textContent=cur+suffix},25);
+    el.textContent=target+suffix;
 }
-function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},80)}
+function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},50)}
 function fmt(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 function fmtSpeed(bps){if(!bps||bps<1)return'0 B/s';const k=1024,s=['B/s','KB/s','MB/s','GB/s'];const i=Math.floor(Math.log(bps)/Math.log(k));return parseFloat((bps/Math.pow(k,i)).toFixed(1))+s[i]}
 function fmtBytes(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 
 async function runOptimizer(cat){
     showLoader(cat+'...');
-    try{
-        const r=await fetch('/api/optimize/'+cat,{method:'POST'});
-        const d=await r.json();
-        hideLoader();
-        showResults(cat,d.results||d);
-    }catch(e){hideLoader();showResults(cat,[{success:false,message:'Error: '+e.message}])}
+    try{const r=await fetch('/api/optimize/'+cat,{method:'POST'});const d=await r.json();hideLoader();showResults(cat,d.results||d)}
+    catch(e){hideLoader();showResults(cat,[{success:false,message:'Error: '+e.message}])}
 }
 
 async function runAllOptimizations(){
@@ -69,148 +116,93 @@ async function runAllOptimizations(){
 
 async function runExtremeTuning(){
     showLoader('Applying extreme mode...');
-    try{
-        const r=await fetch('/api/tuning/extreme',{method:'POST'});
-        const d=await r.json();
-        hideLoader();
-        showResults('extreme',d.results||[]);
-    }catch(e){hideLoader();showResults('extreme',[{success:false,message:'Error: '+e.message}])}
+    try{const r=await fetch('/api/tuning/extreme',{method:'POST'});const d=await r.json();hideLoader();showResults('extreme',d.results||[])}
+    catch(e){hideLoader();showResults('extreme',[{success:false,message:'Error: '+e.message}])}
 }
 
 // SERVICES
 async function loadServices(){
-    const list=document.getElementById('servicesList');
-    if(!list)return;
+    const list=document.getElementById('servicesList');if(!list)return;
     list.innerHTML='<div class="loader-mini"></div>';
     try{
-        const r=await fetch('/api/services');
-        const d=await r.json();
-        const services=d.services||[];
-        list.innerHTML=services.map(s=>`
-            <div class="svc-row">
-                <div class="svc-info">
-                    <span class="svc-name">${s.name}</span>
-                    <span class="svc-desc">${s.desc}</span>
-                    ${s.safe?'<span class="svc-badge safe">Safe to disable</span>':'<span class="svc-badge warn">System critical</span>'}
-                </div>
-                <label class="toggle">
-                    <input type="checkbox" ${s.running?'checked':''} ${!s.safe?'disabled':''} onchange="toggleService('${s.name}',this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        `).join('');
+        const r=await fetch('/api/services');const d=await r.json();const services=d.services||[];
+        list.innerHTML=services.map(s=>`<div class="svc-row"><div class="svc-info"><span class="svc-name">${s.name}</span><span class="svc-desc">${s.desc}</span>${s.safe?'<span class="svc-badge safe">Safe</span>':'<span class="svc-badge warn">Critical</span>'}</div><label class="toggle"><input type="checkbox" ${s.running?'checked':''} ${!s.safe?'disabled':''} onchange="toggleService('${s.name}',this.checked)"><span class="slider"></span></label></div>`).join('');
     }catch(e){list.innerHTML='<p class="err">Failed to load services</p>'}
 }
-
-async function toggleService(name,enable){
-    try{
-        await fetch('/api/services/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})});
-    }catch(e){}
-}
+async function toggleService(name,enable){try{await fetch('/api/services/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})})}catch(e){}}
 
 // STARTUP
 async function loadStartup(){
-    const list=document.getElementById('startupList');
-    if(!list)return;
+    const list=document.getElementById('startupList');if(!list)return;
     list.innerHTML='<div class="loader-mini"></div>';
     try{
-        const r=await fetch('/api/startup');
-        const d=await r.json();
-        const apps=d.apps||[];
-        list.innerHTML=apps.map(a=>`
-            <div class="svc-row">
-                <div class="svc-info">
-                    <span class="svc-name">${a.name}</span>
-                    <span class="svc-desc">${a.desc}</span>
-                </div>
-                <label class="toggle">
-                    <input type="checkbox" checked onchange="toggleStartup('${a.name}',this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        `).join('');
+        const r=await fetch('/api/startup');const d=await r.json();const apps=d.apps||[];
+        list.innerHTML=apps.map(a=>`<div class="svc-row"><div class="svc-info"><span class="svc-name">${a.name}</span><span class="svc-desc">${a.desc}</span></div><label class="toggle"><input type="checkbox" checked onchange="toggleStartup('${a.name}',this.checked)"><span class="slider"></span></label></div>`).join('');
     }catch(e){list.innerHTML='<p class="err">Failed to load startup apps</p>'}
 }
-
-async function toggleStartup(name,enable){
-    try{
-        await fetch('/api/startup/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})});
-    }catch(e){}
-}
+async function toggleStartup(name,enable){try{await fetch('/api/startup/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,enable})})}catch(e){}}
 
 // DISKS
 async function loadDisks(){
-    const list=document.getElementById('diskList');
-    if(!list)return;
+    const list=document.getElementById('diskList');if(!list)return;
     list.innerHTML='<div class="loader-mini"></div>';
     try{
-        const r=await fetch('/api/external-disk');
-        const d=await r.json();
-        const disks=d.disks||[];
-        list.innerHTML=disks.map(dk=>`
-            <div class="svc-row disk-row">
-                <div class="svc-info">
-                    <span class="svc-name">${dk.device} <span class="svc-desc">${dk.mountpoint}</span></span>
-                    <span class="svc-desc">${dk.fstype} | ${fmtBytes(dk.used)} / ${fmtBytes(dk.total)} (${dk.percent}%) ${dk.is_external?'<span class="svc-badge safe">External</span>':''}</span>
-                    <div class="disk-bar"><div class="disk-fill" style="width:${dk.percent}%"></div></div>
-                </div>
-                <button class="btn sm" onclick="optimizeDisk('${dk.device}')">Optimize</button>
-            </div>
-        `).join('');
+        const r=await fetch('/api/external-disk');const d=await r.json();const disks=d.disks||[];
+        list.innerHTML=disks.map(dk=>`<div class="svc-row disk-row"><div class="svc-info"><span class="svc-name">${dk.device} <span class="svc-desc">${dk.mountpoint}</span></span><span class="svc-desc">${dk.fstype} | ${fmtBytes(dk.used)} / ${fmtBytes(dk.total)} (${dk.percent}%) ${dk.is_external?'<span class="svc-badge safe">External</span>':''}</span><div class="disk-bar"><div class="disk-fill" style="width:${dk.percent}%"></div></div></div><button class="btn sm" onclick="optimizeDisk('${dk.device}')">Optimize</button></div>`).join('');
     }catch(e){list.innerHTML='<p class="err">Failed to load disks</p>'}
 }
-
 async function optimizeDisk(device){
     showLoader('Optimizing '+device+'...');
-    try{
-        const r=await fetch('/api/external-disk/optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device})});
-        const d=await r.json();
-        hideLoader();
-        showResults('disk',Array.isArray(d)?d:d.results||[]);
-    }catch(e){hideLoader();showResults('disk',[{success:false,message:'Error: '+e.message}])}
+    try{const r=await fetch('/api/external-disk/optimize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device})});const d=await r.json();hideLoader();showResults('disk',Array.isArray(d)?d:d.results||[])}
+    catch(e){hideLoader();showResults('disk',[{success:false,message:'Error: '+e.message}])}
 }
 
-function showResults(cat,results){
-    const c=document.getElementById(cat+'ResultsList');
-    const s=document.getElementById(cat+'Results');
-    if(!c||!s)return;
-    s.style.display='block';
-    if(Array.isArray(results)){
-        c.innerHTML=results.map((r,i)=>{
-            const cls=r.success?'result-ok':'result-fail';
-            const icon=r.success?'&#10003;':'&#10007;';
-            return'<div class="result-item '+cls+'" style="animation-delay:'+i*0.04+'s">'+icon+' '+r.message+'</div>';
+// DRIVERS
+async function loadDrivers(){
+    const list=document.getElementById('driversList');if(!list)return;
+    list.innerHTML='<div class="loader-mini"></div>';
+    try{
+        const r=await fetch('/api/drivers/scan');const d=await r.json();const drivers=d.drivers||[];
+        const missing=await fetch('/api/drivers/missing');const md=await missing.json();const missingList=md.missing||[];
+
+        let html='';
+        if(missingList.length>0){
+            html+='<div class="svc-header"><h3 style="color:var(--c-red)">Missing/Broken Drivers ('+missingList.length+')</h3></div>';
+            html+=missingList.map(m=>`<div class="svc-row" style="border-left:3px solid var(--c-red)"><div class="svc-info"><span class="svc-name">${m.name}</span><span class="svc-desc">${m.class} | Status: ${m.status}</span></div></div>`).join('');
+            html+='<div style="margin:10px 0"><div class="svc-header"><h3 style="color:var(--c-teal)">Driver Download Links</h3></div>';
+            html+=`<div class="tool-row"><a class="btn sm" href="https://www.nvidia.com/Download/index.aspx" target="_blank">NVIDIA</a><a class="btn sm" href="https://www.amd.com/en/support" target="_blank">AMD</a><a class="btn sm" href="https://www.intel.com/content/www/us/en/download-center/home.html" target="_blank">Intel</a><a class="btn sm" href="https://www.realtek.com/en/component/zoo/category/pc-audio-codecs-high-definition-audio-codecs-software" target="_blank">Realtek Audio</a></div></div>`;
+        }
+
+        html+='<div class="svc-header"><h3 style="color:var(--c-teal)">Installed Drivers ('+drivers.length+')</h3></div>';
+        html+=drivers.slice(0,30).map(d=>{
+            const url=d.download_url||'';
+            return`<div class="svc-row"><div class="svc-info"><span class="svc-name">${d.name}</span><span class="svc-desc">${d.manufacturer||''} | v${d.version||'N/A'} | ${d.class||''}</span></div>${url?'<a class="btn sm" href="'+url+'" target="_blank">Download</a>':''}</div>`;
         }).join('');
-    }
+
+        list.innerHTML=html;
+    }catch(e){list.innerHTML='<p class="err">Failed to load drivers</p>'}
+}
+
+// TOOLBOX
+async function setDNS(provider){showLoader('Setting DNS to '+provider+'...');try{const r=await fetch('/api/toolbox/dns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
+async function toolboxAction(action){showLoader(action+'...');try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
+async function toolboxPost(action,data){showLoader(action+'...');try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}}
+async function toolboxPing(){showLoader('Pinging 8.8.8.8...');try{const r=await fetch('/api/toolbox/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:'8.8.8.8'})});const d=await r.json();hideLoader();const el=document.getElementById('pingResult');if(el){el.style.display='block';el.textContent=d.output||d.message||'No result'}}catch(e){hideLoader()}}
+async function loadHardwareInfo(){try{const r=await fetch('/api/toolbox/hardware');const d=await r.json();const el=document.getElementById('hwInfo');if(el&&d.info){el.style.display='block';el.innerHTML=Object.entries(d.info).map(([k,v])=>`<div class="hw-row"><span class="hw-key">${k}</span><span class="hw-val">${v}</span></div>`).join('')}}catch(e){}}
+function showToolboxResult(r){const c=document.getElementById('toolboxResultsList');const s=document.getElementById('toolboxResults');if(!c||!s)return;s.style.display='block';const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';c.innerHTML=`<div class="result-item ${cls}">${icon} ${r.message||'Done'}</div>`}
+
+function showResults(cat,results){
+    const c=document.getElementById(cat+'ResultsList');const s=document.getElementById(cat+'Results');
+    if(!c||!s)return;s.style.display='block';
+    if(Array.isArray(results)){c.innerHTML=results.map((r,i)=>{const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';return'<div class="result-item '+cls+'" style="animation-delay:'+i*0.04+'s">'+icon+' '+r.message+'</div>'}).join('')}
 }
 
 function showLoader(text){const o=document.getElementById('loader');const t=document.getElementById('loaderText');if(o)o.style.display='flex';if(t)t.textContent=text||'Optimizing...'}
 function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
-// === TOOLBOX ===
-async function setDNS(provider){
-    showLoader('Setting DNS to '+provider+'...');
-    try{const r=await fetch('/api/toolbox/dns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
-}
-async function toolboxAction(action){
-    showLoader(action+'...');
-    try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
-}
-async function toolboxPost(action,data){
-    showLoader(action+'...');
-    try{const r=await fetch('/api/toolbox/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();hideLoader();showToolboxResult(d)}catch(e){hideLoader();showToolboxResult({success:false,message:e.message})}
-}
-async function toolboxPing(){
-    showLoader('Pinging 8.8.8.8...');
-    try{const r=await fetch('/api/toolbox/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:'8.8.8.8'})});const d=await r.json();hideLoader();const el=document.getElementById('pingResult');if(el){el.style.display='block';el.textContent=d.output||d.message||'No result'}}catch(e){hideLoader()}
-}
-async function loadHardwareInfo(){
-    try{const r=await fetch('/api/toolbox/hardware');const d=await r.json();const el=document.getElementById('hwInfo');if(el&&d.info){el.style.display='block';el.innerHTML=Object.entries(d.info).map(([k,v])=>`<div class="hw-row"><span class="hw-key">${k}</span><span class="hw-val">${v}</span></div>`).join('')}}catch(e){}
-}
-function showToolboxResult(r){
-    const c=document.getElementById('toolboxResultsList');const s=document.getElementById('toolboxResults');if(!c||!s)return;s.style.display='block';
-    const cls=r.success?'result-ok':'result-fail';const icon=r.success?'&#10003;':'&#10007;';
-    c.innerHTML=`<div class="result-item ${cls}">${icon} ${r.message||'Done'}</div>`;
-}
-
-document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,5000)});
+document.addEventListener('DOMContentLoaded',()=>{
+    loadSystemInfo();
+    setInterval(loadSystemInfo,3000);
+    // Warm up CPU percent
+    fetch('/api/system-info').then(()=>{setTimeout(()=>fetch('/api/system-info'),1000)});
+});
