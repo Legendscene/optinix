@@ -16,8 +16,6 @@ def main():
     server_thread = threading.Thread(target=start_server, daemon=True)
     server_thread.start()
 
-    icon_path = LOGO_PATH if os.path.exists(LOGO_PATH) else None
-
     window = webview.create_window(
         title="Optinix - PC Optimizer",
         url=f"http://127.0.0.1:{PORT}",
@@ -27,8 +25,7 @@ def main():
         resizable=True,
         frameless=False,
         easy_drag=True,
-        background_color="#09090b",
-        icon=icon_path
+        background_color="#09090b"
     )
     webview.start(debug=False)
 

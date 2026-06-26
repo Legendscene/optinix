@@ -2,7 +2,6 @@ import psutil
 import time
 import subprocess
 import platform
-import json
 
 
 class SystemScanner:
@@ -11,9 +10,10 @@ class SystemScanner:
         self._prev_net = None
         self._prev_net_time = None
         self._cpu_count = psutil.cpu_count(logical=True) or 1
+        self._gpu_cache = None
+        self._gpu_cache_time = 0
         try:
-            psutil.cpu_percent(interval=0)
-            psutil.cpu_percent(interval=0, percpu=True)
+            psutil.cpu_percent(interval=None)
         except Exception:
             pass
 
@@ -22,11 +22,11 @@ class SystemScanner:
         try:
             result["cpu"] = self.scan_cpu()
         except Exception:
-            result["cpu"] = {"percent": 0, "logical": 1, "physical": 1, "freq": None, "per_cpu": [], "temperature": None}
+            result["cpu"] = {"percent": 0, "logical": self._cpu_count, "physical": 1, "freq": None, "per_cpu": [], "temperature": None}
         try:
             result["memory"] = self.scan_memory()
         except Exception:
-            result["memory"] = {"total": 0, "used": 0, "percent": 0, "total_gb": 0, "used_gb": 0}
+            result["memory"] = {"total": 0, "used": 0, "percent": 0, "total_gb": 0, "used_gb": 0, "available_gb": 0}
         try:
             result["disk"] = self.scan_disk()
         except Exception:
@@ -34,11 +34,11 @@ class SystemScanner:
         try:
             result["network"] = self.scan_network()
         except Exception:
-            result["network"] = {"bytes_sent": 0, "bytes_recv": 0, "speed_up": 0, "speed_down": 0}
+            result["network"] = {"bytes_sent": 0, "bytes_recv": 0, "speed_up": 0, "speed_down": 0, "interfaces": []}
         try:
             result["gpu"] = self.scan_gpu()
         except Exception:
-            result["gpu"] = {"name": "N/A", "usage": 0, "memory_total": 0, "memory_used": 0, "temperature": 0}
+            result["gpu"] = {"name": "N/A", "usage": 0, "memory_total": 0, "memory_used": 0, "temperature": 0, "driver": "N/A"}
         try:
             result["processes"] = self.scan_processes()
         except Exception:
@@ -46,7 +46,7 @@ class SystemScanner:
         try:
             result["system"] = self.scan_system()
         except Exception:
-            result["system"] = {"os": platform.system(), "uptime": "N/A"}
+            result["system"] = {"os": "Unknown", "uptime": "N/A"}
         try:
             result["os"] = {"os_name": platform.system(), "release": platform.release()}
         except Exception:
@@ -55,14 +55,14 @@ class SystemScanner:
 
     def scan_cpu(self):
         try:
-            percent = psutil.cpu_percent(interval=0.1)
-            per_cpu = psutil.cpu_percent(interval=0, percpu=True)
+            percent = psutil.cpu_percent(interval=None)
+            per_cpu = psutil.cpu_percent(interval=None, percpu=True)
         except Exception:
             percent = 0
             per_cpu = []
         try:
             freq = psutil.cpu_freq()
-            freq_dict = freq._asdict() if freq else None
+            freq_dict = {"current": freq.current, "min": freq.min, "max": freq.max} if freq else None
         except Exception:
             freq_dict = None
         temp = None
@@ -75,12 +75,9 @@ class SystemScanner:
         except Exception:
             pass
         return {
-            "percent": percent,
-            "logical": self._cpu_count,
+            "percent": percent, "logical": self._cpu_count,
             "physical": psutil.cpu_count(logical=False) or 1,
-            "freq": freq_dict,
-            "per_cpu": per_cpu,
-            "temperature": temp
+            "freq": freq_dict, "per_cpu": per_cpu, "temperature": temp
         }
 
     def scan_memory(self):
@@ -125,20 +122,25 @@ class SystemScanner:
         self._prev_net_time = now
         return {
             "bytes_sent": stats.bytes_sent, "bytes_recv": stats.bytes_recv,
-            "speed_up": round(speed_up), "speed_down": round(speed_down),
-            "interfaces": []
+            "speed_up": round(speed_up), "speed_down": round(speed_down), "interfaces": []
         }
 
     def scan_gpu(self):
+        now = time.time()
+        if self._gpu_cache and (now - self._gpu_cache_time) < 5:
+            return self._gpu_cache
+
         gpu = {"name": "N/A", "usage": 0, "memory_total": 0, "memory_used": 0, "temperature": 0, "driver": "N/A"}
+
         if self.os_type == "windows":
             try:
                 r = subprocess.run(
-                    ["powershell", "-Command",
-                     "Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Select-Object -First 1 Name, AdapterRAM, DriverVersion | ConvertTo-Json"],
-                    capture_output=True, text=True, timeout=5
+                    ["powershell", "-NoProfile", "-Command",
+                     "Get-CimInstance Win32_VideoController -EA SilentlyContinue | Select -First 1 Name,AdapterRAM,DriverVersion | ConvertTo-Json"],
+                    capture_output=True, text=True, timeout=3
                 )
                 if r.stdout.strip():
+                    import json
                     data = json.loads(r.stdout)
                     if isinstance(data, list):
                         data = data[0] if data else {}
@@ -151,7 +153,7 @@ class SystemScanner:
                 r = subprocess.run(
                     ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu",
                      "--format=csv,noheader,nounits"],
-                    capture_output=True, text=True, timeout=3
+                    capture_output=True, text=True, timeout=2
                 )
                 if r.returncode == 0 and r.stdout.strip():
                     parts = r.stdout.strip().split(", ")
@@ -162,9 +164,12 @@ class SystemScanner:
                         gpu["temperature"] = int(parts[3])
             except Exception:
                 pass
+
+        self._gpu_cache = gpu
+        self._gpu_cache_time = now
         return gpu
 
-    def scan_processes(self, top_n=10):
+    def scan_processes(self, top_n=8):
         procs = []
         for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
             try:
