@@ -1,154 +1,89 @@
-let currentPage = 'dashboard';
-
-function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-    const pageEl = document.getElementById('page-' + page);
-    const navEl = document.querySelector(`[data-page="${page}"]`);
-
-    if (pageEl) pageEl.classList.add('active');
-    if (navEl) navEl.classList.add('active');
-
-    currentPage = page;
-
-    if (page === 'dashboard') loadSystemInfo();
+function showPage(page){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
+    const el=document.getElementById('page-'+page);
+    const nav=document.querySelector('[data-page="'+page+'"]');
+    if(el)el.classList.add('active');
+    if(nav)nav.classList.add('active');
+    if(page==='dashboard')loadSystemInfo();
 }
 
-async function loadSystemInfo() {
-    try {
-        const res = await fetch('/api/system-info');
-        const data = await res.json();
+async function loadSystemInfo(){
+    try{
+        const r=await fetch('/api/system-info');
+        const d=await r.json();
+        animate('cpuValue',d.cpu.percent,'%');
+        animate('ramValue',d.memory.percent,'%');
+        if(d.disk&&d.disk.length){animate('diskValue',d.disk[0].percent,'%');bar('diskBar',d.disk[0].percent)}
+        bar('cpuBar',d.cpu.percent);
+        bar('ramBar',d.memory.percent);
+        document.getElementById('netValue').textContent=fmt(d.network.bytes_recv);
+        if(d.os){const b=document.getElementById('osBadge');if(b)b.textContent=d.os.os_name}
+    }catch(e){console.error(e)}
+}
 
-        animateValue('cpuValue', data.cpu.percent, '%');
-        animateValue('ramValue', data.memory.percent, '%');
-        if (data.disk && data.disk.length) {
-            animateValue('diskValue', data.disk[0].percent, '%');
-            animateBar('diskBar', data.disk[0].percent);
-        }
-        animateBar('cpuBar', data.cpu.percent);
-        animateBar('ramBar', data.memory.percent);
+function animate(id,target,suffix){
+    const el=document.getElementById(id);if(!el)return;
+    let cur=0;const step=Math.max(1,Math.floor(target/25));
+    const iv=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(iv)}el.textContent=cur+suffix},25);
+}
+function bar(id,pct){const el=document.getElementById(id);if(!el)return;setTimeout(()=>{el.style.width=pct+'%'},80)}
+function fmt(b){if(!b)return'--';const k=1024,s=['B','KB','MB','GB','TB'];const i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i]}
 
-        if (data.os) {
-            const badge = document.getElementById('osBadge');
-            if (badge) badge.textContent = data.os.os_name + ' ' + data.os.release;
-        }
-
-        document.getElementById('netValue').textContent = formatBytes(data.network.bytes_recv) + ' recv';
-    } catch (e) {
-        console.error('System info failed:', e);
+async function runOptimizer(cat){
+    showLoader(cat+'...');
+    try{
+        const r=await fetch('/api/optimize/'+cat,{method:'POST'});
+        const d=await r.json();
+        hideLoader();
+        showResults(cat,d.results||d);
+    }catch(e){
+        hideLoader();
+        showResults(cat,[{success:false,message:'Error: '+e.message}]);
     }
 }
 
-function animateValue(id, target, suffix) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    let current = 0;
-    const step = Math.max(1, Math.floor(target / 30));
-    const interval = setInterval(() => {
-        current += step;
-        if (current >= target) {
-            current = target;
-            clearInterval(interval);
-        }
-        el.textContent = current + suffix;
-    }, 20);
-}
-
-function animateBar(id, percent) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    setTimeout(() => { el.style.width = percent + '%'; }, 100);
-}
-
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-async function runOptimizer(category) {
-    showLoading(`Optimizing ${category}...`);
-
-    try {
-        const res = await fetch(`/api/optimize/${category}`, { method: 'POST' });
-        const data = await res.json();
-
-        hideLoading();
-        displayResults(category, data.results || data);
-    } catch (e) {
-        hideLoading();
-        displayResults(category, [{ success: false, message: 'Error: ' + e.message }]);
-    }
-}
-
-async function runAllOptimizations() {
-    showLoading('Running all optimizers...');
-
-    try {
-        const res = await fetch('/api/optimize/all', { method: 'POST' });
-        const data = await res.json();
-
-        hideLoading();
-
-        let allResults = [];
-        Object.entries(data).forEach(([cat, results]) => {
-            if (Array.isArray(results)) {
-                results.forEach(r => {
-                    allResults.push({ ...r, category: cat });
-                });
-            }
+async function runAllOptimizations(){
+    showLoader('Running all optimizers...');
+    try{
+        const r=await fetch('/api/optimize/all',{method:'POST'});
+        const d=await r.json();
+        hideLoader();
+        let all=[];
+        Object.entries(d).forEach(([cat,res])=>{
+            if(Array.isArray(res))res.forEach(r=>all.push({...r,category:cat}));
         });
-
-        const container = document.getElementById('dashboardResultsList');
-        const section = document.getElementById('dashboardResults');
-        if (container && section) {
-            section.style.display = 'block';
-            container.innerHTML = allResults.map(r => {
-                const cls = r.success ? 'result-ok' : 'result-fail';
-                const icon = r.success ? '✓' : '✗';
-                const prefix = r.category ? `[${r.category.toUpperCase()}] ` : '';
-                return `<div class="result-item ${cls}">${icon} ${prefix}${r.message}</div>`;
-            }).join('');
-        }
-    } catch (e) {
-        hideLoading();
-        displayResults('dashboard', [{ success: false, message: 'Error: ' + e.message }]);
-    }
+        const c=document.getElementById('dashResultsList');
+        const s=document.getElementById('dashResults');
+        if(c&&s){s.style.display='block';c.innerHTML=all.map(r=>{
+            const cls=r.success?'result-ok':'result-fail';
+            const icon=r.success?'&#10003;':'&#10007;';
+            const pre=r.category?'<strong>['+r.category.toUpperCase()+']</strong> ':'';
+            return'<div class="result-item '+cls+'">'+icon+' '+pre+r.message+'</div>';
+        }).join('')}
+    }catch(e){hideLoader();showResults('dashboard',[{success:false,message:'Error: '+e.message}])}
 }
 
-function displayResults(category, results) {
-    const container = document.getElementById(category + 'ResultsList');
-    const section = document.getElementById(category + 'Results');
-
-    if (!container || !section) return;
-
-    section.style.display = 'block';
-
-    if (Array.isArray(results)) {
-        container.innerHTML = results.map((r, i) => {
-            const cls = r.success ? 'result-ok' : 'result-fail';
-            const icon = r.success ? '✓' : '✗';
-            return `<div class="result-item ${cls}" style="animation-delay:${i * 0.05}s">${icon} ${r.message}</div>`;
+function showResults(cat,results){
+    const c=document.getElementById(cat+'ResultsList');
+    const s=document.getElementById(cat+'Results');
+    if(!c||!s)return;
+    s.style.display='block';
+    if(Array.isArray(results)){
+        c.innerHTML=results.map((r,i)=>{
+            const cls=r.success?'result-ok':'result-fail';
+            const icon=r.success?'&#10003;':'&#10007;';
+            return'<div class="result-item '+cls+'" style="animation-delay:'+i*0.04+'s">'+icon+' '+r.message+'</div>';
         }).join('');
     }
 }
 
-function showLoading(text) {
-    const overlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
-    if (overlay) overlay.style.display = 'flex';
-    if (loadingText) loadingText.textContent = text || 'Optimizing...';
+function showLoader(text){
+    const o=document.getElementById('loader');
+    const t=document.getElementById('loaderText');
+    if(o)o.style.display='flex';
+    if(t)t.textContent=text||'Optimizing...';
 }
+function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = 'none';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadSystemInfo();
-    setInterval(loadSystemInfo, 5000);
-});
+document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,5000)});
