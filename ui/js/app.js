@@ -57,4 +57,20 @@ function showResults(cat,r){const c=document.getElementById(cat+'ResultsList');c
 function showLoader(t){const o=document.getElementById('loader');const l=document.getElementById('loaderText');if(o)o.style.display='flex';if(l)l.textContent=t||'Optimizing...'}
 function hideLoader(){const o=document.getElementById('loader');if(o)o.style.display='none'}
 
-document.addEventListener('DOMContentLoaded',()=>{loadSystemInfo();setInterval(loadSystemInfo,2000);fetch('/api/system-info').then(()=>setTimeout(()=>fetch('/api/system-info'),500))});
+// THEMES
+function setTheme(t){document.body.className='';if(t!=='dark')document.body.classList.add('theme-'+t);document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));const btn=document.querySelector('[data-theme="'+t+'"]');if(btn)btn.classList.add('active');localStorage.setItem('optinix-theme',t)}
+function setAccent(c){document.documentElement.style.setProperty('--c',c);localStorage.setItem('optinix-accent',c)}
+function setBg(b){document.body.classList.remove('bg-gradient','bg-mesh','bg-particles');if(b!=='none')document.body.classList.add('bg-'+b);const canvas=document.getElementById('bgCanvas');if(b==='particles'&&canvas){canvas.style.display='block';startParticles(canvas)}else if(canvas){canvas.style.display='none';stopParticles();document.body.classList.remove('bg-particles')}localStorage.setItem('optinix-bg',b)}
+function toggleSidebar(mode){const s=document.querySelector('.sidebar');if(mode==='compact'){s.style.width='52px';s.style.minWidth='52px';s.querySelectorAll('.nav-btn span,.brand-name,.sidebar-footer').forEach(e=>e.style.display='none')}else if(mode==='hidden'){s.style.display='none'}else{s.style.width='';s.style.minWidth='';s.querySelectorAll('.nav-btn span,.brand-name,.sidebar-footer').forEach(e=>e.style.display='')}}
+
+let particleAnim=null;
+function startParticles(canvas){const ctx=canvas.getContext('2d');canvas.width=window.innerWidth;canvas.height=window.innerHeight;const particles=[];for(let i=0;i<50;i++)particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2+1});function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>canvas.width)p.vx*=-1;if(p.y<0||p.y>canvas.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(124,58,237,0.3)';ctx.fill()});particles.forEach((a,i)=>{particles.slice(i+1).forEach(b=>{const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(124,58,237,'+(1-d/120)*0.15+')';ctx.stroke()}})});particleAnim=requestAnimationFrame(draw)}draw()}
+function stopParticles(){if(particleAnim)cancelAnimationFrame(particleAnim)}
+
+// Load saved theme
+document.addEventListener('DOMContentLoaded',()=>{
+    const saved=localStorage.getItem('optinix-theme');if(saved)setTheme(saved);
+    const accent=localStorage.getItem('optinix-accent');if(accent)setAccent(accent);
+    const bg=localStorage.getItem('optinix-bg');if(bg)setBg(bg);
+    loadSystemInfo();setInterval(loadSystemInfo,2000);fetch('/api/system-info').then(()=>setTimeout(()=>fetch('/api/system-info'),500))
+});

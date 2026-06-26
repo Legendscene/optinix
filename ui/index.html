@@ -25,6 +25,7 @@
 <button class="nav-btn" data-page="developer" onclick="showPage('developer')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Developer</span></button>
 <button class="nav-btn" data-page="toolbox" onclick="showPage('toolbox')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>Toolbox</span></button>
 <button class="nav-btn" data-page="drivers" onclick="showPage('drivers')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/></svg><span>Drivers</span></button>
+<button class="nav-btn" data-page="settings" onclick="showPage('settings')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
 </nav>
 <div class="sidebar-footer"><div class="os-pill" id="osBadge">Detecting...</div></div>
 </aside>
@@ -182,6 +183,49 @@
 <header class="page-head"><div><h1>Driver Manager</h1><p class="sub">Scan and download drivers</p></div></header>
 <div class="panel" id="driversPanel"><div class="svc-header"><h3>Driver Scanner</h3><button class="btn sm" onclick="loadDrivers()">Scan Drivers</button></div><div class="svc-list" id="driversList"><p class="svc-desc">Click "Scan" to detect installed and missing drivers</p></div></div>
 <div class="panel" style="margin-top:10px"><h3>Quick Download</h3><p>Direct links to latest drivers</p><div class="tool-row"><a class="btn sm" href="https://www.nvidia.com/Download/index.aspx" target="_blank">NVIDIA</a><a class="btn sm" href="https://www.amd.com/en/support" target="_blank">AMD</a><a class="btn sm" href="https://www.intel.com/content/www/us/en/download-center/home.html" target="_blank">Intel</a><a class="btn sm" href="https://www.realtek.com/en/component/zoo/category/pc-audio-codecs-high-definition-audio-codecs-software" target="_blank">Realtek Audio</a><a class="btn sm" href="https://www.qualcomm.com/products/connectivity/wi-fi" target="_blank">Qualcomm WiFi</a><a class="btn sm" href="https://www.intel.com/content/www/us/en/products/details/wireless/wi-fi-adapters.html" target="_blank">Intel WiFi</a></div></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="page" id="page-settings">
+<header class="page-head"><div><h1>Settings</h1><p class="sub">Customize theme and appearance</p></div></header>
+<div class="panel-grid">
+<div class="panel"><h3>Theme</h3><p>Choose application appearance</p>
+<div class="theme-grid">
+<button class="theme-btn active" onclick="setTheme('dark')" data-theme="dark"><div class="theme-preview dark-preview"></div><span>Dark</span></button>
+<button class="theme-btn" onclick="setTheme('midnight')" data-theme="midnight"><div class="theme-preview midnight-preview"></div><span>Midnight</span></button>
+<button class="theme-btn" onclick="setTheme('purple')" data-theme="purple"><div class="theme-preview purple-preview"></div><span>Purple</span></button>
+<button class="theme-btn" onclick="setTheme('ocean')" data-theme="ocean"><div class="theme-preview ocean-preview"></div><span>Ocean</span></button>
+<button class="theme-btn" onclick="setTheme('forest')" data-theme="forest"><div class="theme-preview forest-preview"></div><span>Forest</span></button>
+<button class="theme-btn" onclick="setTheme('sunset')" data-theme="sunset"><div class="theme-preview sunset-preview"></div><span>Sunset</span></button>
+<button class="theme-btn" onclick="setTheme('glassy')" data-theme="glassy"><div class="theme-preview glassy-preview"></div><span>Glassy</span></button>
+<button class="theme-btn" onclick="setTheme('neon')" data-theme="neon"><div class="theme-preview neon-preview"></div><span>Neon</span></button>
+</div>
+</div>
+<div class="panel"><h3>Background</h3><p>Animated or static background</p>
+<div class="bg-options">
+<button class="btn sm active" onclick="setBg('none')">None</button>
+<button class="btn sm" onclick="setBg('gradient')">Gradient</button>
+<button class="btn sm" onclick="setBg('mesh')">Mesh</button>
+<button class="btn sm" onclick="setBg('particles')">Particles</button>
+</div>
+<canvas id="bgCanvas" class="bg-canvas" style="display:none"></canvas>
+</div>
+<div class="panel"><h3>Accent Color</h3><p>Primary accent color</p>
+<div class="color-grid">
+<button class="color-btn" style="background:#7c3aed" onclick="setAccent('#7c3aed')"></button>
+<button class="color-btn" style="background:#06b6d4" onclick="setAccent('#06b6d4')"></button>
+<button class="color-btn" style="background:#ec4899" onclick="setAccent('#ec4899')"></button>
+<button class="color-btn" style="background:#f59e0b" onclick="setAccent('#f59e0b')"></button>
+<button class="color-btn" style="background:#22c55e" onclick="setAccent('#22c55e')"></button>
+<button class="color-btn" style="background:#ef4444" onclick="setAccent('#ef4444')"></button>
+<button class="color-btn" style="background:#8b5cf6" onclick="setAccent('#8b5cf6')"></button>
+<button class="color-btn" style="background:#14b8a6" onclick="setAccent('#14b8a6')"></button>
+</div>
+</div>
+<div class="panel"><h3>Sidebar</h3><p>Sidebar appearance</p>
+<div class="tool-row"><button class="btn sm" onclick="toggleSidebar('compact')">Compact</button><button class="btn sm" onclick="toggleSidebar('full')">Full</button><button class="btn sm" onclick="toggleSidebar('hidden')">Hidden</button></div>
+</div>
+</div>
 </section>
 
 <!-- LOADER -->
