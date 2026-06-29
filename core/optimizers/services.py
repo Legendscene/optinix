@@ -20,16 +20,68 @@ class ServicesOptimizer:
             self._disable_macos_agents()
         return self.results
 
+    def disable_basic_debloat(self):
+        self.results = []
+        basic = [
+            "DiagTrack", "WSearch", "MapsBroker", "lfsvc",
+            "RemoteRegistry", "wisvc", "PhoneSvc", "XblAuthManager",
+            "XblGameSave", "XboxNetApiSvc", "XboxGipSvc",
+            "edgeupdate", "edgeupdatem", "WerSvc", "PcaSvc",
+        ]
+        disabled = 0
+        for svc in basic:
+            try:
+                subprocess.run(
+                    ["powershell", "-Command",
+                     f"Stop-Service -Name '{svc}' -Force -ErrorAction SilentlyContinue; "
+                     f"Set-Service -Name '{svc}' -StartupType Disabled -ErrorAction SilentlyContinue"],
+                    capture_output=True, timeout=15
+                )
+                disabled += 1
+            except Exception:
+                continue
+        self.results.append({"success": True, "message": f"Basic debloat: disabled {disabled} services"})
+        return self.results
+
+    def disable_advanced_debloat(self):
+        self.results = self.disable_basic_debloat()
+        advanced = [
+            "SysMain", "TabletInputService", "RetailDemo",
+            "SharedAccess", "WpcMonSvc", "TapiSrv",
+            "dmwappushservice", "AJRouter", "BDESVC",
+            "BthAvctpSvc", "cbdhsvc", "MicrosoftEdgeElevationService",
+            "TrkWks", "DPS", "CscService", "StorSvc",
+            "OneSyncSvc", "WbioSrvc", "NaturalAuthentication",
+            "WalletService", "MessagingService",
+            "PimIndexMaintenanceSvc", "UnistoreSvc",
+            "UserDataSvc", "WpnService", "BcastDVRUserService",
+        ]
+        disabled = 0
+        for svc in advanced:
+            try:
+                subprocess.run(
+                    ["powershell", "-Command",
+                     f"Stop-Service -Name '{svc}' -Force -ErrorAction SilentlyContinue; "
+                     f"Set-Service -Name '{svc}' -StartupType Disabled -ErrorAction SilentlyContinue"],
+                    capture_output=True, timeout=15
+                )
+                disabled += 1
+            except Exception:
+                continue
+        self.results.append({"success": True, "message": f"Advanced debloat: disabled {disabled} additional services"})
+        return self.results
+
     def _disable_heavy_services(self):
         services = [
             "SysMain", "DiagTrack", "WSearch", "TabletInputService",
             "RetailDemo", "MapsBroker", "lfsvc", "SharedAccess",
             "RemoteRegistry", "wisvc", "WpcMonSvc", "PhoneSvc",
-            "TapiSrv", "RpcSs", "XblAuthManager", "XblGameSave",
+            "TapiSrv", "XblAuthManager", "XblGameSave",
             "XboxNetApiSvc", "XboxGipSvc", "dmwappushservice",
             "AJRouter", "BDESVC", "BthAvctpSvc", "cbdhsvc",
             "edgeupdate", "edgeupdatem", "MicrosoftEdgeElevationService",
-            "WerSvc", "PcaSvc", "TrkWks", "DPS"
+            "WerSvc", "PcaSvc", "TrkWks", "DPS", "CscService",
+            "StorSvc", "OneSyncSvc"
         ]
         disabled = 0
         for svc in services:

@@ -4,7 +4,9 @@ import webbrowser
 import sys
 import os
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
+sys.path.insert(0, BASE_DIR)
 
 print("=" * 40)
 print("   OPTINIX - PC Optimizer")
@@ -15,7 +17,11 @@ print("Starting server...")
 from app import app, PORT
 
 def run():
-    app.run(host="127.0.0.1", port=PORT, debug=False, use_reloader=False, threaded=True)
+    try:
+        from waitress import serve
+        serve(app, host="127.0.0.1", port=PORT, threads=8)
+    except ImportError:
+        app.run(host="127.0.0.1", port=PORT, debug=False, use_reloader=False, threaded=True)
 
 t = threading.Thread(target=run, daemon=True)
 t.start()

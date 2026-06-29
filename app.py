@@ -1,6 +1,7 @@
 import os
 import time
 import platform
+import subprocess
 import psutil
 from flask import Flask, send_from_directory, jsonify, request
 
@@ -13,16 +14,22 @@ _prev_net_time = None
 _gpu_cache = None
 _gpu_time = 0
 OS = {"Windows": "windows", "Darwin": "macos", "Linux": "linux"}.get(platform.system(), "unknown")
+_bg_optimizer = None
+
+
+UI_DIR = os.path.join(BASE_DIR, "desktop", "dist")
+if not os.path.isdir(UI_DIR):
+    UI_DIR = os.path.join(BASE_DIR, "ui")
 
 
 @app.route("/")
 def index():
-    return send_from_directory(os.path.join(BASE_DIR, "ui"), "index.html")
+    return send_from_directory(UI_DIR, "index.html")
 
 
 @app.route("/<path:p>")
 def statics(p):
-    return send_from_directory(os.path.join(BASE_DIR, "ui"), p)
+    return send_from_directory(UI_DIR, p)
 
 
 @app.route("/api/system-info")
@@ -74,7 +81,6 @@ def sysinfo():
     if not _gpu_cache or (now - _gpu_time) > 10:
         gpu = {"name": "N/A", "usage": 0, "memory_total": 0, "memory_used": 0, "temperature": 0, "driver": "N/A"}
         try:
-            import subprocess
             r = subprocess.run(["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,driver_version", "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=2)
             if r.returncode == 0 and r.stdout.strip():
                 p = r.stdout.strip().split(", ")
@@ -288,17 +294,533 @@ def optimize(cat):
 
 @app.route("/api/background/status")
 def bg_st():
-    return jsonify({"running": False, "profile": "balanced"})
+    global _bg_optimizer
+    if not _bg_optimizer:
+        from core.background_optimizer import BackgroundOptimizer
+        _bg_optimizer = BackgroundOptimizer(OS)
+    return jsonify(_bg_optimizer.get_status())
+
+
+@app.route("/api/ram-boost", methods=["POST"])
+def ram_boost():
+    try:
+        import ctypes
+        try:
+            ctypes.windll.ntdll.NtSetSystemInformation(
+                0x57,
+                bytes([0x01, 0x00, 0x00, 0x00]),
+                4
+            )
+        except Exception:
+            pass
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "[System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers()"],
+            capture_output=True, timeout=15
+        )
+        return jsonify({"success": True, "message": "RAM standby memory cleared"})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"RAM boost failed: {e}"})
 
 
 @app.route("/api/background/start", methods=["POST"])
 def bg_go():
+    global _bg_optimizer
+    if not _bg_optimizer:
+        from core.background_optimizer import BackgroundOptimizer
+        _bg_optimizer = BackgroundOptimizer(OS)
+    _bg_optimizer.start()
     return jsonify({"success": True})
 
 
 @app.route("/api/background/stop", methods=["POST"])
 def bg_no():
+    global _bg_optimizer
+    if _bg_optimizer:
+        _bg_optimizer.stop()
     return jsonify({"success": True})
+
+
+_scheduler = None
+
+@app.route("/api/scheduler/status")
+def sched_status():
+    global _scheduler
+    if not _scheduler:
+        from core.scheduler import MaintenanceScheduler
+        _scheduler = MaintenanceScheduler(OS)
+    return jsonify(_scheduler.get_config())
+
+
+@app.route("/api/scheduler/update", methods=["POST"])
+def sched_update():
+    global _scheduler
+    if not _scheduler:
+        from core.scheduler import MaintenanceScheduler
+        _scheduler = MaintenanceScheduler(OS)
+    d = request.get_json() or {}
+    if _scheduler.save_config(d):
+        if d.get("enabled"):
+            _scheduler.start()
+        else:
+            _scheduler.stop()
+        return jsonify({"success": True})
+    return jsonify({"success": False, "message": "Failed to save config"})
+
+
+_tweak_state = None
+
+@app.route("/api/smart-detect")
+def smart_detect():
+    try:
+        from core.smart_detect import SmartDetector
+        sd = SmartDetector(OS)
+        return jsonify({"hardware": sd.get_hardware_info(), "recommendations": sd.get_recommendations()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweak-state")
+def tweak_state_get():
+    global _tweak_state
+    if not _tweak_state:
+        from core.tweak_state import TweakState
+        _tweak_state = TweakState()
+    return jsonify(_tweak_state.get_all())
+
+
+@app.route("/api/tweak-state/set", methods=["POST"])
+def tweak_state_set():
+    global _tweak_state
+    if not _tweak_state:
+        from core.tweak_state import TweakState
+        _tweak_state = TweakState()
+    d = request.get_json() or {}
+    for k, v in d.items():
+        _tweak_state.set(k, v)
+    return jsonify({"success": True})
+
+
+@app.route("/api/network/adapters")
+def net_adapters():
+    try:
+        from core.network_tuner import NetworkTuner
+        return jsonify({"adapters": NetworkTuner(OS).get_adapters()})
+    except Exception as e:
+        return jsonify({"adapters": [], "error": str(e)})
+
+
+@app.route("/api/network/tune-adapter", methods=["POST"])
+def net_tune_adapter():
+    try:
+        d = request.get_json() or {}
+        from core.network_tuner import NetworkTuner
+        return jsonify({"results": NetworkTuner(OS).tune_adapter(d.get("adapter"), d.get("preset", "gaming"))})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/bufferbloat", methods=["POST"])
+def net_bufferbloat():
+    try:
+        d = request.get_json() or {}
+        from core.network_tuner import NetworkTuner
+        return jsonify({"results": NetworkTuner(OS).set_bufferbloat_preset(d.get("preset", "low_latency"))})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/qos", methods=["POST"])
+def net_qos():
+    try:
+        d = request.get_json() or {}
+        from core.network_tuner import NetworkTuner
+        return jsonify({"results": NetworkTuner(OS).set_qos_priority(d.get("enable", True))})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/advanced-tweaks", methods=["POST"])
+def net_advanced():
+    try:
+        from core.network_tuner import NetworkTuner
+        return jsonify({"results": NetworkTuner(OS).advanced_network_tweaks()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/optimize/gpu", methods=["POST"])
+def optimize_gpu():
+    try:
+        from core.optimizers.gpu import GPUOptimizer
+        return jsonify({"results": GPUOptimizer(OS).run()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/optimize/peripheral", methods=["POST"])
+def optimize_peripheral():
+    try:
+        from core.optimizers.peripheral import PeripheralOptimizer
+        return jsonify({"results": PeripheralOptimizer(OS).run()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/optimize/affinity", methods=["POST"])
+def optimize_affinity():
+    try:
+        from core.optimizers.affinity import AffinityOptimizer
+        return jsonify({"results": AffinityOptimizer(OS).run()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/services/debloat", methods=["POST"])
+def svc_debloat():
+    try:
+        d = request.get_json() or {}
+        preset = d.get("preset", "basic")
+        from core.optimizers.services import ServicesOptimizer
+        o = ServicesOptimizer(OS)
+        if preset == "basic":
+            o.disable_basic_debloat()
+        else:
+            o.disable_advanced_debloat()
+        return jsonify({"results": o.results})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/bios/info")
+def bios_info():
+    try:
+        from core.bios_optimizer import BIOSOptimizer
+        return jsonify(BIOSOptimizer(OS).get_bios_info())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/bios/recommendations")
+def bios_recs():
+    try:
+        from core.bios_optimizer import BIOSOptimizer
+        return jsonify({"recommendations": BIOSOptimizer(OS).get_recommended_settings()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/bios/apply", methods=["POST"])
+def bios_apply():
+    try:
+        d = request.get_json() or {}
+        from core.bios_optimizer import BIOSOptimizer
+        return jsonify(BIOSOptimizer(OS).apply_settings(d.get("settings", [])))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+_game_mode_instance = None
+
+
+def _get_game_mode():
+    global _game_mode_instance
+    if not _game_mode_instance:
+        from core.game_mode import GameMode
+        _game_mode_instance = GameMode(OS)
+    return _game_mode_instance
+
+
+@app.route("/api/game-mode/status")
+def gm_status():
+    try:
+        return jsonify(_get_game_mode().get_status())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/games")
+def gm_games():
+    try:
+        return jsonify({"games": _get_game_mode().get_game_processes()})
+    except Exception as e:
+        return jsonify({"games": [], "error": str(e)})
+
+
+@app.route("/api/game-mode/enable", methods=["POST"])
+def gm_enable():
+    try:
+        return jsonify(_get_game_mode().enable_game_mode())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/disable", methods=["POST"])
+def gm_disable():
+    try:
+        return jsonify(_get_game_mode().disable_game_mode())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/affinity", methods=["POST"])
+def gm_affinity():
+    try:
+        from core.game_mode import AffinityOptimizer
+        d = request.get_json() or {}
+        return jsonify(AffinityOptimizer(OS).optimize_for_gaming(d.get("pid")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/core-parking", methods=["POST"])
+def gm_core_parking():
+    try:
+        from core.game_mode import AffinityOptimizer
+        return jsonify(AffinityOptimizer(OS).disable_core_parking())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/timer-resolution", methods=["POST"])
+def gm_timer():
+    try:
+        from core.game_mode import TimerResolution
+        d = request.get_json() or {}
+        ms = d.get("resolution_ms", 1.0)
+        return jsonify(TimerResolution(OS).set_resolution(ms))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/game-mode/timer-restore", methods=["POST"])
+def gm_timer_restore():
+    try:
+        from core.game_mode import TimerResolution
+        return jsonify(TimerResolution(OS).restore_default())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/debloat/categories")
+def debloat_cats():
+    try:
+        from core.debloater import CustomDebloater
+        return jsonify({"categories": CustomDebloater(OS).get_categories()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/debloat/apply", methods=["POST"])
+def debloat_apply():
+    try:
+        d = request.get_json() or {}
+        from core.debloater import CustomDebloater
+        return jsonify(CustomDebloater(OS).apply_category(d.get("category"), d.get("dry_run", False)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/debloat/apply-multiple", methods=["POST"])
+def debloat_apply_multi():
+    try:
+        d = request.get_json() or {}
+        from core.debloater import CustomDebloater
+        return jsonify(CustomDebloater(OS).apply_multiple(d.get("categories", []), d.get("dry_run", False)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/debloat/restore-point", methods=["POST"])
+def debloat_restore():
+    try:
+        from core.debloater import CustomDebloater
+        return jsonify(CustomDebloater(OS).create_restore_point())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/debloat/app-optimize", methods=["POST"])
+def debloat_app():
+    try:
+        d = request.get_json() or {}
+        app = d.get("app", "")
+        from core.debloater import AppOptimizer
+        ao = AppOptimizer(OS)
+        if app == "steam":
+            return jsonify(ao.optimize_steam())
+        elif app == "discord":
+            return jsonify(ao.optimize_discord())
+        elif app == "browsers":
+            return jsonify(ao.optimize_browsers())
+        return jsonify({"success": False, "message": f"Unknown app: {app}"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/qos/enable", methods=["POST"])
+def np_qos_enable():
+    try:
+        from core.network_priority import NetworkPriority
+        return jsonify(NetworkPriority(OS).enable_qos())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/qos/disable", methods=["POST"])
+def np_qos_disable():
+    try:
+        from core.network_priority import NetworkPriority
+        return jsonify(NetworkPriority(OS).disable_qos())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/qos/game-traffic", methods=["POST"])
+def np_qos_game():
+    try:
+        d = request.get_json() or {}
+        from core.network_priority import NetworkPriority
+        return jsonify(NetworkPriority(OS).prioritize_game_traffic(d.get("game_exe", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/bufferbloat/presets")
+def np_bufferbloat_presets():
+    try:
+        from core.network_priority import BufferBloatControl
+        return jsonify({"presets": BufferBloatControl(OS).get_presets()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/bufferbloat/apply", methods=["POST"])
+def np_bufferbloat_apply():
+    try:
+        d = request.get_json() or {}
+        from core.network_priority import BufferBloatControl
+        return jsonify(BufferBloatControl(OS).apply_preset(d.get("preset", "balanced")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/adapter/optimize", methods=["POST"])
+def np_adapter_optimize():
+    try:
+        d = request.get_json() or {}
+        from core.network_priority import AdapterTuner
+        return jsonify(AdapterTuner(OS).optimize_adapter(d.get("adapter", ""), d.get("preset", "gaming")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network-priority/adapter/reset", methods=["POST"])
+def np_adapter_reset():
+    try:
+        d = request.get_json() or {}
+        from core.network_priority import AdapterTuner
+        return jsonify(AdapterTuner(OS).reset_adapter(d.get("adapter", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/registry/scan")
+def reg_scan():
+    try:
+        from core.registry_cleaner import RegistryCleaner
+        return jsonify(RegistryCleaner(OS).scan_issues())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/registry/fix", methods=["POST"])
+def reg_fix():
+    try:
+        d = request.get_json() or {}
+        from core.registry_cleaner import RegistryCleaner
+        return jsonify(RegistryCleaner(OS).fix_issues(d.get("paths", [])))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/registry/backup", methods=["POST"])
+def reg_backup():
+    try:
+        from core.registry_cleaner import RegistryCleaner
+        return jsonify(RegistryCleaner(OS).backup())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/registry/restore", methods=["POST"])
+def reg_restore():
+    try:
+        d = request.get_json() or {}
+        from core.registry_cleaner import RegistryCleaner
+        return jsonify(RegistryCleaner(OS).restore(d.get("filename", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/registry/backups")
+def reg_backups():
+    try:
+        from core.registry_cleaner import RegistryCleaner
+        return jsonify({"backups": RegistryCleaner(OS).list_backups()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweaks/list")
+def tw_list():
+    try:
+        from core.windows_tweaks import WindowsTweaks
+        return jsonify(WindowsTweaks(OS).get_tweaks())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweaks/apply", methods=["POST"])
+def tw_apply():
+    try:
+        d = request.get_json() or {}
+        tid = d.get("tweak", "")
+        enable = d.get("enable", True)
+        from core.windows_tweaks import WindowsTweaks
+        return jsonify(WindowsTweaks(OS).apply_tweak(tid, enable))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweaks/apply-multiple", methods=["POST"])
+def tw_apply_multi():
+    try:
+        d = request.get_json() or {}
+        from core.windows_tweaks import WindowsTweaks
+        return jsonify(WindowsTweaks(OS).apply_multiple(d.get("tweaks", {})))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweaks/export", methods=["POST"])
+def tw_export():
+    try:
+        d = request.get_json() or {}
+        from core.windows_tweaks import WindowsTweaks
+        return jsonify(WindowsTweaks(OS).export_settings(d.get("tweaks", {})))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/tweaks/import", methods=["POST"])
+def tw_import():
+    try:
+        d = request.get_json() or {}
+        from core.windows_tweaks import WindowsTweaks
+        return jsonify(WindowsTweaks(OS).import_settings(d.get("tweaks", {})))
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 @app.route("/health")

@@ -5,8 +5,24 @@ class ExtremeTuner:
     def __init__(self, os_type):
         self.os_type = os_type
 
+    def _create_restore_point(self):
+        if self.os_type != "windows":
+            return
+        try:
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Checkpoint-Computer -Description 'Optinix Extreme Tuning' -RestorePointType MODIFY_SETTINGS "
+                 "-EA SilentlyContinue"],
+                capture_output=True, timeout=30
+            )
+        except Exception:
+            pass
+
     def apply_all(self):
         results = []
+        self._create_restore_point()
+        results.append({"success": True, "message": "System restore point created (if available)"})
+
         if self.os_type == "windows":
             results.extend(self._windows_extreme())
         elif self.os_type == "linux":
@@ -19,26 +35,18 @@ class ExtremeTuner:
         results = []
         try:
             cmds = [
-                # Force max CPU performance
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
-                # Disable core parking - all cores active
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
-                # Aggressive turbo boost
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTMODE 2',
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTPOL 100',
-                # Disable processor idle
                 'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR IDLEDISABLE 1',
-                # Maximum processor state
-                'powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFBOOSTPOL 100',
-                # Apply
                 'powercfg /setactive SCHEME_CURRENT'
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "CPU forced to maximum performance (100% all cores, turbo boost aggressive)"})
 
-            # Memory optimization
             mem_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f',
@@ -49,7 +57,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "RAM: Paging disabled, prefetch off, memory forced to physical RAM"})
 
-            # GPU maximum performance
             gpu_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v TdrDelay /t REG_DWORD /d 10 /f',
@@ -61,7 +68,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "GPU: Hardware scheduling, no throttle, multimedia priority max"})
 
-            # Timer precision
             timer_cmds = [
                 'bcdedit /set useplatformtick yes',
                 'bcdedit /set disabledynamictick yes',
@@ -71,7 +77,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "Timer: High precision mode, no dynamic tick"})
 
-            # Disk I/O optimization
             disk_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /t REG_DWORD /d 0 /f',
                 'fsutil behavior set DisableDeleteNotify 0',
@@ -81,7 +86,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "Disk I/O: Maximum cache, TRIM enabled, memory usage high"})
 
-            # Process priority
             priority_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 1 /f',
@@ -90,7 +94,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "Process scheduling: Short foreground boost, IRQ priority"})
 
-            # Disable visual overhead
             vis_cmds = [
                 'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
                 'reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d "0" /f',
@@ -100,7 +103,6 @@ class ExtremeTuner:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
             results.append({"success": True, "message": "Visual effects: Minimal mode, animations off, menu delay zero"})
 
-            # Network max throughput
             net_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpAckFrequency /t REG_DWORD /d 1 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TCPNoDelay /t REG_DWORD /d 1 /f',

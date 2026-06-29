@@ -30,6 +30,9 @@
 <button class="nav-btn" data-page="extreme" onclick="showPage('extreme')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Extreme</span></button>
 <button class="nav-btn" data-page="disks" onclick="showPage('disks')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>Disks</span></button>
 <button class="nav-btn" data-page="developer" onclick="showPage('developer')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Developer</span></button>
+<button class="nav-btn" data-page="gpu" onclick="showPage('gpu')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span>GPU</span></button>
+<button class="nav-btn" data-page="network-adv" onclick="showPage('network-adv')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Net&nbsp;Pro</span></button>
+<button class="nav-btn" data-page="peripheral" onclick="showPage('peripheral')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h12"/></svg><span>USB&nbsp;+&nbsp;Periph</span></button>
 <button class="nav-btn" data-page="toolbox" onclick="showPage('toolbox')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>Toolbox</span></button>
 <button class="nav-btn" data-page="drivers" onclick="showPage('drivers')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/></svg><span>Drivers</span></button>
 <button class="nav-btn" data-page="settings" onclick="showPage('settings')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
@@ -63,9 +66,13 @@
 <button class="btn" onclick="runOptimizer('cleanup')">Quick Clean</button>
 <button class="btn" onclick="runOptimizer('network')">Fix Network</button>
 <button class="btn" onclick="runOptimizer('performance')">Boost Speed</button>
+<button class="btn" onclick="runOptimizer('gpu')">GPU Tweak</button>
+<button class="btn" onclick="runOptimizer('peripheral')">USB/Periph</button>
+<button class="btn" onclick="fetch('/api/ram-boost',{method:'POST'}).then(r=>r.json()).then(function(d){showResults('dash',[d])})">Free RAM</button>
 <button class="btn danger" onclick="runExtremeTuning()">Extreme Mode</button>
 </div>
 <div class="panel" id="dashResults" style="display:none"><h3 class="r-title">Results</h3><div class="result-list" id="dashResultsList"></div></div>
+<div class="panel" id="recsPanel"><h3 class="r-title" style="color:var(--c)">Smart Recommendations</h3><div class="result-list" id="recsList"><div class="loader-mini"></div></div></div>
 </section>
 
 <!-- CLEANUP -->
@@ -82,7 +89,7 @@
 
 <!-- NETWORK -->
 <section class="page" id="page-network">
-<header class="page-head"><div><h1>Network Optimization</h3><p class="sub">Maximize speed, reduce latency</p></div></header>
+<header class="page-head"><div><h1>Network Optimization</h1><p class="sub">Maximize speed, reduce latency</p></div></header>
 <div class="panel-grid">
 <div class="panel card-hover" onclick="runOptimizer('network')"><div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="1.5"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg></div><h3>TCP/IP Stack</h3><p>Autotune, RSS, Nagle off, BBR congestion, fast open, buffer sizes, timestamps</p><div class="tag-row"><span class="tag">TCP</span><span class="tag">BBR</span><span class="tag">Nagle</span></div><button class="btn sm">Optimize</button></div>
 <div class="panel"><h3>DNS Provider</h3><p>Switch to fastest DNS server</p><div class="tool-row"><button class="btn sm" onclick="setDNS('cloudflare')">Cloudflare</button><button class="btn sm" onclick="setDNS('google')">Google</button><button class="btn sm" onclick="setDNS('opendns')">OpenDNS</button><button class="btn sm" onclick="setDNS('quad9')">Quad9</button><button class="btn sm" onclick="setDNS('adguard')">AdGuard</button></div></div>
@@ -102,6 +109,40 @@
 <div class="panel"><h3>Context Menu</h3><p>Windows 11 classic right-click menu</p><div class="tool-row"><button class="btn sm" onclick="toolboxPost('context-menu',{enable:true})">Classic Menu</button><button class="btn sm" onclick="toolboxPost('context-menu',{enable:false})">New Menu</button></div></div>
 </div>
 <div class="panel" id="performanceResults" style="display:none"><h3 class="r-title">Results</h3><div class="result-list" id="performanceResultsList"></div></div>
+</section>
+
+<!-- GPU -->
+<section class="page" id="page-gpu">
+<header class="page-head"><div><h1>GPU Optimization</h1><p class="sub">NVIDIA & AMD tweaks, hardware scheduling, GPU priority</p></div></header>
+<div class="panel-grid">
+<div class="panel card-hover" onclick="runOptimizer('gpu')"><div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div><h3>Full GPU Optimization</h3><p>HW scheduling, NVIDIA persistent mode, AMD ULPS off, spread spectrum, clock gating, GPU priority for games</p><div class="tag-row"><span class="tag">NVIDIA</span><span class="tag">AMD</span><span class="tag">Scheduling</span><span class="tag">ULPS</span></div><button class="btn sm">Optimize GPU</button></div>
+<div class="panel card-hover" onclick="toolboxPost('power-plan',{plan:'ultimate'})"><div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--am)" stroke-width="1.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>GPU Power Plan</h3><p>Ultimate performance power plan for max GPU clocks</p><button class="btn sm">Ultimate Power</button></div>
+<div class="panel"><h3>GPU Info</h3><div id="gpuDetails"><p>Loading GPU details...</p></div></div>
+</div>
+<div class="panel" id="gpuResults" style="display:none"><h3 class="r-title">Results</h3><div class="result-list" id="gpuResultsList"></div></div>
+</section>
+
+<!-- NETWORK PRO -->
+<section class="page" id="page-network-adv">
+<header class="page-head"><div><h1>Network Pro</h1><p class="sub">Adapter tuner, bufferbloat, QoS, advanced TCP</p></div></header>
+<div class="panel-grid">
+<div class="panel card-hover" onclick="fetch('/api/network/advanced-tweaks',{method:'POST'}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))"><div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Advanced TCP Tweaks</h3><p>TCP window, SACK, WSD, ICMP redirect, BBR2, IPv6 transition off, Winsock buffer</p><div class="tag-row"><span class="tag">BBR2</span><span class="tag">TCP</span><span class="tag">IPv6</span></div><button class="btn sm">Apply Advanced</button></div>
+<div class="panel"><h3>Bufferbloat Control</h3><p>Choose network mode</p><div class="tool-row"><button class="btn sm" onclick="fetch('/api/network/bufferbloat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'low_latency'})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Low Latency</button><button class="btn sm" onclick="fetch('/api/network/bufferbloat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'high_throughput'})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">High Throughput</button><button class="btn sm" onclick="fetch('/api/network/bufferbloat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'balanced'})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Balanced</button></div></div>
+<div class="panel"><h3>QoS / Network Priority</h3><p>Force game packets priority</p><div class="tool-row"><button class="btn sm primary" onclick="fetch('/api/network/qos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enable:true})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Enable QoS</button><button class="btn sm" onclick="fetch('/api/network/qos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enable:false})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Disable</button></div></div>
+<div class="panel"><h3>Debloat Presets</h3><p>Reduce background services</p><div class="tool-row"><button class="btn sm" onclick="fetch('/api/services/debloat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'basic'})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Basic</button><button class="btn sm danger" onclick="fetch('/api/services/debloat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'advanced'})}).then(r=>r.json()).then(d=>showResults('netadv',d.results||[]))">Advanced</button></div></div>
+</div>
+<div class="panel" id="netadvResults" style="display:none"><h3 class="r-title">Results</h3><div class="result-list" id="netadvResultsList"></div></div>
+</section>
+
+<!-- PERIPHERAL & USB -->
+<section class="page" id="page-peripheral">
+<header class="page-head"><div><h1>Peripheral & USB</h1><p class="sub">Mouse, keyboard, USB, NVMe optimization</p></div></header>
+<div class="panel-grid">
+<div class="panel card-hover" onclick="runOptimizer('peripheral')"><div class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h12"/></svg></div><h3>Full Peripheral Optimization</h3><p>Mouse accel off, USB suspend off, keyboard delay min, filter keys off, NVMe MSI/queue depth</p><div class="tag-row"><span class="tag">Mouse</span><span class="tag">USB</span><span class="tag">Keyboard</span><span class="tag">NVMe</span></div><button class="btn sm">Optimize</button></div>
+<div class="panel"><h3>RAM Booster</h3><p>Clear standby memory</p><div class="tool-row"><button class="btn sm primary" onclick="fetch('/api/ram-boost',{method:'POST'}).then(r=>r.json()).then(d=>showResults('peripheral',[d]))">Free RAM</button></div></div>
+<div class="panel"><h3>Scheduled Maintenance</h3><p>Auto-cleanup and optimization</p><div class="tool-row"><button class="btn sm" onclick="fetch('/api/scheduler/status').then(function(r){return r.json()}).then(function(c){var e=c.enabled;fetch('/api/scheduler/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!e,interval_hours:24,tasks:{cleanup:true,dns_flush:true,ram_boost:false,disk_trim:false}})}).then(function(r){return r.json()}).then(function(d){showResults('peripheral',[d.success?{success:true,message:(e?'Disabled':'Enabled')+' scheduled maintenance'}:{success:false,message:'Failed'}]))})})">Toggle Auto-Maintenance</button></div></div>
+</div>
+<div class="panel" id="peripheralResults" style="display:none"><h3 class="r-title">Results</h3><div class="result-list" id="peripheralResultsList"></div></div>
 </section>
 
 <!-- GAMING -->

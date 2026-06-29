@@ -7,3 +7,6 @@ from .security import SecurityOptimizer
 from .developer import DeveloperOptimizer
 from .services import ServicesOptimizer
 from .overclock import OverclockOptimizer
+from .affinity import AffinityOptimizer
+from .gpu import GPUOptimizer
+from .peripheral import PeripheralOptimizer

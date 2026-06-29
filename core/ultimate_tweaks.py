@@ -97,6 +97,20 @@ class UltimateTweaks:
             {"path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "OpenAtGameHiveLaunch", "value": "0", "type": "DWord", "desc": "Disable Game Bar at launch"},
             {"path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "AllowAutoGameMode", "value": "1", "type": "DWord", "desc": "Enable auto game mode"},
             {"path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "AutoGameModeEnabled", "value": "1", "type": "DWord", "desc": "Game mode enabled"},
+
+            # === WINDOWS 11 AI / COPILOT ===
+            {"path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "ShowCopilotButton", "value": "0", "type": "DWord", "desc": "Hide Copilot button"},
+            {"path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot", "name": "TurnOffWindowsCopilot", "value": "1", "type": "DWord", "desc": "Disable Windows Copilot"},
+            {"path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows AI", "name": "DisableAIDataCollection", "value": "1", "type": "DWord", "desc": "Disable AI data collection"},
+
+            # === S3 SLEEP STATES ===
+            {"path": "HKLM:\\System\\CurrentControlSet\\Control\\Session Manager\\Power", "name": "SleepStudyDisabled", "value": "1", "type": "DWord", "desc": "Disable sleep study"},
+            {"path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FlyoutMenuSettings", "name": "ShowSleepOption", "value": "0", "type": "DWord", "desc": "Hide sleep option"},
+
+            # === MICROSOFT EDGE ===
+            {"path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "name": "BackgroundModeEnabled", "value": "0", "type": "DWord", "desc": "Edge: disable background mode"},
+            {"path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "name": "StartupBoostEnabled", "value": "0", "type": "DWord", "desc": "Edge: disable startup boost"},
+            {"path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "name": "HardwareAccelerationModeEnabled", "value": "0", "type": "DWord", "desc": "Edge: disable hardware acceleration"},
             {"path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "name": "GPU Priority", "value": "8", "type": "DWord", "desc": "GPU priority for games"},
             {"path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "name": "Priority", "value": "6", "type": "DWord", "desc": "Game process priority"},
             {"path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "name": "Scheduling Category", "value": "High", "type": "String", "desc": "Game scheduling category"},
@@ -203,7 +217,6 @@ class UltimateTweaks:
             {"name": "wuauserv", "desc": "Windows Update", "safe": False},
             {"name": "WinDefend", "desc": "Windows Defender", "safe": False},
             {"name": "Schedule", "desc": "Task Scheduler", "safe": False},
-            {"name": "RpcSs", "desc": "RPC", "safe": False},
             {"name": "Dnscache", "desc": "DNS Cache", "safe": False},
             {"name": "AudioSrv", "desc": "Windows Audio", "safe": False},
             {"name": "plugplay", "desc": "Plug and Play", "safe": False},
@@ -279,6 +292,8 @@ class UltimateTweaks:
 
     def apply_all_optimizations(self):
         results = []
+        self._create_restore_point()
+        results.append({"success": True, "message": "System restore point created (if available)"})
         if self.os_type == "windows":
             results.extend(self.apply_registry_tweaks())
             results.extend(self._disable_services())
@@ -291,6 +306,19 @@ class UltimateTweaks:
         elif self.os_type == "macos":
             results.extend(self._macos_optimizations())
         return results
+
+    def _create_restore_point(self):
+        if self.os_type != "windows":
+            return
+        try:
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Checkpoint-Computer -Description 'Optinix Optimization' -RestorePointType MODIFY_SETTINGS "
+                 "-EA SilentlyContinue"],
+                capture_output=True, timeout=30
+            )
+        except Exception:
+            pass
 
     def _disable_services(self):
         services = [s["name"] for s in self.get_all_services() if s["safe"]]

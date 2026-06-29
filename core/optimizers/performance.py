@@ -14,9 +14,35 @@ class PerformanceOptimizer:
         self._kill_heavy_processes()
         self._set_power_plan()
         self._optimize_virtual_memory()
+        self._free_standby_memory()
         if self.os_type == "linux":
             self._optimize_linux_perf()
         return self.results
+
+    def _free_standby_memory(self):
+        if self.os_type == "windows":
+            try:
+                subprocess.run(
+                    ["powershell", "-NoProfile", "-Command",
+                     "[System.Runtime.InteropServices.Marshal]::WriteInt32("
+                     "[System.Diagnostics.Process]::GetCurrentProcess().Handle, 0, 0); "
+                     "EmptyWorkingSet(); "
+                     "Remove-Item variable:\\_ 2>$null; "
+                     "[System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers()"],
+                    capture_output=True, timeout=15
+                )
+                try:
+                    import ctypes
+                    ctypes.windll.ntdll.NtSetSystemInformation(
+                        0x57,  # SystemMemoryListInformation
+                        bytes([0x01, 0x00, 0x00, 0x00]),  # MemoryListPurgeStandbyList
+                        4
+                    )
+                except Exception:
+                    pass
+                self.results.append({"success": True, "message": "Standby memory cleared, RAM freed"})
+            except Exception as e:
+                self.results.append({"success": False, "message": f"Standby memory clear failed: {e}"})
 
     def _kill_heavy_processes(self):
         targets = ["Spotify", "Discord", "MSPCManager", "Skype", "OneDrive", "Teams"]

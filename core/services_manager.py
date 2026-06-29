@@ -38,7 +38,6 @@ class ServicesManager:
             {"name": "wuauserv", "desc": "Windows Update", "safe": False},
             {"name": "WinDefend", "desc": "Windows Defender", "safe": False},
             {"name": "Schedule", "desc": "Task Scheduler", "safe": False},
-            {"name": "RpcSs", "desc": "Remote Procedure Call", "safe": False},
             {"name": "Dnscache", "desc": "DNS Client", "safe": False},
             {"name": "EventLog", "desc": "Windows Event Log", "safe": False},
             {"name": "Themes", "desc": "Themes", "safe": False},
