@@ -39,7 +39,7 @@ def sysinfo():
     global _prev_net, _prev_net_time, _gpu_cache, _gpu_time
     out = {}
     try:
-        out["cpu"] = {"percent": psutil.cpu_percent(interval=0.3), "logical": psutil.cpu_count(), "physical": psutil.cpu_count(False) or 1, "temperature": None}
+        out["cpu"] = {"percent": psutil.cpu_percent(interval=0), "logical": psutil.cpu_count(), "physical": psutil.cpu_count(False) or 1, "temperature": None}
         try:
             for n, e in psutil.sensors_temperatures().items():
                 if e:
@@ -939,31 +939,42 @@ def mem_info():
 import threading
 
 
+_socket_gpu_cache = {"load": 0, "memory_used": 0, "memory_total": 0, "temperature": 0}
+_socket_gpu_time = 0.0
+
 @socketio.on('connect')
 def handle_connect():
     def send_status():
+        global _socket_gpu_cache, _socket_gpu_time
         while True:
             try:
-                cpu = psutil.cpu_percent(interval=0.5)
+                cpu = psutil.cpu_percent(interval=0)
                 mem = psutil.virtual_memory()
                 disk = psutil.disk_usage('/')
-                try:
-                    import GPUtil
-                    gpu = GPUtil.getGPUs()[0] if GPUtil.getGPUs() else None
-                except:
-                    gpu = None
+                now = time.time()
+                if now - _socket_gpu_time > 10:
+                    try:
+                        import GPUtil
+                        gpus = GPUtil.getGPUs()
+                        if gpus:
+                            g = gpus[0]
+                            _socket_gpu_cache = {"load": g.load * 100, "memory_used": g.memoryUsed, "memory_total": g.memoryTotal, "temperature": g.temperature}
+                    except:
+                        pass
+                    _socket_gpu_time = now
+                gpu = _socket_gpu_cache
                 emit('system_status', {
                     'cpu': cpu,
                     'memory': {'total': mem.total, 'available': mem.available, 'used': mem.used, 'percent': mem.percent},
                     'disk': {'total': disk.total, 'used': disk.used, 'free': disk.free, 'percent': disk.percent},
-                    'gpu': {'load': gpu.load * 100 if gpu else 0, 'memory_used': gpu.memoryUsed if gpu else 0, 'memory_total': gpu.memoryTotal if gpu else 0, 'temperature': gpu.temperature if gpu else 0} if gpu else None,
+                    'gpu': gpu,
                     'processes': len(psutil.pids()),
                     'uptime': time.time() - psutil.boot_time(),
                     'timestamp': time.time()
                 })
             except:
                 emit('system_status', {'error': True})
-            time.sleep(2)
+            time.sleep(3)
     thread = threading.Thread(target=send_status, daemon=True)
     thread.start()
 
