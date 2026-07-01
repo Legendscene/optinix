@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Shield,
@@ -32,6 +32,18 @@ export function SecurityPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   const [result, setResult] = useState<{ key: string; message: string; success: boolean } | null>(null)
   const [defenderOn, setDefenderOn] = useState(true)
   const [windowsUpdateOn, setWindowsUpdateOn] = useState(true)
+
+  const loadTweakState = useCallback(async () => {
+    try {
+      const state = await api.tweakState()
+      if (state.defender !== undefined) setDefenderOn(state.defender)
+      if (state.windows_update !== undefined) setWindowsUpdateOn(state.windows_update)
+    } catch {
+      // defaults remain
+    }
+  }, [])
+
+  useEffect(() => { loadTweakState() }, [loadTweakState])
 
   const runAction = async (key: string, fn: () => Promise<unknown>, successMsg: string) => {
     setLoadingAction(key)

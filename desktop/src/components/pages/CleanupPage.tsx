@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Trash2,
@@ -7,6 +7,8 @@ import {
   FileText,
   Delete,
   Trash,
+  Search,
+  FolderOpen,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
@@ -31,6 +33,22 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const [result, setResult] = useState<{ key: string; message: string; success: boolean } | null>(null)
   const [cleaned, setCleaned] = useState<Record<string, boolean>>({})
+  const [scanResults, setScanResults] = useState<{ name: string; description: string; items: number; bytes: number }[] | null>(null)
+  const [scanLoading, setScanLoading] = useState(false)
+  const [scanTotal, setScanTotal] = useState(0)
+
+  const deepScan = useCallback(async () => {
+    setScanLoading(true)
+    try {
+      const res = await api.diskScan('C:')
+      setScanResults(res.categories)
+      setScanTotal(res.total_bytes)
+    } catch {
+      setScanResults([])
+    } finally {
+      setScanLoading(false)
+    }
+  }, [])
 
   const runAction = async (key: string, fn: () => Promise<unknown>, successMsg: string) => {
     setLoadingAction(key)
@@ -56,9 +74,9 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
     )
   }
 
-  const totalCache = 2.4 * 1024 ** 3
-  const tempFiles = 856 * 1024 ** 2
-  const recycleBin = 1.1 * 1024 ** 3
+  const totalCache = scanResults?.find((c) => /cache/i.test(c.name))?.bytes ?? 0
+  const tempFiles = scanResults?.find((c) => /temp/i.test(c.name))?.bytes ?? 0
+  const recycleBin = scanResults?.find((c) => /recycle/i.test(c.name))?.bytes ?? 0
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
@@ -105,7 +123,34 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
           tags={['Storage']}
           onClick={() => runAction('recycle', () => api.optimize('cleanup'), 'Recycle bin emptied')}
         />
+        <ActionCard
+          icon={<Search className="w-5 h-5" />}
+          title="Deep Scan"
+          desc="Scan disk for detailed category breakdown"
+          tags={['Analysis']}
+          onClick={deepScan}
+          loading={scanLoading}
+        />
       </motion.div>
+
+      {scanResults && scanResults.length > 0 && (
+        <motion.div variants={item}>
+          <Card>
+            <h2 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><FolderOpen className="w-4 h-4 text-accent" />Scan Results — {formatBytes(scanTotal)} total</h2>
+            <div className="space-y-2">
+              {scanResults.map((cat) => (
+                <div key={cat.name} className="flex items-center justify-between py-2">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <p className="text-sm font-medium text-text truncate">{cat.name}</p>
+                    <p className="text-xs text-text-tertiary truncate">{cat.description} &middot; {cat.items} items</p>
+                  </div>
+                  <span className="text-sm font-mono text-text-secondary shrink-0">{formatBytes(cat.bytes)}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       <motion.div variants={item}>
         <Card>

@@ -11,6 +11,10 @@ import {
   Gauge,
   SlidersHorizontal,
   Globe,
+  Cloud,
+  Shield,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -36,6 +40,46 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [adaptersLoading, setAdaptersLoading] = useState(true)
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const [result, setResult] = useState<{ key: string; message: string; success: boolean } | null>(null)
+  const [dnsLoading, setDnsLoading] = useState<string | null>(null)
+  const [pingHost, setPingHost] = useState('8.8.8.8')
+  const [pingLoading, setPingLoading] = useState(false)
+  const [pingResult, setPingResult] = useState<string | null>(null)
+
+  const dnsProviders = [
+    { id: 'cloudflare', name: 'Cloudflare', icon: <Cloud className="w-5 h-5" />, primary: '1.1.1.1', secondary: '1.0.0.1' },
+    { id: 'google', name: 'Google', icon: <Globe className="w-5 h-5" />, primary: '8.8.8.8', secondary: '8.8.4.4' },
+    { id: 'opendns', name: 'OpenDNS', icon: <Shield className="w-5 h-5" />, primary: '208.67.222.222', secondary: '208.67.220.220' },
+    { id: 'quad9', name: 'Quad9', icon: <AlertCircle className="w-5 h-5" />, primary: '9.9.9.9', secondary: '149.112.112.112' },
+    { id: 'adguard', name: 'AdGuard', icon: <Shield className="w-5 h-5" />, primary: '94.140.14.14', secondary: '94.140.15.15' },
+  ]
+
+  const setDNS = async (provider: typeof dnsProviders[0]) => {
+    setDnsLoading(provider.id)
+    setResult(null)
+    try {
+      await api.dns(provider.id)
+      setResult({ key: 'dns', message: `DNS set to ${provider.name}`, success: true })
+    } catch (e) {
+      setResult({ key: 'dns', message: e instanceof Error ? e.message : 'Failed to set DNS', success: false })
+    } finally {
+      setDnsLoading(null)
+    }
+  }
+
+  const runCustomPing = async () => {
+    setPingLoading(true)
+    setResult(null)
+    try {
+      const d = await api.ping(pingHost)
+      setPingResult(d.output || 'Ping complete')
+      setResult({ key: 'ping', message: `Ping to ${pingHost} complete`, success: true })
+    } catch (e) {
+      setPingResult('Ping failed')
+      setResult({ key: 'ping', message: e instanceof Error ? e.message : 'Ping failed', success: false })
+    } finally {
+      setPingLoading(false)
+    }
+  }
 
   const loadAdapters = useCallback(async () => {
     setAdaptersLoading(true)
@@ -164,6 +208,57 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
           tags={['Advanced']}
           onClick={() => runAction('tcp', () => api.advancedNetwork(), 'TCP tweaks applied')}
         />
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg">
+          <h2 className="text-sm font-semibold text-text mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" />DNS Provider</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {dnsProviders.map((provider, i) => (
+              <motion.button
+                key={provider.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => setDNS(provider)}
+                disabled={!!dnsLoading}
+                className="relative p-3 rounded-xl bg-surface-2 border border-border text-left hover:bg-surface-3 hover:border-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 rounded bg-surface-3 text-accent">{provider.icon}</div>
+                  <span className="font-medium text-text">{provider.name}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-text-tertiary">
+                  <span>{provider.primary}</span>
+                  <span className="text-surface-3">/</span>
+                  <span>{provider.secondary}</span>
+                </div>
+                {dnsLoading === provider.id && <Loader2 className="absolute top-2 right-2 w-4 h-4 text-accent animate-spin" />}
+              </motion.button>
+            ))}
+          </div>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg">
+          <h2 className="text-sm font-semibold text-text mb-4 flex items-center gap-2"><Wifi className="w-4 h-4 text-accent" />Ping Test</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={pingHost}
+              onChange={(e) => setPingHost(e.target.value)}
+              placeholder="Hostname or IP"
+              className="flex-1 px-3 py-2 text-sm rounded-xl bg-surface-2 border border-border text-text placeholder-text-tertiary focus:outline-none focus:border-accent/50"
+            />
+            <Button variant="default" size="sm" icon={<Zap className="w-4 h-4" />} loading={pingLoading} onClick={runCustomPing}>
+              Ping
+            </Button>
+          </div>
+          {pingResult && (
+            <p className="mt-3 text-xs text-text-secondary">{pingResult}</p>
+          )}
+        </Card>
       </motion.div>
 
       {result && (

@@ -79,6 +79,17 @@ export const api = {
   debloatRestorePoint: () => post('/api/debloat/restore-point'),
   debloatAppOptimize: (app: string) => post('/api/debloat/app-optimize', { app }),
 
+  // Disk Analyzer
+  diskScan: (drive = 'C:') => post<{ categories: { name: string; description: string; items: number; bytes: number; files: { path: string; size: number }[] }[]; total_bytes: number; drive: string }>('/api/disk/scan', { drive }),
+  diskCleanCategory: (category: string, drive = 'C:') => post('/api/disk/clean-category', { category, drive }),
+  diskCleanAll: (drive = 'C:') => post('/api/disk/clean-all', { drive }),
+
+  // Memory Manager
+  memoryProcesses: () => get<{ processes: { pid: number; name: string; rss_mb: number; vms_mb: number; memory_percent: number; cpu_percent: number; status: string }[] }>('/api/memory/processes'),
+  memoryFree: () => post('/api/memory/free'),
+  memoryAutoOptimize: () => post('/api/memory/auto-optimize'),
+  memoryInfo: () => get<{ total_gb: number; available_gb: number; used_gb: number; percent: number; swap_total_gb: number; swap_used_gb: number; swap_percent: number }>('/api/memory/info'),
+
   // Network Priority
   networkPriorityQosEnable: () => post('/api/network-priority/qos/enable'),
   networkPriorityQosDisable: () => post('/api/network-priority/qos/disable'),

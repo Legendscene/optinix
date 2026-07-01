@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HardDrive, Trash2, Zap, Search, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
+import { HardDrive, Trash2, Zap, Search, CheckCircle, AlertTriangle, XCircle, FolderKanban, RotateCw, FileText, Delete } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { ProgressBar } from '../ui/ProgressBar'
 import { Skeleton } from '../ui/Skeleton'
 import { Badge } from '../ui/Badge'
-import { cn } from '../../lib/utils'
+import { Button } from '../ui/Button'
+import { cn, formatBytes } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo, DiskInfo } from '../../types'
 
@@ -42,10 +43,25 @@ const healthIcon = {
   bad: <XCircle size={14} className="text-red" />,
 }
 
+interface ScanCategory {
+  name: string
+  description: string
+  items: number
+  bytes: number
+  files: { path: string; size: number }[]
+}
+
 export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_loading, setLoading] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
+
+  const [selectedDrive, setSelectedDrive] = useState('C:')
+  const [scanResult, setScanResult] = useState<{ categories: ScanCategory[]; total_bytes: number; drive: string } | null>(null)
+  const [scanning, setScanning] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
+  const [cleanResult, setCleanResult] = useState<string | null>(null)
+  const [hasScanned, setHasScanned] = useState(false)
 
   const disks = systemInfo?.disk ?? []
   const primary = disks[0]
@@ -58,6 +74,78 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   function formatGb(bytes: number): string {
     const gb = bytes / 1e9
     return gb >= 1000 ? `${(gb / 1024).toFixed(1)} TB` : `${gb.toFixed(1)} GB`
+  }
+
+  const handleScan = useCallback(async () => {
+    setScanning(true)
+    setScanResult(null)
+    setSelectedCategories(new Set())
+    setCleanResult(null)
+    try {
+      const res = await api.diskScan(selectedDrive)
+      setScanResult(res)
+      setHasScanned(true)
+    } catch {
+      setCleanResult('Scan failed')
+      setHasScanned(true)
+    } finally {
+      setScanning(false)
+    }
+  }, [selectedDrive])
+
+  useEffect(() => {
+    if (systemInfo && disks.length > 0 && !hasScanned) {
+      handleScan()
+    }
+  }, [systemInfo, disks, hasScanned, handleScan])
+
+  async function handleCleanSelected() {
+    if (selectedCategories.size === 0) return
+    setCleaning(true)
+    setCleanResult(null)
+    try {
+      for (const cat of selectedCategories) {
+        await api.diskCleanCategory(cat, selectedDrive)
+      }
+      setCleanResult(`Cleaned ${selectedCategories.size} categor${selectedCategories.size === 1 ? 'y' : 'ies'}`)
+      setSelectedCategories(new Set())
+      const res = await api.diskScan(selectedDrive)
+      setScanResult(res)
+    } catch {
+      setCleanResult('Clean failed')
+    } finally {
+      setCleaning(false)
+    }
+  }
+
+  async function handleCleanAll() {
+    setCleaning(true)
+    setCleanResult(null)
+    try {
+      await api.diskCleanAll(selectedDrive)
+      setCleanResult('All categories cleaned')
+      setSelectedCategories(new Set())
+      const res = await api.diskScan(selectedDrive)
+      setScanResult(res)
+    } catch {
+      setCleanResult('Clean all failed')
+    } finally {
+      setCleaning(false)
+    }
+  }
+
+  function toggleCategory(name: string) {
+    setSelectedCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  function onDriveChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedDrive(e.target.value)
+    setHasScanned(false)
   }
 
   async function handleCleanup() {
@@ -107,6 +195,8 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
       </div>
     )
   }
+
+  const totalScanBytes = scanResult?.total_bytes ?? 0
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -195,6 +285,155 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
               </div>
             ))}
           </div>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-text">Disk Cleaner</h2>
+              <select
+                value={selectedDrive}
+                onChange={onDriveChange}
+                className="bg-surface-2 text-text border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-accent cursor-pointer"
+              >
+                {disks.map((d: DiskInfo) => {
+                  const val = d.device?.replace(':', '') + ':'
+                  return (
+                    <option key={val} value={val}>{d.device} {d.mountpoint ? `(${d.mountpoint})` : ''}</option>
+                  )
+                })}
+              </select>
+            </div>
+            <Button size="sm" variant="secondary" icon={<RotateCw size={14} />} loading={scanning} onClick={handleScan}>
+              Scan
+            </Button>
+          </div>
+
+          {(scanning || cleaning) && (
+            <div className="mb-4 p-3 rounded-lg bg-surface-2">
+              <div className="flex items-center gap-2 mb-2">
+                {scanning
+                  ? <Search size={14} className="text-accent animate-pulse" />
+                  : <Trash2 size={14} className="text-accent animate-pulse" />
+                }
+                <span className="text-xs text-text-secondary">
+                  {scanning ? `Scanning ${selectedDrive}...` : 'Cleaning...'}
+                </span>
+              </div>
+              <ProgressBar value={scanning ? 45 : 70} size="sm" />
+            </div>
+          )}
+
+          {scanResult && scanResult.categories.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-text-secondary">
+                    {scanResult.categories.length} categor{scanResult.categories.length === 1 ? 'y' : 'ies'} found
+                  </span>
+                  <span className="text-xs text-text-tertiary">·</span>
+                  <span className="text-xs text-text-secondary">{formatBytes(totalScanBytes)} total</span>
+                  <span className="text-xs text-text-tertiary">·</span>
+                  <span className="text-xs text-text-secondary">
+                    {selectedCategories.size} selected
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon={<Delete size={14} />}
+                    loading={cleaning}
+                    disabled={selectedCategories.size === 0}
+                    onClick={handleCleanSelected}
+                  >
+                    Clean Selected
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={<Trash2 size={14} />}
+                    loading={cleaning}
+                    onClick={handleCleanAll}
+                  >
+                    Clean All
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {scanResult.categories.map((cat) => {
+                  const selected = selectedCategories.has(cat.name)
+                  return (
+                    <div
+                      key={cat.name}
+                      onClick={() => toggleCategory(cat.name)}
+                      className={cn(
+                        'flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors',
+                        selected
+                          ? 'bg-accent/10 border border-accent/30'
+                          : 'bg-surface-2 border border-transparent hover:border-border-light'
+                      )}
+                    >
+                      <div className={cn(
+                        'mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                        selected ? 'bg-accent border-accent' : 'border-border'
+                      )}>
+                        {selected && <CheckCircle size={12} className="text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-text truncate">{cat.name}</span>
+                          <span className="text-xs font-mono text-text-secondary flex-shrink-0">{formatBytes(cat.bytes)}</span>
+                        </div>
+                        <p className="text-[11px] text-text-tertiary mt-0.5 leading-relaxed line-clamp-2">{cat.description}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="text-[11px] text-text-tertiary flex items-center gap-1">
+                            <FileText size={10} />
+                            {cat.items} item{cat.items !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-[11px] text-text-tertiary flex items-center gap-1">
+                            <FolderKanban size={10} />
+                            {cat.files?.length ?? 0} file{(cat.files?.length ?? 0) !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {scanResult && scanResult.categories.length === 0 && (
+            <div className="text-center py-8 text-text-tertiary text-sm">
+              <FolderKanban size={32} className="mx-auto mb-2 opacity-40" />
+              No junk found on {selectedDrive}
+            </div>
+          )}
+
+          {!scanResult && !scanning && (
+            <div className="text-center py-8 text-text-tertiary text-sm">
+              <Search size={32} className="mx-auto mb-2 opacity-40" />
+              Click "Scan" to analyze junk files on {selectedDrive}
+            </div>
+          )}
+
+          {cleanResult && (
+            <div className="mt-4">
+              <Card className={cn('text-center py-3', cleanResult.includes('failed') ? 'border-red/30' : 'border-green/30')}>
+                <span className={cn(
+                  'text-sm font-medium flex items-center justify-center gap-2',
+                  cleanResult.includes('failed') ? 'text-red' : 'text-green'
+                )}>
+                  {cleanResult.includes('failed') ? <XCircle size={14} /> : <CheckCircle size={14} />}
+                  {cleanResult}
+                </span>
+              </Card>
+            </div>
+          )}
         </Card>
       </motion.div>
 

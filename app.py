@@ -823,6 +823,72 @@ def tw_import():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/disk/scan", methods=["POST"])
+def disk_scan():
+    try:
+        d = request.get_json() or {}
+        from core.disk_analyzer import DiskAnalyzer
+        return jsonify(DiskAnalyzer(OS).scan(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/disk/clean-category", methods=["POST"])
+def disk_clean_cat():
+    try:
+        d = request.get_json() or {}
+        from core.disk_analyzer import DiskAnalyzer
+        return jsonify(DiskAnalyzer(OS).clean_category(d.get("category", ""), d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/disk/clean-all", methods=["POST"])
+def disk_clean_all():
+    try:
+        d = request.get_json() or {}
+        from core.disk_analyzer import DiskAnalyzer
+        return jsonify(DiskAnalyzer(OS).clean_all(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/memory/processes")
+def mem_procs():
+    try:
+        from core.memory_manager import MemoryManager
+        return jsonify({"processes": MemoryManager(OS).get_processes()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/memory/free", methods=["POST"])
+def mem_free():
+    try:
+        from core.memory_manager import MemoryManager
+        return jsonify(MemoryManager(OS).free_ram())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/memory/auto-optimize", methods=["POST"])
+def mem_auto():
+    try:
+        from core.memory_manager import MemoryManager
+        return jsonify(MemoryManager(OS).auto_optimize())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/memory/info")
+def mem_info():
+    try:
+        from core.memory_manager import MemoryManager
+        return jsonify(MemoryManager(OS).get_info())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "os": OS})

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   Server,
@@ -30,6 +30,8 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   const [toggling, setToggling] = useState<string | null>(null)
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const [result, setResult] = useState<{ message: string; success: boolean } | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'running' | 'stopped' | 'safe'>('all')
 
   const loadServices = useCallback(async () => {
     setLoading(true)
@@ -75,6 +77,16 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   const safeCount = services.filter((s) => s.safe).length
   const criticalCount = services.filter((s) => !s.safe).length
 
+  const filteredServices = useMemo(() => {
+    return services.filter((s) => {
+      if (filterStatus === 'running' && !s.running) return false
+      if (filterStatus === 'stopped' && s.running) return false
+      if (filterStatus === 'safe' && !s.safe) return false
+      if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      return true
+    })
+  }, [services, searchQuery, filterStatus])
+
   if (!systemInfo) {
     return (
       <div className="p-6 space-y-6">
@@ -117,17 +129,46 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
         </div>
       </motion.div>
 
+      <motion.div variants={item} className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search services..."
+            className="w-full px-3 py-2 pl-9 text-sm rounded-xl bg-surface-2 border border-border text-text placeholder-text-tertiary focus:outline-none focus:border-accent/50"
+          />
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </div>
+        <div className="flex gap-1.5">
+          {(['all', 'running', 'stopped', 'safe'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilterStatus(f)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize',
+                filterStatus === f
+                  ? 'bg-accent text-white'
+                  : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
       <motion.div variants={item}>
-        <Card padding="sm" className="max-h-[65vh] overflow-y-auto">
+        <Card padding="sm" className="max-h-[55vh] overflow-y-auto">
           {loading ? (
             <div className="space-y-2 p-2">
               {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} variant="rectangular" height="52px" />)}
             </div>
-          ) : services.length === 0 ? (
-            <p className="text-xs text-text-tertiary py-8 text-center">No services found</p>
+          ) : filteredServices.length === 0 ? (
+            <p className="text-xs text-text-tertiary py-8 text-center">No services match your filter</p>
           ) : (
             <div className="divide-y divide-border">
-              {services.map((s) => (
+              {filteredServices.map((s) => (
                 <motion.div
                   key={s.name}
                   initial={{ opacity: 0 }}
