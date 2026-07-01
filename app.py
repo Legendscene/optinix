@@ -892,7 +892,6 @@ def mem_info():
 
 
 import threading
-import GPUtil
 
 
 @socketio.on('connect')
@@ -904,6 +903,7 @@ def handle_connect():
                 mem = psutil.virtual_memory()
                 disk = psutil.disk_usage('/')
                 try:
+                    import GPUtil
                     gpu = GPUtil.getGPUs()[0] if GPUtil.getGPUs() else None
                 except:
                     gpu = None

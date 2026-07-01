@@ -2,14 +2,14 @@ import sys
 import threading
 import os
 import webview
-from app import app, PORT
+from app import app, socketio, PORT
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGO_PATH = os.path.join(BASE_DIR, "ui", "assets", "logo.jfif")
 
 
 def start_server():
-    app.run(host="127.0.0.1", port=PORT, debug=False, use_reloader=False)
+    socketio.run(app, host="127.0.0.1", port=PORT, debug=False, allow_unsafe_werkzeug=True)
 
 
 def main():
