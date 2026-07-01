@@ -12,22 +12,22 @@ class CleanupOptimizer:
 
     def run(self):
         self.results = []
-        self._clean_temp()
-        self._clean_crash_dumps()
-        self._clean_thumbnails()
-        self._clean_dns()
-        self._clean_browser_cache()
-        self._clean_logs()
-        self._clean_prefetch()
-        self._clean_windows_update()
+        steps = [
+            self._clean_temp, self._clean_crash_dumps, self._clean_thumbnails,
+            self._clean_dns, self._clean_browser_cache, self._clean_logs,
+            self._clean_prefetch, self._clean_windows_update,
+        ]
         if self.os_type == "windows":
-            self._clean_recycle_bin()
-            self._clean_windows_temp()
-            self._clean_old_logs()
+            steps += [self._clean_recycle_bin, self._clean_windows_temp, self._clean_old_logs]
         elif self.os_type == "macos":
-            self._clean_macos_cache()
+            steps += [self._clean_macos_cache]
         elif self.os_type == "linux":
-            self._clean_linux_cache()
+            steps += [self._clean_linux_cache]
+        for step in steps:
+            try:
+                step()
+            except Exception as e:
+                self.results.append({"success": False, "message": f"{step.__name__.replace('_clean_', '').replace('_', ' ').title()} failed: {e}"})
         return self.results
 
     def _clean_temp(self):

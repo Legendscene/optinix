@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 
 
 class DiskOptimizer:
@@ -21,28 +22,32 @@ class DiskOptimizer:
     def _trim_ssd(self):
         try:
             if self.os_type == "windows":
-                subprocess.run(["defrag", "C:", "/L", "/O"], capture_output=True, timeout=300)
+                subprocess.run(["defrag", "C:", "/L"], capture_output=True, timeout=60)
                 self.results.append({"success": True, "message": "SSD TRIM scheduled (Windows)"})
             elif self.os_type == "linux":
-                r = subprocess.run(["sudo", "fstrim", "-v", "/"], capture_output=True, text=True, timeout=300)
+                r = subprocess.run(["sudo", "fstrim", "-v", "/"], capture_output=True, text=True, timeout=30)
                 self.results.append({"success": True, "message": f"SSD TRIM: {r.stdout.strip() or 'completed'}"})
             else:
                 self.results.append({"success": True, "message": "macOS auto-TRIM enabled by default"})
+        except subprocess.TimeoutExpired:
+            self.results.append({"success": False, "message": "TRIM timed out"})
         except Exception as e:
             self.results.append({"success": False, "message": f"TRIM failed: {e}"})
 
     def _check_disk_health(self):
         try:
             if self.os_type == "windows":
-                r = subprocess.run(["wmic", "diskdrive", "get", "status"], capture_output=True, text=True, timeout=30)
+                r = subprocess.run(["wmic", "diskdrive", "get", "status"], capture_output=True, text=True, timeout=15)
                 status = r.stdout.strip().split("\n")[-1].strip()
                 self.results.append({"success": status == "OK", "message": f"Disk health: {status}"})
             elif self.os_type == "linux":
-                r = subprocess.run(["sudo", "smartctl", "-H", "/dev/sda"], capture_output=True, text=True, timeout=30)
+                r = subprocess.run(["sudo", "smartctl", "-H", "/dev/sda"], capture_output=True, text=True, timeout=15)
                 ok = "PASSED" in r.stdout
                 self.results.append({"success": ok, "message": f"Disk health: {'PASSED' if ok else 'WARNING'}"})
             else:
                 self.results.append({"success": True, "message": "Disk health checked"})
+        except subprocess.TimeoutExpired:
+            self.results.append({"success": False, "message": "Health check timed out"})
         except Exception as e:
             self.results.append({"success": False, "message": f"Health check failed: {e}"})
 
@@ -51,11 +56,16 @@ class DiskOptimizer:
             home = os.path.expanduser("~")
             dirs = [os.path.join(home, "Downloads"), os.path.join(home, "Documents")]
             large = []
+            deadline = time.time() + 10
             for d in dirs:
                 if not os.path.exists(d):
                     continue
                 for root, _, files in os.walk(d):
+                    if time.time() > deadline:
+                        break
                     for f in files:
+                        if time.time() > deadline:
+                            break
                         fp = os.path.join(root, f)
                         try:
                             size = os.path.getsize(fp)
@@ -63,6 +73,8 @@ class DiskOptimizer:
                                 large.append({"path": fp, "size": size})
                         except (OSError, PermissionError):
                             continue
+                if time.time() > deadline:
+                    break
             large.sort(key=lambda x: x["size"], reverse=True)
             self.results.append({
                 "success": True,

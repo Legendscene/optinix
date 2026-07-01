@@ -278,20 +278,33 @@ def drv_miss():
 
 @app.route("/api/optimize/<cat>", methods=["POST"])
 def optimize(cat):
-    try:
-        if cat == "all":
-            results = {}
-            for n in ["cleanup", "network", "disk", "performance", "gaming", "security", "developer", "services", "overclock"]:
-                try:
-                    mod = __import__(f"core.optimizers.{n}", fromlist=[f"{n.title()}Optimizer"])
-                    results[n] = getattr(mod, f"{n.title()}Optimizer")(OS).run()
-                except:
-                    pass
-            return jsonify(results)
-        mod = __import__(f"core.optimizers.{cat}", fromlist=[f"{cat.title()}Optimizer"])
-        return jsonify({"category": cat, "results": getattr(mod, f"{cat.title()}Optimizer")(OS).run()})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    _cat = cat
+    _out = {"error": "Optimizer failed"}
+    def _work(c):
+        nonlocal _out
+        try:
+            if c == "all":
+                results = {}
+                for n in ["cleanup", "network", "disk", "performance", "gaming", "security", "developer", "services", "overclock"]:
+                    try:
+                        mod = __import__(f"core.optimizers.{n}", fromlist=[f"{n.title()}Optimizer"])
+                        results[n] = getattr(mod, f"{n.title()}Optimizer")(OS).run()
+                    except:
+                        pass
+                _out = results
+            else:
+                mod = __import__(f"core.optimizers.{c}", fromlist=[f"{c.title()}Optimizer"])
+                _out = {"category": c, "results": getattr(mod, f"{c.title()}Optimizer")(OS).run()}
+        except Exception as e:
+            _out = {"error": str(e)}
+    thr = threading.Thread(target=_work, args=(_cat,), daemon=True)
+    thr.start()
+    thr.join(timeout=120)
+    if thr.is_alive():
+        return jsonify({"error": "Optimizer timed out"}), 504
+    if isinstance(_out, dict) and _out.get("error"):
+        return jsonify(_out), 500
+    return jsonify(_out)
 
 
 @app.route("/api/background/status")

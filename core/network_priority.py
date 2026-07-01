@@ -252,7 +252,7 @@ class AdapterTuner:
                     "powershell", "-Command",
                     "Get-NetAdapterAdvancedProperty | "
                     "Select-Object Name,DisplayName,DisplayValue,ValidDisplayValues | ConvertTo-Json"
-                ], capture_output=True, text=True, text=True, timeout=15)
+                ], capture_output=True, text=True, timeout=15)
                 if r.stdout.strip():
                     data = json.loads(r.stdout)
                     if isinstance(data, dict):

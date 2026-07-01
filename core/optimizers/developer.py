@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import time
 
 
 class DeveloperOptimizer:
@@ -12,22 +13,36 @@ class DeveloperOptimizer:
 
     def run(self):
         self.results = []
-        self._clean_npm()
-        self._clean_pip()
-        self._clean_pycache()
-        self._clean_git()
-        self._clean_docker()
-        self._clean_ide()
-        self._clean_build_artifacts()
+        deadline = time.time() + 30
+        steps = [
+            self._clean_npm, self._clean_pip, self._clean_pycache,
+            self._clean_git, self._clean_docker, self._clean_ide, self._clean_build_artifacts
+        ]
+        for step in steps:
+            if time.time() > deadline:
+                self.results.append({"success": False, "message": "Developer cleanup timed out"})
+                break
+            try:
+                step(deadline)
+            except Exception as e:
+                self.results.append({"success": False, "message": f"{step.__name__.replace('_clean_', '').replace('_', ' ').title()} failed: {e}"})
         return self.results
 
-    def _clean_npm(self):
+    def _walk_bounded(self, root_dir, deadline):
         try:
-            subprocess.run(["npm", "cache", "clean", "--force"], capture_output=True, timeout=60)
+            for root, dirs, files in os.walk(root_dir):
+                if time.time() > deadline:
+                    break
+                yield root, dirs, files
+        except (PermissionError, OSError):
+            pass
+
+    def _clean_npm(self, deadline):
+        try:
+            subprocess.run(["npm", "cache", "clean", "--force"], capture_output=True, timeout=30)
             home = os.path.expanduser("~")
-            nm_path = os.path.join(home, "node_modules")
             cleaned = 0
-            for root, dirs, files in os.walk(home):
+            for root, dirs, _ in self._walk_bounded(home, deadline):
                 if "node_modules" in dirs:
                     nm = os.path.join(root, "node_modules")
                     try:
@@ -35,27 +50,27 @@ class DeveloperOptimizer:
                         cleaned += 1
                     except (PermissionError, OSError):
                         continue
-                if cleaned >= 20:
+                if cleaned >= 20 or time.time() > deadline:
                     break
             self.results.append({"success": True, "message": f"npm cache + {cleaned} node_modules cleaned"})
         except FileNotFoundError:
             self.results.append({"success": True, "message": "npm not found, skipped"})
-        except Exception as e:
-            self.results.append({"success": False, "message": f"npm failed: {e}"})
+        except subprocess.TimeoutExpired:
+            self.results.append({"success": False, "message": "npm timed out"})
 
-    def _clean_pip(self):
+    def _clean_pip(self, deadline):
         try:
-            subprocess.run(["pip", "cache", "purge"], capture_output=True, timeout=60)
+            subprocess.run(["pip", "cache", "purge"], capture_output=True, timeout=30)
             self.results.append({"success": True, "message": "pip cache cleaned"})
         except FileNotFoundError:
             self.results.append({"success": True, "message": "pip not found, skipped"})
-        except Exception as e:
-            self.results.append({"success": False, "message": f"pip failed: {e}"})
+        except subprocess.TimeoutExpired:
+            self.results.append({"success": False, "message": "pip timed out"})
 
-    def _clean_pycache(self):
+    def _clean_pycache(self, deadline):
         home = os.path.expanduser("~")
         cleaned = 0
-        for root, dirs, files in os.walk(home):
+        for root, dirs, files in self._walk_bounded(home, deadline):
             for d in dirs[:]:
                 if d == "__pycache__":
                     try:
@@ -71,39 +86,39 @@ class DeveloperOptimizer:
                         cleaned += 1
                     except (PermissionError, OSError):
                         continue
-            if cleaned >= 500:
+            if cleaned >= 500 or time.time() > deadline:
                 break
         self.results.append({"success": True, "message": f"Python cache cleaned ({cleaned} items)"})
 
-    def _clean_git(self):
+    def _clean_git(self, deadline):
         try:
             home = os.path.expanduser("~")
             cleaned = 0
-            for root, dirs, files in os.walk(home):
+            for root, dirs, _ in self._walk_bounded(home, deadline):
                 if ".git" in dirs:
                     try:
                         subprocess.run(["git", "gc", "--auto", "--quiet"],
-                                      cwd=root, capture_output=True, timeout=60)
+                                      cwd=root, capture_output=True, timeout=30)
                         cleaned += 1
                     except Exception:
                         pass
                     dirs.remove(".git")
-                if cleaned >= 30:
+                if cleaned >= 30 or time.time() > deadline:
                     break
             self.results.append({"success": True, "message": f"Git garbage collected ({cleaned} repos)"})
         except Exception as e:
             self.results.append({"success": False, "message": f"Git failed: {e}"})
 
-    def _clean_docker(self):
+    def _clean_docker(self, deadline):
         try:
-            subprocess.run(["docker", "system", "prune", "-f"], capture_output=True, timeout=120)
+            subprocess.run(["docker", "system", "prune", "-f"], capture_output=True, timeout=30)
             self.results.append({"success": True, "message": "Docker system pruned"})
         except FileNotFoundError:
             self.results.append({"success": True, "message": "Docker not found, skipped"})
-        except Exception as e:
-            self.results.append({"success": False, "message": f"Docker failed: {e}"})
+        except subprocess.TimeoutExpired:
+            self.results.append({"success": False, "message": "Docker timed out"})
 
-    def _clean_ide(self):
+    def _clean_ide(self, deadline):
         home = os.path.expanduser("~")
         caches = []
         if self.os_type == "windows":
@@ -129,6 +144,8 @@ class DeveloperOptimizer:
 
         cleaned = 0
         for c in caches:
+            if time.time() > deadline:
+                break
             if os.path.exists(c):
                 try:
                     shutil.rmtree(c, ignore_errors=True)
@@ -137,11 +154,13 @@ class DeveloperOptimizer:
                     continue
         self.results.append({"success": True, "message": f"IDE caches cleaned ({cleaned} dirs)"})
 
-    def _clean_build_artifacts(self):
+    def _clean_build_artifacts(self, deadline):
         home = os.path.expanduser("~")
         patterns = ["*.pyc", "*.pyo", "*.o", "*.obj", "*.class"]
         cleaned = 0
-        for root, dirs, files in os.walk(home):
+        for root, _, files in self._walk_bounded(home, deadline):
+            if time.time() > deadline:
+                break
             for f in files:
                 for pat in patterns:
                     if f.endswith(pat[1:]):
@@ -150,6 +169,6 @@ class DeveloperOptimizer:
                             cleaned += 1
                         except (PermissionError, OSError):
                             pass
-            if cleaned >= 500:
+            if cleaned >= 500 or time.time() > deadline:
                 break
         self.results.append({"success": True, "message": f"Build artifacts cleaned ({cleaned} files)"})
