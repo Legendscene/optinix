@@ -317,7 +317,7 @@ def optimize(cat):
         try:
             if c == "all":
                 results = {}
-                for n in ["cleanup", "network", "disk", "performance", "gaming", "security", "developer", "services", "overclock"]:
+                for n in ["cleanup", "network", "disk", "performance", "gaming", "security", "developer", "services", "overclock", "startup"]:
                     try:
                         mod = __import__(f"core.optimizers.{n}", fromlist=[f"{n.title()}Optimizer"])
                         results[n] = getattr(mod, f"{n.title()}Optimizer")(OS).run()

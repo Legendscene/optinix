@@ -5,6 +5,7 @@ import { TopBar } from './components/layout/TopBar'
 import { useSystemInfo } from './hooks/useSystemInfo'
 import { Dashboard } from './components/pages/Dashboard'
 import { Skeleton } from './components/ui/Skeleton'
+import { PreferencesProvider } from './contexts/PreferencesContext'
 
 const CpuPage = lazy(() => import('./components/pages/CpuPage').then(m => ({ default: m.CpuPage })))
 const GpuPage = lazy(() => import('./components/pages/GpuPage').then(m => ({ default: m.GpuPage })))
@@ -106,9 +107,9 @@ export default function App() {
   const Page = pages[active] || Dashboard
 
   return (
-    <div className="flex h-full w-full bg-surface-0">
+    <PreferencesProvider>
       <Sidebar active={active} onNavigate={setActive} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <TopBar
           cpu={sysInfo?.cpu.percent}
           ram={sysInfo?.memory.percent}
@@ -132,6 +133,6 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
-    </div>
+    </PreferencesProvider>
   )
 }

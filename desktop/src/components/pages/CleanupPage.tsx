@@ -1,38 +1,39 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Trash2,
-  HardDrive,
-  RefreshCw,
-  FileText,
-  Delete,
-  Trash,
-  Search,
-  FolderOpen,
+  Trash2, HardDrive, RefreshCw, FileText, Delete, Trash,
+  Search, FolderOpen, Monitor, Globe, Bug, Archive, FolderKanban,
+  Wifi, Layers, Bomb, CheckCircle2, Loader2,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
-import { Badge } from '../ui/Badge'
 import { MetricCard } from '../ui/MetricCard'
-import { ActionCard } from '../ui/ActionCard'
+import { Button } from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
 import { cn, formatBytes } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
-}
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
 
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+const categoryIcons: Record<string, React.ReactNode> = {
+  'Temp Files': <FileText className="w-4 h-4" />,
+  'Windows Temp': <FolderOpen className="w-4 h-4" />,
+  'Recycle Bin': <Trash className="w-4 h-4" />,
+  'Browser Cache': <Globe className="w-4 h-4" />,
+  'System Logs': <Monitor className="w-4 h-4" />,
+  'Windows Update': <RefreshCw className="w-4 h-4" />,
+  'Delivery Opt.': <Wifi className="w-4 h-4" />,
+  'Crash Dumps': <Bug className="w-4 h-4" />,
+  'Thumbnails': <Layers className="w-4 h-4" />,
+  'Prefetch': <Archive className="w-4 h-4" />,
+  'Old Windows': <FolderKanban className="w-4 h-4" />,
 }
 
 export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const [result, setResult] = useState<{ key: string; message: string; success: boolean } | null>(null)
-  const [cleaned, setCleaned] = useState<Record<string, boolean>>({})
+  const [cleanedCategories, setCleanedCategories] = useState<Set<string>>(new Set())
   const [scanResults, setScanResults] = useState<{ name: string; description: string; items: number; bytes: number }[] | null>(null)
   const [scanLoading, setScanLoading] = useState(false)
   const [scanTotal, setScanTotal] = useState(0)
@@ -50,15 +51,32 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
     }
   }, [])
 
-  const runAction = async (key: string, fn: () => Promise<unknown>, successMsg: string) => {
-    setLoadingAction(key)
+  useEffect(() => { deepScan() }, [deepScan])
+
+  const cleanCategory = async (name: string) => {
+    setLoadingAction(name)
     setResult(null)
     try {
-      await fn()
-      setCleaned((prev) => ({ ...prev, [key]: true }))
-      setResult({ key, message: successMsg, success: true })
+      await api.diskCleanCategory(name)
+      setCleanedCategories(prev => new Set(prev).add(name))
+      setResult({ key: name, message: `${name} cleaned successfully`, success: true })
+      deepScan()
     } catch (e) {
-      setResult({ key, message: e instanceof Error ? e.message : 'Operation failed', success: false })
+      setResult({ key: name, message: e instanceof Error ? e.message : 'Clean failed', success: false })
+    } finally {
+      setLoadingAction(null)
+    }
+  }
+
+  const cleanAll = async () => {
+    setLoadingAction('all')
+    setResult(null)
+    try {
+      await api.diskCleanAll()
+      setResult({ key: 'all', message: 'All system cache cleaned', success: true })
+      deepScan()
+    } catch (e) {
+      setResult({ key: 'all', message: e instanceof Error ? e.message : 'Clean all failed', success: false })
     } finally {
       setLoadingAction(null)
     }
@@ -74,121 +92,147 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
     )
   }
 
-  const totalCache = scanResults?.find((c) => /cache/i.test(c.name))?.bytes ?? 0
-  const tempFiles = scanResults?.find((c) => /temp/i.test(c.name))?.bytes ?? 0
-  const recycleBin = scanResults?.find((c) => /recycle/i.test(c.name))?.bytes ?? 0
+  const tempFiles = scanResults?.find(c => /temp/i.test(c.name))?.bytes ?? 0
+  const recycleBin = scanResults?.find(c => /recycle/i.test(c.name))?.bytes ?? 0
+  const browserCache = scanResults?.find(c => /browser/i.test(c.name))?.bytes ?? 0
+  const windowsUpdate = scanResults?.find(c => /update/i.test(c.name))?.bytes ?? 0
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
         <div className="flex items-center gap-3 mb-1">
           <Trash2 className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">Cleanup</h1>
+          <h1 className="text-2xl font-bold text-text">System Cleanup</h1>
         </div>
-        <p className="text-sm text-text-secondary ml-9">Remove junk and free up space</p>
+        <p className="text-sm text-text-secondary ml-9">Scan and remove system junk, cache, and temporary files</p>
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
-        <MetricCard icon={<HardDrive className="w-5 h-5" />} label="System Cache" value={formatBytes(totalCache)} progress={65} sub="Temporary and cache files" />
-        <MetricCard icon={<FileText className="w-5 h-5" />} label="Temp Files" value={formatBytes(tempFiles)} progress={35} sub="User and system temp data" />
-        <MetricCard icon={<Delete className="w-5 h-5" />} label="Recycle Bin" value={formatBytes(recycleBin)} progress={45} sub={`${Math.floor(recycleBin / (100 * 1024 ** 2))}+ items`} />
+      <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MetricCard icon={<HardDrive className="w-5 h-5" />} label="Total Junk" value={formatBytes(scanTotal)} progress={scanTotal > 0 ? Math.min(100, Math.round((scanTotal / (10 * 1024 ** 3)) * 100)) : 0} sub="Scannable waste" />
+        <MetricCard icon={<FileText className="w-5 h-5" />} label="Temp Files" value={formatBytes(tempFiles)} progress={tempFiles > 0 ? Math.min(100, Math.round((tempFiles / (2 * 1024 ** 3)) * 100)) : 0} sub="User & system temp" />
+        <MetricCard icon={<Globe className="w-5 h-5" />} label="Browser Cache" value={formatBytes(browserCache)} progress={browserCache > 0 ? Math.min(100, Math.round((browserCache / (1024 ** 3)) * 100)) : 0} sub="Chrome, Edge, Firefox" />
+        <MetricCard icon={<RefreshCw className="w-5 h-5" />} label="Windows Update" value={formatBytes(windowsUpdate)} progress={windowsUpdate > 0 ? Math.min(100, Math.round((windowsUpdate / (2 * 1024 ** 3)) * 100)) : 0} sub="Update cache" />
+        <MetricCard icon={<Trash className="w-5 h-5" />} label="Recycle Bin" value={formatBytes(recycleBin)} progress={recycleBin > 0 ? Math.min(100, Math.round((recycleBin / (1024 ** 3)) * 100)) : 0} sub="Deleted files" />
+        <MetricCard icon={<Layers className="w-5 h-5" />} label="Thumbnails" value={formatBytes(scanResults?.find(c => /thumb/i.test(c.name))?.bytes ?? 0)} progress={45} sub="Thumbnail cache" />
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-        <ActionCard
-          icon={<Trash2 className="w-5 h-5" />}
-          title="Full System Cleanup"
-          desc="Clear all caches, temp files, and junk data"
-          tags={['Recommended']}
-          onClick={() => runAction('cleanup', () => api.optimize('cleanup'), 'System cleanup complete')}
-        />
-        <ActionCard
-          icon={<RefreshCw className="w-5 h-5" />}
-          title="Flush DNS"
-          desc="Clear DNS resolver cache to fix connectivity"
-          tags={['Network']}
-          onClick={() => runAction('flushdns', () => api.flushDns(), 'DNS cache flushed')}
-        />
-        <ActionCard
-          icon={<FileText className="w-5 h-5" />}
-          title="Office Telemetry Cleanup"
-          desc="Remove Office telemetry data and logs"
-          tags={['Office']}
-          onClick={() => runAction('officetel', () => api.disableOfficeTelemetry(), 'Office telemetry cleaned')}
-        />
-        <ActionCard
-          icon={<Trash className="w-5 h-5" />}
-          title="Empty Recycle Bin"
-          desc="Permanently delete all recycled items"
-          tags={['Storage']}
-          onClick={() => runAction('recycle', () => api.optimize('cleanup'), 'Recycle bin emptied')}
-        />
-        <ActionCard
-          icon={<Search className="w-5 h-5" />}
-          title="Deep Scan"
-          desc="Scan disk for detailed category breakdown"
-          tags={['Analysis']}
-          onClick={deepScan}
-          loading={scanLoading}
-        />
+      <motion.div variants={item} className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="md"
+            icon={scanLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            onClick={deepScan}
+            loading={scanLoading}
+          >
+            Rescan
+          </Button>
+          <Button
+            variant="default"
+            size="md"
+            icon={<Bomb className="w-4 h-4" />}
+            onClick={cleanAll}
+            loading={loadingAction === 'all'}
+          >
+            Clean All
+          </Button>
+        </div>
+        {scanResults && (
+          <p className="text-xs text-text-secondary">
+            {scanResults.filter(c => c.bytes > 0).length} categories with waste
+            {cleanedCategories.size > 0 && ` · ${cleanedCategories.size} cleaned`}
+          </p>
+        )}
       </motion.div>
+
+      {scanLoading && !scanResults && (
+        <motion.div variants={item} className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height="56px" />
+          ))}
+        </motion.div>
+      )}
 
       {scanResults && scanResults.length > 0 && (
-        <motion.div variants={item}>
-          <Card>
-            <h2 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><FolderOpen className="w-4 h-4 text-accent" />Scan Results — {formatBytes(scanTotal)} total</h2>
-            <div className="space-y-2">
-              {scanResults.map((cat) => (
-                <div key={cat.name} className="flex items-center justify-between py-2">
-                  <div className="flex-1 min-w-0 mr-4">
-                    <p className="text-sm font-medium text-text truncate">{cat.name}</p>
-                    <p className="text-xs text-text-tertiary truncate">{cat.description} &middot; {cat.items} items</p>
+        <motion.div variants={item} className="space-y-1.5">
+          {scanResults
+            .sort((a, b) => b.bytes - a.bytes)
+            .map(cat => {
+              const isCleaned = cleanedCategories.has(cat.name)
+              const pct = scanTotal > 0 ? Math.round((cat.bytes / scanTotal) * 100) : 0
+              return (
+                <div key={cat.name} className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all',
+                  isCleaned ? 'border-green/30 bg-green-dim/10' :
+                    cat.bytes > 0 ? 'border-border bg-surface-1 hover:bg-surface-2' :
+                      'border-border/50 bg-surface-1/50 opacity-50'
+                )}>
+                  <div className={cn(
+                    'p-1.5 rounded-lg shrink-0',
+                    isCleaned ? 'text-green bg-green-dim/20' : 'text-text-secondary bg-surface-3'
+                  )}>
+                    {categoryIcons[cat.name] || <FolderKanban className="w-4 h-4" />}
                   </div>
-                  <span className="text-sm font-mono text-text-secondary shrink-0">{formatBytes(cat.bytes)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-text truncate">{cat.name}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-mono text-text-secondary">
+                          {formatBytes(cat.bytes)}
+                        </span>
+                        {cat.items > 0 && (
+                          <span className="text-[10px] text-text-tertiary">({cat.items} items)</span>
+                        )}
+                        {isCleaned && <CheckCircle2 className="w-3.5 h-3.5 text-green" />}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1 rounded-full bg-surface-3 overflow-hidden">
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-500', isCleaned ? 'bg-green' : 'bg-accent')}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-text-tertiary w-8 text-right">{pct}%</span>
+                    </div>
+                    <p className="text-[10px] text-text-tertiary mt-0.5 truncate">{cat.description}</p>
+                  </div>
+                  {cat.bytes > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Delete className="w-3.5 h-3.5" />}
+                      onClick={() => cleanCategory(cat.name)}
+                      loading={loadingAction === cat.name}
+                    >
+                      Clean
+                    </Button>
+                  )}
                 </div>
-              ))}
+              )
+            })}
+        </motion.div>
+      )}
+
+      {!scanLoading && scanResults && scanResults.length === 0 && (
+        <motion.div variants={item}>
+          <Card padding="lg">
+            <div className="flex flex-col items-center gap-2 py-6">
+              <Search className="w-8 h-8 text-text-tertiary" />
+              <p className="text-sm text-text-secondary">No cache data found. Run a scan to analyze your system.</p>
             </div>
           </Card>
         </motion.div>
       )}
 
-      <motion.div variants={item}>
-        <Card>
-          <h2 className="text-sm font-semibold text-text mb-3">Cleanup History</h2>
-          <div className="space-y-2">
-            {[
-              { key: 'cleanup', label: 'System Cleanup' },
-              { key: 'flushdns', label: 'Flush DNS' },
-              { key: 'officetel', label: 'Office Telemetry' },
-              { key: 'recycle', label: 'Recycle Bin' },
-            ].map((c) => (
-              <div key={c.key} className="flex items-center justify-between py-2">
-                <span className="text-sm text-text">{c.label}</span>
-                {cleaned[c.key] ? (
-                  <Badge variant="success">Completed</Badge>
-                ) : (
-                  <Badge variant="default">Pending</Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      </motion.div>
-
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cn('p-4 rounded-xl border', result.success ? 'bg-green-dim border-green/30' : 'bg-red-dim border-red/30')}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className={cn('p-4 rounded-xl border', result.success ? 'bg-green-dim border-green/30' : 'bg-red-dim border-red/30')}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <p className={cn('text-sm font-medium', result.success ? 'text-green' : 'text-red')}>{result.message}</p>
           </div>
         </motion.div>
-      )}
-
-      {loadingAction && (
-        <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <svg className="animate-spin h-3 w-3 text-accent" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-          Cleaning system...
-        </div>
       )}
     </motion.div>
   )
