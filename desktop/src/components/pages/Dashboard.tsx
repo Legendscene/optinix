@@ -22,13 +22,11 @@ export function Dashboard({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [actionResult, setActionResult] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!systemInfo) return
-    setLoadingSmart(true)
     fetch('/api/smart-detect')
       .then(r => r.json())
       .then(d => { setSmartDetect(d); setLoadingSmart(false) })
       .catch(() => setLoadingSmart(false))
-  }, [systemInfo])
+  }, [])
 
   const actionHandlers: Record<string, () => Promise<Record<string, unknown>>> = {
     'Optimize Everything': () => api.optimizeAll(),
