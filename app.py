@@ -39,7 +39,7 @@ def sysinfo():
     global _prev_net, _prev_net_time, _gpu_cache, _gpu_time
     out = {}
     try:
-        out["cpu"] = {"percent": psutil.cpu_percent(interval=None), "logical": psutil.cpu_count(), "physical": psutil.cpu_count(False) or 1, "temperature": None}
+        out["cpu"] = {"percent": psutil.cpu_percent(interval=0.3), "logical": psutil.cpu_count(), "physical": psutil.cpu_count(False) or 1, "temperature": None}
         try:
             for n, e in psutil.sensors_temperatures().items():
                 if e:
@@ -59,7 +59,19 @@ def sysinfo():
         for p in psutil.disk_partitions(all=False):
             try:
                 u = psutil.disk_usage(p.mountpoint)
-                disks.append({"device": p.device, "mountpoint": p.mountpoint, "fstype": p.fstype, "total": u.total, "used": u.used, "free": u.free, "percent": u.percent})
+                is_ssd = None
+                try:
+                    if os.name == 'nt':
+                        import subprocess as sp_
+                        r_ = sp_.run(['wmic', 'diskdrive', 'where', f'Index=0', 'get', 'MediaType'], capture_output=True, text=True, timeout=5)
+                        if 'SSD' in r_.stdout or 'Solid State' in r_.stdout:
+                            is_ssd = True
+                        elif 'HDD' in r_.stdout or 'Fixed' in r_.stdout:
+                            is_ssd = False
+                except:
+                    pass
+                is_ext = p.mountpoint != os.path.expanduser("~")[:2] and p.mountpoint not in ["C:\\", "D:\\"]
+                disks.append({"device": p.device, "mountpoint": p.mountpoint, "fstype": p.fstype, "total": u.total, "used": u.used, "free": u.free, "percent": u.percent, "is_ssd": is_ssd, "is_external": is_ext})
             except:
                 pass
         out["disk"] = disks
@@ -80,7 +92,7 @@ def sysinfo():
     except:
         out["network"] = {"bytes_sent": 0, "bytes_recv": 0, "speed_up": 0, "speed_down": 0}
     now = time.time()
-    if not _gpu_cache or (now - _gpu_time) > 10:
+    if not _gpu_cache or (now - _gpu_time) > 5:
         gpu = {"name": "N/A", "usage": 0, "memory_total": 0, "memory_used": 0, "temperature": 0, "driver": "N/A"}
         try:
             r = subprocess.run(["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,driver_version", "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=2)
@@ -90,6 +102,26 @@ def sysinfo():
                     gpu = {"name": p[0].strip(), "usage": int(p[1]), "memory_used": int(p[2]), "memory_total": int(p[3]), "temperature": int(p[4]), "driver": p[5].strip()}
         except:
             pass
+        if gpu["name"] == "N/A" and os.name == 'nt':
+            try:
+                r = subprocess.run(["wmic", "path", "win32_VideoController", "get", "Name,AdapterRAM,DriverVersion,CurrentHorizontalResolution,CurrentVerticalResolution", "/format:csv"], capture_output=True, text=True, timeout=5)
+                for line in r.stdout.strip().split("\n")[1:]:
+                    if line.strip() and "Node" not in line:
+                        parts = [x.strip() for x in line.split(",") if x.strip()]
+                        for p in parts:
+                            if "GB" in p or "MB" in p or not any(c.isdigit() for c in p):
+                                continue
+                        name = parts[1] if len(parts) > 1 else gpu["name"]
+                        ram_str = parts[2] if len(parts) > 2 else "0"
+                        driver = parts[3] if len(parts) > 3 else gpu["driver"]
+                        try:
+                            mem_total = int(ram_str) // (1024*1024) if ram_str.isdigit() else 0
+                        except:
+                            mem_total = 0
+                        if name.lower() != "name":
+                            gpu = {"name": name, "usage": gpu["usage"], "memory_total": mem_total, "memory_used": gpu["memory_used"], "temperature": gpu["temperature"], "driver": driver}
+            except:
+                pass
         _gpu_cache = gpu
         _gpu_time = now
     out["gpu"] = _gpu_cache
