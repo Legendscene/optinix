@@ -112,4 +112,47 @@ export const api = {
   tweaksApplyMultiple: (tweaks: Record<string, boolean>) => post('/api/tweaks/apply-multiple', { tweaks }),
   tweaksExport: (tweaks: Record<string, boolean>) => post('/api/tweaks/export', { tweaks }),
   tweaksImport: (tweaks: Record<string, boolean>) => post('/api/tweaks/import', { tweaks }),
+
+  // ---- Driver Updater ----
+  driverCheckUpdates: () => get<{ total: number; outdated: number; up_to_date: number; drivers: { name: string; version: string; latest_version: string; update_available: boolean; category: string; manufacturer: string; download_url?: string }[] }>('/api/drivers/check-updates'),
+  driverDownload: (name: string) => post('/api/drivers/download', { name }),
+  driverInstall: (name: string) => post('/api/drivers/install', { name }),
+  driverDownloadAll: () => post('/api/drivers/download-all'),
+  driverInstallAll: () => post('/api/drivers/install-all'),
+
+  // ---- Software Updater ----
+  softwareCheckUpdates: () => get<{ total: number; updates_available: number; up_to_date: number; software: { name: string; current_version: string; latest_version: string; update_available: boolean; download_url: string; category: string }[] }>('/api/software/check-updates'),
+
+  // ---- Duplicate & Large Files ----
+  fileDuplicates: () => post<{ duplicates: { original: string; duplicate: string; size: number; original_name: string; duplicate_name: string }[] }>('/api/files/duplicates'),
+  fileLarge: (minSizeMb = 500) => post<{ large_files: { path: string; name: string; size: number; category: string }[] }>('/api/files/large', { min_size_mb: minSizeMb }),
+  fileDelete: (path: string) => post('/api/files/delete', { path }),
+
+  // ---- File Shredder ----
+  fileShred: (path: string, passes = 3) => post('/api/files/shred', { path, passes }),
+  fileShredFolder: (path: string, passes = 3) => post('/api/files/shred-folder', { path, passes }),
+
+  // ---- Disk Tools (Defrag/TRIM) ----
+  diskDefrag: (drive = 'C:') => post('/api/disk/defrag', { drive }),
+  diskTrim: (drive = 'C:') => post('/api/disk/trim', { drive }),
+  diskDriveInfo: (drive = 'C:') => post<{ drive: string; total?: number; used?: number; free?: number; percent?: number; model?: string; is_ssd?: boolean }>('/api/disk/drive-info', { drive }),
+
+  // ---- System Repair ----
+  repairSfc: () => post('/api/repair/sfc'),
+  repairDism: () => post('/api/repair/dism'),
+  repairCheckDisk: (drive = 'C:') => post('/api/repair/check-disk', { drive }),
+
+  // ---- Startup Timer ----
+  startupTimer: () => get<{ uptime_seconds: number; uptime_formatted: string; boot_time: string; startup_processes: { name: string; pid: number; start_time: string; cpu: number }[]; total_startup_processes: number }>('/api/startup/timer'),
+
+  // ---- Context Menu ----
+  contextMenu: () => get<{ items: { key: string; name: string; command: string; location: string }[] }>('/api/context-menu'),
+  contextMenuDisable: (key: string) => post('/api/context-menu/disable', { key }),
+  contextMenuEnable: (key: string) => post('/api/context-menu/enable', { key }),
+
+  // ---- Speed Test ----
+  speedTestPing: (host = '8.8.8.8', count = 4) => post('/api/speed-test/ping', { host, count }),
+  speedTestDownload: (sizeMb = 25) => post('/api/speed-test/download', { size_mb: sizeMb }),
+  speedTestUpload: (sizeMb = 5) => post('/api/speed-test/upload', { size_mb: sizeMb }),
+  speedTestAll: () => post<{ ping: { avg_ms: number; min_ms: number; max_ms: number; packet_loss: number }; download: { download_mbps: number }; upload: { upload_mbps: number } }>('/api/speed-test/all'),
 }

@@ -987,6 +987,256 @@ def ping_host():
         return jsonify({"error": str(e)})
 
 
+# ==================== DRIVER UPDATER ====================
+@app.route("/api/drivers/check-updates")
+def drv_check_updates():
+    try:
+        from core.driver_updater import DriverUpdater
+        return jsonify(DriverUpdater(OS).get_scan_summary())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/drivers/download", methods=["POST"])
+def drv_download():
+    try:
+        d = request.get_json() or {}
+        from core.driver_updater import DriverUpdater
+        return jsonify(DriverUpdater(OS).download_driver(d.get("name", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/drivers/install", methods=["POST"])
+def drv_install():
+    try:
+        d = request.get_json() or {}
+        from core.driver_updater import DriverUpdater
+        return jsonify(DriverUpdater(OS).install_driver(d.get("name", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/drivers/download-all", methods=["POST"])
+def drv_dl_all():
+    try:
+        from core.driver_updater import DriverUpdater
+        return jsonify(DriverUpdater(OS).download_all())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/drivers/install-all", methods=["POST"])
+def drv_inst_all():
+    try:
+        from core.driver_updater import DriverUpdater
+        return jsonify(DriverUpdater(OS).install_all())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== SOFTWARE UPDATER ====================
+@app.route("/api/software/check-updates")
+def sw_check():
+    try:
+        from core.software_updater import SoftwareUpdater
+        return jsonify(SoftwareUpdater(OS).get_updates_summary())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== DUPLICATE & LARGE FILE FINDER ====================
+@app.route("/api/files/duplicates", methods=["POST"])
+def file_dupes():
+    try:
+        from core.duplicate_finder import DuplicateFinder
+        return jsonify({"duplicates": DuplicateFinder(OS).find_duplicates()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/files/large", methods=["POST"])
+def file_large():
+    try:
+        d = request.get_json() or {}
+        from core.duplicate_finder import DuplicateFinder
+        return jsonify({"large_files": DuplicateFinder(OS).find_large_files(d.get("min_size_mb", 500))})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/files/delete", methods=["POST"])
+def file_del():
+    try:
+        d = request.get_json() or {}
+        from core.duplicate_finder import DuplicateFinder
+        return jsonify(DuplicateFinder(OS).delete_file(d.get("path", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== FILE SHREDDER ====================
+@app.route("/api/files/shred", methods=["POST"])
+def file_shred():
+    try:
+        d = request.get_json() or {}
+        from core.disk_tools import DiskTools
+        return jsonify(DiskTools(OS).shred_file(d.get("path", ""), d.get("passes", 3)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/files/shred-folder", methods=["POST"])
+def file_shred_folder():
+    try:
+        d = request.get_json() or {}
+        from core.disk_tools import DiskTools
+        return jsonify(DiskTools(OS).shred_folder(d.get("path", ""), d.get("passes", 3)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== DISK TOOLS (DEFRAG / TRIM) ====================
+@app.route("/api/disk/defrag", methods=["POST"])
+def disk_defrag():
+    try:
+        d = request.get_json() or {}
+        from core.disk_tools import DiskTools
+        return jsonify(DiskTools(OS).defragment(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/disk/trim", methods=["POST"])
+def disk_trim():
+    try:
+        d = request.get_json() or {}
+        from core.disk_tools import DiskTools
+        return jsonify(DiskTools(OS).trim(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/disk/drive-info", methods=["POST"])
+def disk_drive_info():
+    try:
+        d = request.get_json() or {}
+        from core.disk_tools import DiskTools
+        return jsonify(DiskTools(OS).get_drive_info(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== SYSTEM REPAIR ====================
+@app.route("/api/repair/sfc", methods=["POST"])
+def repair_sfc():
+    try:
+        from core.system_repair import SystemRepair
+        return jsonify(SystemRepair(OS).sfc_scan())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/repair/dism", methods=["POST"])
+def repair_dism():
+    try:
+        from core.system_repair import SystemRepair
+        return jsonify(SystemRepair(OS).dism_restore())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/repair/check-disk", methods=["POST"])
+def repair_chkdsk():
+    try:
+        d = request.get_json() or {}
+        from core.system_repair import SystemRepair
+        return jsonify(SystemRepair(OS).check_disk(d.get("drive", "C:")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== STARTUP TIMER ====================
+@app.route("/api/startup/timer")
+def startup_timer():
+    try:
+        from core.system_repair import StartupTimer
+        return jsonify(StartupTimer().get_startup_times())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== CONTEXT MENU MANAGER ====================
+@app.route("/api/context-menu")
+def ctx_menu_list():
+    try:
+        from core.system_repair import ContextMenuManager
+        return jsonify({"items": ContextMenuManager().get_items()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/context-menu/disable", methods=["POST"])
+def ctx_menu_disable():
+    try:
+        d = request.get_json() or {}
+        from core.system_repair import ContextMenuManager
+        return jsonify(ContextMenuManager().disable_item(d.get("key", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/context-menu/enable", methods=["POST"])
+def ctx_menu_enable():
+    try:
+        d = request.get_json() or {}
+        from core.system_repair import ContextMenuManager
+        return jsonify(ContextMenuManager().enable_item(d.get("key", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== SPEED TEST ====================
+@app.route("/api/speed-test/ping", methods=["POST"])
+def speed_ping():
+    try:
+        d = request.get_json() or {}
+        from core.speed_test import SpeedTest
+        return jsonify(SpeedTest().test_ping(d.get("host", "8.8.8.8"), d.get("count", 4)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/speed-test/download", methods=["POST"])
+def speed_dl():
+    try:
+        d = request.get_json() or {}
+        from core.speed_test import SpeedTest
+        return jsonify(SpeedTest().test_download(d.get("size_mb", 25)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/speed-test/upload", methods=["POST"])
+def speed_ul():
+    try:
+        d = request.get_json() or {}
+        from core.speed_test import SpeedTest
+        return jsonify(SpeedTest().test_upload(d.get("size_mb", 5)))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/speed-test/all", methods=["POST"])
+def speed_all():
+    try:
+        from core.speed_test import SpeedTest
+        return jsonify(SpeedTest().test_all())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==================== HEALTH ====================
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "os": OS})

@@ -37,6 +37,11 @@ const DebloatPage = lazy(() => import('./components/pages/DebloatPage').then(m =
 const BiosPage = lazy(() => import('./components/pages/BiosPage').then(m => ({ default: m.BiosPage })))
 const PeripheralPage = lazy(() => import('./components/pages/PeripheralPage').then(m => ({ default: m.PeripheralPage })))
 const DevicePage = lazy(() => import('./components/pages/DevicePage').then(m => ({ default: m.DevicePage })))
+const DriverBoosterPage = lazy(() => import('./components/pages/DriverBoosterPage').then(m => ({ default: m.DriverBoosterPage })))
+const SoftwarePage = lazy(() => import('./components/pages/SoftwarePage').then(m => ({ default: m.SoftwarePage })))
+const FileToolsPage = lazy(() => import('./components/pages/FileToolsPage').then(m => ({ default: m.FileToolsPage })))
+const SystemRepairPage = lazy(() => import('./components/pages/SystemRepairPage').then(m => ({ default: m.SystemRepairPage })))
+const SpeedTestPage = lazy(() => import('./components/pages/SpeedTestPage').then(m => ({ default: m.SpeedTestPage })))
 
 const PageFallback = () => (
   <div className="p-6 space-y-6">
@@ -87,6 +92,11 @@ const pages: Record<string, React.ComponentType<{ systemInfo: ReturnType<typeof 
   bios: BiosPage,
   peripheral: PeripheralPage,
   device: DevicePage,
+  'drivers-update': DriverBoosterPage,
+  software: SoftwarePage,
+  'file-tools': FileToolsPage,
+  'system-repair': SystemRepairPage,
+  'speed-test': SpeedTestPage,
 }
 
 export default function App() {

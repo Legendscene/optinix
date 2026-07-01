@@ -7,6 +7,7 @@ import {
   Power, Battery, Clock, Wrench, Code, Puzzle, Users,
   ChevronLeft, ChevronRight, FolderKanban,
   ScanLine as Scan, FileCode, Globe, Trash2, Play, Mouse,
+  Download, Files, Activity, Package,
 } from 'lucide-react'
 
 interface NavItem { id: string; label: string; icon: ReactNode; badge?: string }
@@ -43,9 +44,16 @@ const sections: { title?: string; items: NavItem[] }[] = [
     { id: 'power', label: 'Power Plans', icon: <Battery size={16} /> },
     { id: 'scheduler', label: 'Scheduler', icon: <Clock size={16} /> },
   ]},
+  { title: 'Utilities', items: [
+    { id: 'file-tools', label: 'File Tools', icon: <Files size={16} /> },
+    { id: 'system-repair', label: 'System Repair', icon: <Wrench size={16} /> },
+    { id: 'speed-test', label: 'Speed Test', icon: <Activity size={16} /> },
+    { id: 'software', label: 'Software Updates', icon: <Package size={16} /> },
+  ]},
   { title: 'Tools', items: [
     { id: 'registry', label: 'Registry', icon: <FileCode size={16} /> },
     { id: 'drivers', label: 'Drivers', icon: <Scan size={16} /> },
+    { id: 'drivers-update', label: 'Driver Updates', icon: <Download size={16} /> },
     { id: 'windows', label: 'Windows Tweaks', icon: <Wrench size={16} /> },
     { id: 'developer', label: 'Dev Tools', icon: <Code size={16} /> },
     { id: 'toolbox', label: 'Toolbox', icon: <FolderKanban size={16} /> },
