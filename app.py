@@ -4,10 +4,12 @@ import platform
 import subprocess
 import psutil
 from flask import Flask, send_from_directory, jsonify, request
+from flask_socketio import SocketIO, emit
 
 PORT = 5420
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=None)
+socketio = SocketIO(app, cors_allowed_origins="*")
 _boot = time.time()
 _prev_net = None
 _prev_net_time = None
@@ -889,6 +891,61 @@ def mem_info():
         return jsonify({"error": str(e)})
 
 
+import threading
+import GPUtil
+
+
+@socketio.on('connect')
+def handle_connect():
+    def send_status():
+        while True:
+            try:
+                cpu = psutil.cpu_percent(interval=0.5)
+                mem = psutil.virtual_memory()
+                disk = psutil.disk_usage('/')
+                try:
+                    gpu = GPUtil.getGPUs()[0] if GPUtil.getGPUs() else None
+                except:
+                    gpu = None
+                emit('system_status', {
+                    'cpu': cpu,
+                    'memory': {'total': mem.total, 'available': mem.available, 'used': mem.used, 'percent': mem.percent},
+                    'disk': {'total': disk.total, 'used': disk.used, 'free': disk.free, 'percent': disk.percent},
+                    'gpu': {'load': gpu.load * 100 if gpu else 0, 'memory_used': gpu.memoryUsed if gpu else 0, 'memory_total': gpu.memoryTotal if gpu else 0, 'temperature': gpu.temperature if gpu else 0} if gpu else None,
+                    'processes': len(psutil.pids()),
+                    'uptime': time.time() - psutil.boot_time(),
+                    'timestamp': time.time()
+                })
+            except:
+                emit('system_status', {'error': True})
+            time.sleep(2)
+    thread = threading.Thread(target=send_status, daemon=True)
+    thread.start()
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    pass
+
+
+@app.route("/api/ping", methods=["POST"])
+def ping_host():
+    d = request.get_json() or {}
+    host = d.get("host", "8.8.8.8")
+    try:
+        param = "-n" if platform.system().lower() == "windows" else "-c"
+        result = subprocess.run(["ping", param, "4", host], capture_output=True, text=True, timeout=10)
+        return jsonify({"output": result.stdout, "error": result.stderr})
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Ping timed out"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "os": OS})
+
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

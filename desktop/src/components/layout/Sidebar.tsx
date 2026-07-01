@@ -6,7 +6,7 @@ import {
   HardDrive, Wifi, Gamepad2, Eraser, Zap, Settings2, Shield,
   Power, Battery, Clock, Wrench, Code, Puzzle, Users,
   ChevronLeft, ChevronRight, FolderKanban,
-  ScanLine as Scan, FileCode, Globe, Trash2, Play,
+  ScanLine as Scan, FileCode, Globe, Trash2, Play, Mouse,
 } from 'lucide-react'
 
 interface NavItem { id: string; label: string; icon: ReactNode; badge?: string }
@@ -25,6 +25,8 @@ const sections: { title?: string; items: NavItem[] }[] = [
     { id: 'memory', label: 'Memory', icon: <MemoryIcon size={16} /> },
     { id: 'storage', label: 'Storage', icon: <HardDrive size={16} /> },
     { id: 'bios', label: 'BIOS', icon: <Settings2 size={16} /> },
+    { id: 'peripheral', label: 'Peripherals', icon: <Mouse size={16} /> },
+    { id: 'device', label: 'Devices', icon: <Monitor size={16} /> },
   ]},
   { title: 'Network', items: [
     { id: 'network', label: 'Network', icon: <Wifi size={16} /> },

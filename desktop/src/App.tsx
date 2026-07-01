@@ -35,6 +35,8 @@ const SchedulerPage = lazy(() => import('./components/pages/SchedulerPage').then
 const GameModePage = lazy(() => import('./components/pages/GameModePage').then(m => ({ default: m.GameModePage })))
 const DebloatPage = lazy(() => import('./components/pages/DebloatPage').then(m => ({ default: m.DebloatPage })))
 const BiosPage = lazy(() => import('./components/pages/BiosPage').then(m => ({ default: m.BiosPage })))
+const PeripheralPage = lazy(() => import('./components/pages/PeripheralPage').then(m => ({ default: m.PeripheralPage })))
+const DevicePage = lazy(() => import('./components/pages/DevicePage').then(m => ({ default: m.DevicePage })))
 
 const PageFallback = () => (
   <div className="p-6 space-y-6">
@@ -83,6 +85,8 @@ const pages: Record<string, React.ComponentType<{ systemInfo: ReturnType<typeof 
   'game-mode': GameModePage,
   debloat: DebloatPage,
   bios: BiosPage,
+  peripheral: PeripheralPage,
+  device: DevicePage,
 }
 
 export default function App() {
