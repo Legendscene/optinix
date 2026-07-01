@@ -7,7 +7,7 @@ import {
   Power, Battery, Clock, Wrench, Code, Puzzle, Users,
   ChevronLeft, ChevronRight, FolderKanban,
   ScanLine as Scan, FileCode, Globe, Trash2, Play, Mouse,
-  Download, Files, Activity, Package,
+  Download, Files, Activity, Package, Undo2,
 } from 'lucide-react'
 
 interface NavItem { id: string; label: string; icon: ReactNode; badge?: string }
@@ -60,6 +60,7 @@ const sections: { title?: string; items: NavItem[] }[] = [
     { id: 'plugins', label: 'Plugins', icon: <Puzzle size={16} /> },
   ]},
   { title: 'Other', items: [
+    { id: 'rollback', label: 'Rollback', icon: <Undo2 size={16} /> },
     { id: 'settings', label: 'Settings', icon: <Settings2 size={16} /> },
   ]},
 ]

@@ -43,6 +43,7 @@ const SoftwarePage = lazy(() => import('./components/pages/SoftwarePage').then(m
 const FileToolsPage = lazy(() => import('./components/pages/FileToolsPage').then(m => ({ default: m.FileToolsPage })))
 const SystemRepairPage = lazy(() => import('./components/pages/SystemRepairPage').then(m => ({ default: m.SystemRepairPage })))
 const SpeedTestPage = lazy(() => import('./components/pages/SpeedTestPage').then(m => ({ default: m.SpeedTestPage })))
+const RollbackPage = lazy(() => import('./components/pages/RollbackPage'))
 
 const PageFallback = () => (
   <div className="p-6 space-y-6">
@@ -98,6 +99,7 @@ const pages: Record<string, React.ComponentType<{ systemInfo: ReturnType<typeof 
   'file-tools': FileToolsPage,
   'system-repair': SystemRepairPage,
   'speed-test': SpeedTestPage,
+  'rollback': RollbackPage,
 }
 
 export default function App() {

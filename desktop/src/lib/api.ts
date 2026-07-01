@@ -155,4 +155,9 @@ export const api = {
   speedTestDownload: (sizeMb = 25) => post('/api/speed-test/download', { size_mb: sizeMb }),
   speedTestUpload: (sizeMb = 5) => post('/api/speed-test/upload', { size_mb: sizeMb }),
   speedTestAll: () => post<{ ping: { avg_ms: number; min_ms: number; max_ms: number; packet_loss: number }; download: { download_mbps: number }; upload: { upload_mbps: number } }>('/api/speed-test/all'),
+
+  // ---- Rollback ----
+  rollbackSnapshots: () => get<{ snapshots: { file: string; created: string; os: string }[] }>('/api/rollback/snapshots'),
+  rollbackRestore: (file: string) => post<{ success: boolean; results: { success: boolean; message: string }[]; total: number; ok: number }>('/api/rollback/restore', { file }),
+  rollbackCreateSnapshot: () => post<{ success: boolean; file: string }>('/api/rollback/create-snapshot'),
 }

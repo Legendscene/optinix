@@ -17,6 +17,7 @@ _gpu_cache = None
 _gpu_time = 0
 OS = {"Windows": "windows", "Darwin": "macos", "Linux": "linux"}.get(platform.system(), "unknown")
 _bg_optimizer = None
+_rollback_engine = None
 
 
 UI_DIR = os.path.join(BASE_DIR, "desktop", "dist")
@@ -337,6 +338,47 @@ def optimize(cat):
     if isinstance(_out, dict) and _out.get("error"):
         return jsonify(_out), 500
     return jsonify(_out)
+
+
+@app.route("/api/rollback/snapshots")
+def rollback_snapshots():
+    from core.rollback_engine import RollbackEngine
+    re = RollbackEngine(OS)
+    try:
+        files = sorted([f for f in os.listdir(re.log_dir) if f.startswith("snapshot_") and f.endswith(".json")], reverse=True)
+        snapshots = []
+        for f in files:
+            fp = os.path.join(re.log_dir, f)
+            try:
+                with open(fp) as fh:
+                    data = json.load(fh)
+                snapshots.append({"file": f, "created": data.get("created", ""), "os": data.get("os", "")})
+            except:
+                snapshots.append({"file": f, "created": "", "os": ""})
+        return jsonify({"snapshots": snapshots[:20]})
+    except Exception as e:
+        return jsonify({"snapshots": [], "error": str(e)})
+
+
+@app.route("/api/rollback/restore", methods=["POST"])
+def rollback_restore():
+    from core.rollback_engine import RollbackEngine
+    data = request.get_json(silent=True) or {}
+    file = data.get("file", "")
+    re = RollbackEngine(OS)
+    snap_file = os.path.join(re.log_dir, file) if file else re.snapshot_file
+    results = re.full_restore(snap_file)
+    success = sum(1 for r in results if r.get("success"))
+    return jsonify({"success": success == len(results), "results": results, "total": len(results), "ok": success})
+
+
+@app.route("/api/rollback/create-snapshot", methods=["POST"])
+def rollback_create():
+    from core.rollback_engine import RollbackEngine
+    re = RollbackEngine(OS)
+    re.snapshot_power_plan()
+    fp = re.save_snapshot()
+    return jsonify({"success": True, "file": os.path.basename(fp)})
 
 
 @app.route("/api/background/status")
