@@ -25,7 +25,6 @@ class DiskAnalyzer:
             ("Thumbnails", self._scan_thumbnails, "Thumbnail cache files"),
             ("Prefetch", self._scan_prefetch, "App prefetch files"),
             ("Old Windows", self._scan_old_windows, "Previous Windows installation(s)"),
-            ("Recycle Bin", self._scan_recycle_bin, "Files in Recycle Bin"),
         ]
 
         for name, scanner, desc in cat_config:
@@ -73,9 +72,11 @@ class DiskAnalyzer:
 
     def _scan_recycle_bin(self, drive: str) -> List[Dict[str, Any]]:
         try:
+            drive_letter = drive[0]
+            guid_path = f"::{drive_letter}645FF040-5081-101B-9F08-00AA002F954E"
+            ps_cmd = f"(Get-ChildItem '{guid_path}' -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum"
             r = subprocess.run(
-                ["powershell", "-NoProfile", "-Command",
-                 f"(Get-ChildItem '::{drive[0]}645FF040-5081-101B-9F08-00AA002F954E}' -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum"],
+                ["powershell", "-NoProfile", "-Command", ps_cmd],
                 capture_output=True, text=True, timeout=10
             )
             sz = int(r.stdout.strip()) if r.stdout.strip().isdigit() else 0

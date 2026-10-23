@@ -1,5 +1,6 @@
 import psutil
 import subprocess
+import ctypes
 from typing import Dict, List, Any
 
 class MemoryManager:
@@ -51,16 +52,25 @@ class MemoryManager:
 
     def auto_optimize(self) -> Dict[str, Any]:
         results = []
-        targets = ["Spotify", "Discord", "Skype", "OneDrive", "Teams", "Slack"]
-        killed = 0
-        for proc in psutil.process_iter(['name']):
+        cleared = 0
+        essential_prefixes = ["system", "smss", "csrss", "wininit", "services",
+                              "lsass", "svchost", "winlogon", "fontdrvhost",
+                              "sihost", "taskhostw", "ctfmon", "explorer"]
+        for proc in psutil.process_iter(['pid', 'name']):
             try:
-                if proc.info['name'] in targets:
-                    proc.kill()
-                    killed += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                name = proc.info['name']
+                if not name:
+                    continue
+                if any(name.lower().startswith(p) for p in essential_prefixes):
+                    continue
+                handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, proc.info['pid'])
+                if handle:
+                    ctypes.windll.psapi.EmptyWorkingSet(handle)
+                    ctypes.windll.kernel32.CloseHandle(handle)
+                    cleared += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied, Exception):
                 continue
-        results.append({"success": True, "message": f"Killed {killed} heavy processes"})
+        results.append({"success": True, "message": f"Cleared working sets of {cleared} processes"})
         ram = self.free_ram()
         results.extend(ram.get("results", []))
         return {"success": True, "results": results}

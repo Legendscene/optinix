@@ -125,7 +125,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -163,8 +163,8 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
   ]
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 50%, #7c3aed 0%, transparent 70%)' }} />
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 50%, var(--color-accent) 0%, transparent 70%)' }} />
       <div className="absolute inset-0 opacity-3" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%237c3aed%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
 
       <motion.div variants={item} className="relative z-10 flex items-center justify-between">
@@ -188,7 +188,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
       </motion.div>
 
       <motion.div variants={item} className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={<BrainCircuit className="w-5 h-5" />} label="AI Confidence" value={`${aiAnalysis?.confidence ?? 92}%`} progress={aiAnalysis?.confidence ?? 92} progressColor="#7c3aed" sub="Model certainty score" />
+        <MetricCard icon={<BrainCircuit className="w-5 h-5" />} label="AI Confidence" value={`${aiAnalysis?.confidence ?? 92}%`} progress={aiAnalysis?.confidence ?? 92} progressColor="var(--chart-1)" sub="Model certainty score" />
         <MetricCard icon={<BarChart3 className="w-5 h-5" />} label="Patterns Analyzed" value={String(aiAnalysis?.patternsAnalyzed ?? (smartDetect ? 147 : 0))} sub="System behavior patterns" />
         <MetricCard icon={<Sparkles className="w-5 h-5" />} label="Recommendations" value={String(aiAnalysis?.recommendations?.length ?? (smartDetect?.recommendations?.length ?? 0))} sub="Actionable optimizations" />
         <MetricCard icon={<Calendar className="w-5 h-5" />} label="Last Scan" value={aiAnalysis?.lastScan ? new Date(aiAnalysis.lastScan).toLocaleTimeString() : (loadingSmart ? 'Scanning...' : 'Never')} sub={loadingSmart ? 'Analyzing system...' : 'Manual or scheduled'} />
@@ -198,7 +198,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
         <div className="flex items-center gap-2 mb-4">
           <div className="flex gap-1 bg-surface-2 p-1 rounded-lg">
             {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as 'recommendations' | 'analysis' | 'schedule')} className={cn('flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all', activeTab === tab.id ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:text-text')}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id as 'recommendations' | 'analysis' | 'schedule')} className={cn('flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all', activeTab === tab.id ? 'bg-accent text-surface-0 shadow-md' : 'text-text-secondary hover:text-text')}>
                 {tab.icon}
                 {tab.label}
               </button>
@@ -219,7 +219,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
                 {aiAnalysis.recommendations.map((rec, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="group relative p-4 rounded-xl bg-surface-2/60 hover:bg-surface-2 transition-colors border border-transparent hover:border-accent/30">
                     <div className="flex items-start gap-3">
-                      <div className={cn('p-2.5 rounded-lg shrink-0', rec.priority === 'high' ? 'bg-red-dim text-red' : rec.priority === 'medium' ? 'bg-yellow-dim text-yellow' : 'bg-blue-dim text-blue')}>
+                      <div className={cn('p-2.5 rounded-lg shrink-0', rec.priority === 'high' ? 'bg-red-dim text-red' : rec.priority === 'medium' ? 'bg-yellow-dim text-yellow' : 'bg-cyan-dim text-cyan')}>
                         {typeIcon[rec.type] ?? <ZapSmall className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -284,7 +284,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
               ))}
             </div>
             <div className="mt-4 p-4 rounded-xl bg-surface-2/40 border border-border">
-              <div className="flex items-center gap-2 mb-2"><Info className="w-4 h-4 text-blue" /><span className="text-sm font-medium text-text">Analysis Summary</span></div>
+              <div className="flex items-center gap-2 mb-2"><Info className="w-4 h-4 text-cyan" /><span className="text-sm font-medium text-text">Analysis Summary</span></div>
               <p className="text-xs text-text-secondary">AI analyzed {aiAnalysis?.patternsAnalyzed ?? 147} system behavior patterns across CPU scheduling, memory pressure, disk I/O, network latency, and startup sequences.{aiAnalysis?.confidence && ` Confidence level: ${aiAnalysis.confidence}%`}</p>
             </div>
           </Card>
@@ -336,7 +336,7 @@ export function AiOptimizerPage({ systemInfo }: { systemInfo: SystemInfo | null 
       </motion.div>
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>

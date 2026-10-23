@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
@@ -75,13 +76,13 @@ export function OverclockPage({ systemInfo }: { systemInfo: SystemInfo | null })
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Zap className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Overclock & Tuning</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Push hardware to limits</p>
+        <PageHero
+          title="Overclock & Tuning"
+          subtitle="Push hardware to limits"
+          icon={<Zap size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-3 gap-4">

@@ -18,6 +18,7 @@ import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { Button } from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -135,12 +136,12 @@ export default function RegistryPage({ systemInfo }: { systemInfo: SystemInfo | 
   const selectAll = useCallback(() => setIssues(prev => prev.map(i => ({ ...i, selected: true }))), [])
   const selectNone = useCallback(() => setIssues(prev => prev.map(i => ({ ...i, selected: false }))), [])
 
-  const severityColor = (s: string) => s === 'critical' ? 'text-red' : s === 'high' ? 'text-red' : s === 'medium' ? 'text-yellow' : 'text-blue'
-  const severityBg = (s: string) => s === 'critical' ? 'bg-red-dim' : s === 'high' ? 'bg-red-dim' : s === 'medium' ? 'bg-yellow-dim' : 'bg-blue-dim'
+  const severityColor = (s: string) => s === 'critical' ? 'text-red' : s === 'high' ? 'text-red' : s === 'medium' ? 'text-yellow' : 'text-cyan'
+  const severityBg = (s: string) => s === 'critical' ? 'bg-red-dim' : s === 'high' ? 'bg-red-dim' : s === 'medium' ? 'bg-yellow-dim' : 'bg-cyan-dim'
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -161,26 +162,26 @@ export default function RegistryPage({ systemInfo }: { systemInfo: SystemInfo | 
   const highCount = issues.filter(i => i.severity === 'high').length
 
   return (
-    <motion.div initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-surface-2 text-accent"><Database className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Registry Cleaner</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Clean and optimize Windows registry</p>
-        </div>
-        <motion.div className="flex items-center gap-2">
-          <span className={cn('px-3 py-1 rounded-full text-xs font-medium', criticalCount > 0 ? 'bg-red-dim text-red' : 'bg-green-dim text-green')}>
-            {criticalCount > 0 ? `${criticalCount} Critical` : 'Healthy'}
-          </span>
-          <span className="px-3 py-1 rounded-full bg-yellow-dim text-yellow text-xs font-medium">{highCount} High</span>
-        </motion.div>
-      </motion.div>
+    <motion.div initial="hidden" animate="show" className="page space-y-6">
+            <PageHero
+        title="Registry Cleaner"
+        subtitle="Clean and optimize Windows registry"
+        icon={<Database size={19} />}
+        actions={
+          <>
+    <motion.div className="flex items-center gap-2">
+              <span className={cn('px-3 py-1 rounded-full text-xs font-medium', criticalCount > 0 ? 'bg-red-dim text-red' : 'bg-green-dim text-green')}>
+                {criticalCount > 0 ? `${criticalCount} Critical` : 'Healthy'}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-yellow-dim text-yellow text-xs font-medium">{highCount} High</span>
+            </motion.div>
+          </>
+        }
+      />
 
       <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard icon={<Database className="w-5 h-5" />} label="Total Issues" value={String(issues.length)} progress={Math.min(issues.length * 5, 100)} sub="Registry entries" />
-        <MetricCard icon={<AlertTriangle className="w-5 h-5" />} label="Critical" value={String(criticalCount)} progressColor="#ef4444" sub="Immediate action needed" />
+        <MetricCard icon={<AlertTriangle className="w-5 h-5" />} label="Critical" value={String(criticalCount)} progressColor="var(--color-red)" sub="Immediate action needed" />
         <MetricCard icon={<Shield className="w-5 h-5" />} label="Backups" value={String(backupCount)} sub="Available restore points" />
         <MetricCard icon={<RotateCw className="w-5 h-5" />} label="Last Clean" value={scanning ? 'Scanning...' : '2 days ago'} sub={scanning ? `${scanProgress}%` : 'Last maintenance'} />
       </motion.div>
@@ -254,7 +255,7 @@ export default function RegistryPage({ systemInfo }: { systemInfo: SystemInfo | 
       </motion.div>
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>

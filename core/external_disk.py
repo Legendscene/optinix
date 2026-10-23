@@ -11,12 +11,14 @@ class ExternalDiskManager:
     def _is_ssd(self, device):
         if self.os_type == "windows":
             try:
+                clean = device.replace("\\\\", "").replace(":", "")
+                ns = "root\\cimv2"
+                ps_cmd = f"Get-CimInstance -Namespace '{ns}' -ClassName MSFT_PhysicalDisk | "
+                ps_cmd += f"Where-Object {{$_.DeviceId -eq (Get-CimInstance -Namespace '{ns}' -ClassName MSFT_Disk | "
+                ps_cmd += f"Where-Object {{$_.Path -like '*{clean}*'}}).Number}} | "
+                ps_cmd += "Select-Object -ExpandProperty MediaType | ConvertTo-Json"
                 r = subprocess.run(
-                    ["powershell", "-NoProfile", "-Command",
-                     f"Get-CimInstance -Namespace root\\cimv2 -ClassName MSFT_PhysicalDisk | "
-                     f"Where-Object {{$_.DeviceId -eq (Get-CimInstance -Namespace root\\cimv2 -ClassName MSFT_Disk | "
-                     f"Where-Object {{$_.Path -like '*{device.replace('\\\\','').replace(':','')}*'}}).Number}} | "
-                     f"Select-Object -ExpandProperty MediaType | ConvertTo-Json"],
+                    ["powershell", "-NoProfile", "-Command", ps_cmd],
                     capture_output=True, text=True, timeout=10
                 )
                 if r.stdout.strip():

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Activity,
   Gauge,
   ArrowDown,
   ArrowUp,
@@ -13,8 +12,8 @@ import {
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 
-import { Badge } from '../ui/Badge'
-import { MetricCard } from '../ui/MetricCard'
+import { Button } from '../ui/Button'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 
@@ -75,52 +74,35 @@ export function SpeedTestPage() {
     setTesting(false)
   }, [])
 
-  const gaugePercent = (mbps: number, max: number) => Math.min(100, Math.round((mbps / max) * 100))
+  const phaseLabel = testing
+    ? phase === 'ping' ? 'Testing ping…'
+      : phase === 'download' ? 'Testing download…'
+      : phase === 'upload' ? 'Testing upload…' : 'Running…'
+    : phase === 'done' ? 'Complete' : 'Idle'
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+      {/* The hero is the readout: last measured ping, download and upload are
+          already the three numbers people come here for, so repeating them in
+          a tile row underneath added nothing. */}
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Activity className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Speed Test</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Measure your internet connection speed</p>
-      </motion.div>
-
-      <motion.div variants={item} className="flex flex-col items-center gap-4 py-6">
-        <div className="relative">
-          <div className={cn(
-            'w-32 h-32 rounded-full flex items-center justify-center border-4 transition-all duration-500',
-            phase === 'idle' ? 'border-accent/40 bg-accent-dim/20' :
-            phase === 'done' ? 'border-green bg-green-dim/20' :
-            'border-accent bg-accent-dim/20 animate-pulse'
-          )}>
-            <button
-              onClick={startTest}
-              disabled={testing}
-              className="w-full h-full rounded-full flex flex-col items-center justify-center cursor-pointer disabled:opacity-50"
-            >
-              {testing ? (
-                <svg className="animate-spin w-8 h-8 text-accent" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                  <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
-                </svg>
-              ) : (
-                <Play className="w-8 h-8 text-accent" />
-              )}
-              <span className="text-[10px] text-text-secondary mt-1">Start Test</span>
-            </button>
-          </div>
-          {testing && (
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <Badge variant="accent">
-                {phase === 'ping' ? 'Testing Ping...' :
-                 phase === 'download' ? 'Testing Download...' :
-                 phase === 'upload' ? 'Testing Upload...' : ''}
-              </Badge>
-            </div>
-          )}
-        </div>
+        <PageHero
+          eyebrow="Network · Measure"
+          title="Speed Test"
+          subtitle="One sequential run: ICMP ping first, then download, then upload. Nothing is cached between runs."
+          icon={<Gauge size={19} />}
+          stats={[
+            { label: 'Ping', value: pingResult ? `${pingResult.avg_ms.toFixed(1)} ms` : '—', hint: pingResult ? `min ${pingResult.min_ms} / max ${pingResult.max_ms}` : 'not measured' },
+            { label: 'Download', value: downloadResult?.download_mbps != null ? `${downloadResult.download_mbps.toFixed(1)}` : '—', hint: 'Mbps' },
+            { label: 'Upload', value: uploadResult?.upload_mbps != null ? `${uploadResult.upload_mbps.toFixed(1)}` : '—', hint: 'Mbps' },
+            { label: 'Status', value: phaseLabel, tone: testing ? 'accent' : phase === 'done' ? 'good' : 'default', hint: history.length ? `${history.length} run(s) this session` : undefined },
+          ]}
+          actions={
+            <Button variant="primary" size="md" icon={<Play size={14} />} onClick={startTest} loading={testing}>
+              {phase === 'done' ? 'Test again' : 'Start test'}
+            </Button>
+          }
+        />
       </motion.div>
 
       {error && (
@@ -134,27 +116,6 @@ export function SpeedTestPage() {
 
       {(pingResult || downloadResult || uploadResult) && (
         <>
-          <motion.div variants={item} className="grid grid-cols-3 gap-4">
-            <MetricCard
-              icon={<Clock className="w-5 h-5" />}
-              label="Ping"
-              value={pingResult ? `${pingResult.avg_ms.toFixed(1)} ms` : '--'}
-              sub={pingResult ? `min: ${pingResult.min_ms}ms / max: ${pingResult.max_ms}ms` : undefined}
-            />
-            <MetricCard
-              icon={<ArrowDown className="w-5 h-5" />}
-              label="Download"
-              value={downloadResult?.download_mbps != null ? `${downloadResult.download_mbps.toFixed(1)} Mbps` : '--'}
-              progress={downloadResult?.download_mbps != null ? gaugePercent(downloadResult.download_mbps, 1000) : 0}
-            />
-            <MetricCard
-              icon={<ArrowUp className="w-5 h-5" />}
-              label="Upload"
-              value={uploadResult?.upload_mbps != null ? `${uploadResult.upload_mbps.toFixed(1)} Mbps` : '--'}
-              progress={uploadResult?.upload_mbps != null ? gaugePercent(uploadResult.upload_mbps, 100) : 0}
-            />
-          </motion.div>
-
           {pingResult && (
             <motion.div variants={item}>
               <Card padding="lg">
@@ -163,21 +124,21 @@ export function SpeedTestPage() {
                   <h2 className="text-sm font-semibold text-text">Ping Details</h2>
                 </div>
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-surface-2 text-center">
+                  <div className="card-depth p-3 rounded-xl border border-border bg-surface-1 text-center">
                     <p className="text-[11px] text-text-tertiary">Average</p>
-                    <p className="text-lg font-semibold text-text">{pingResult.avg_ms.toFixed(1)} ms</p>
+                    <p className="text-lg font-semibold text-text tnum">{pingResult.avg_ms.toFixed(1)} ms</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-surface-2 text-center">
+                  <div className="card-depth p-3 rounded-xl border border-border bg-surface-1 text-center">
                     <p className="text-[11px] text-text-tertiary">Minimum</p>
-                    <p className="text-lg font-semibold text-text">{pingResult.min_ms.toFixed(1)} ms</p>
+                    <p className="text-lg font-semibold text-text tnum">{pingResult.min_ms.toFixed(1)} ms</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-surface-2 text-center">
+                  <div className="card-depth p-3 rounded-xl border border-border bg-surface-1 text-center">
                     <p className="text-[11px] text-text-tertiary">Maximum</p>
-                    <p className="text-lg font-semibold text-text">{pingResult.max_ms.toFixed(1)} ms</p>
+                    <p className="text-lg font-semibold text-text tnum">{pingResult.max_ms.toFixed(1)} ms</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-surface-2 text-center">
+                  <div className="card-depth p-3 rounded-xl border border-border bg-surface-1 text-center">
                     <p className="text-[11px] text-text-tertiary">Packet Loss</p>
-                    <p className={cn('text-lg font-semibold', pingResult.packet_loss > 0 ? 'text-red' : 'text-green')}>
+                    <p className={cn('text-lg font-semibold tnum', pingResult.packet_loss > 0 ? 'text-red' : 'text-green')}>
                       {pingResult.packet_loss}%
                     </p>
                   </div>
@@ -211,15 +172,6 @@ export function SpeedTestPage() {
         </>
       )}
 
-      {phase === 'idle' && !error && (
-        <motion.div variants={item}>
-          <Card padding="lg" className="text-center">
-            <Gauge className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-            <p className="text-sm text-text-secondary">Press the Start Test button to measure your connection speed.</p>
-            <p className="text-xs text-text-tertiary mt-1">Tests ping, download, and upload speeds sequentially.</p>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   )
 }

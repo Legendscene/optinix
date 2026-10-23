@@ -7,6 +7,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
+import { PageHero } from '../ui/PageHero'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Skeleton } from '../ui/Skeleton'
@@ -89,7 +90,7 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div><Skeleton variant="text" width="200px" height="28px" /><Skeleton variant="text" width="300px" height="16px" className="mt-2" /></div>
         <div className="flex gap-2"><Skeleton variant="rectangular" width="100px" height="32px" /><Skeleton variant="rectangular" width="100px" height="32px" /></div>
         <Skeleton variant="rectangular" height="400px" />
@@ -98,13 +99,20 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Server className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">Services</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Manage Windows services</p>
+        <PageHero
+          eyebrow="Optimizer · Startup and background"
+          title="Services"
+          subtitle="Every service the backend reports, with its dependency chain checked before anything is marked safe to stop."
+          icon={<Server size={19} />}
+          stats={[
+            { label: 'Running', value: String(runningCount), tone: 'good' },
+            { label: 'Stopped', value: String(Math.max(services.length - runningCount, 0)) },
+            { label: 'Safe to stop', value: String(safeCount), hint: 'no dependents', tone: 'accent' },
+            { label: 'Critical', value: String(criticalCount), hint: 'left alone', tone: criticalCount ? 'warn' : 'default' },
+          ]}
+        />
       </motion.div>
 
       <motion.div variants={item} className="flex items-center justify-between">
@@ -148,7 +156,7 @@ export function ServicesPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize',
                 filterStatus === f
-                  ? 'bg-accent text-white'
+                  ? 'bg-accent text-surface-0'
                   : 'bg-surface-2 text-text-secondary hover:bg-surface-3'
               )}
             >

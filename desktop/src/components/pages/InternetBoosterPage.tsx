@@ -22,6 +22,7 @@ import { ActionCard } from '../ui/ActionCard'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn, formatSpeed } from '../../lib/utils'
 import type { SystemInfo, NetworkAdapter } from '../../types'
 import { api } from '../../lib/api'
@@ -164,7 +165,7 @@ export default function InternetBoosterPage({ systemInfo }: { systemInfo: System
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -182,15 +183,13 @@ export default function InternetBoosterPage({ systemInfo }: { systemInfo: System
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item} className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-surface-2 text-accent"><Globe className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Internet Booster</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Optimize connection speed and stability</p>
-        </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="Internet Booster"
+          subtitle="Optimize connection speed and stability"
+          icon={<Globe size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -274,7 +273,7 @@ export default function InternetBoosterPage({ systemInfo }: { systemInfo: System
         <Card padding="lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-text flex items-center gap-2"><Shield className="w-4 h-4 text-accent" />QoS / Network Priority</h2>
-            <button onClick={toggleQoS} disabled={qosLoading} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', qosEnabled ? 'bg-accent text-white' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
+            <button onClick={toggleQoS} disabled={qosLoading} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', qosEnabled ? 'bg-accent text-surface-0' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
               {qosLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : qosEnabled ? 'Enabled' : 'Disabled'}
             </button>
           </div>
@@ -307,7 +306,7 @@ export default function InternetBoosterPage({ systemInfo }: { systemInfo: System
       )}
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>

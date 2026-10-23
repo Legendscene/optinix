@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { HardDrive, Trash2, Zap, Search, CheckCircle, AlertTriangle, XCircle, FolderKanban, RotateCw, FileText, Delete } from 'lucide-react'
 import { Card } from '../ui/Card'
-import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
+import { PageHero } from '../ui/PageHero'
 import { ProgressBar } from '../ui/ProgressBar'
 import { Skeleton } from '../ui/Skeleton'
 import { Badge } from '../ui/Badge'
@@ -199,31 +199,19 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const totalScanBytes = scanResult?.total_bytes ?? 0
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold tracking-tight text-text">Storage</h1>
-        <p className="text-sm text-text-secondary mt-1">Disk space monitoring & health management</p>
-      </motion.div>
-
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
-        <MetricCard
-          icon={<HardDrive size={18} />}
-          label="Usage"
-          value={`${percent.toFixed(1)}%`}
-          progress={percent}
-          trend={{ value: `${(Math.random() * 3).toFixed(1)}%`, up: percent > 50 }}
-        />
-        <MetricCard
-          icon={<HardDrive size={18} />}
-          label="Free"
-          value={formatGb(free)}
-          sub={`${((free / total) * 100).toFixed(0)}% of total`}
-        />
-        <MetricCard
-          icon={<HardDrive size={18} />}
-          label="Total"
-          value={formatGb(total)}
-          sub={`${disks.length} partition${disks.length !== 1 ? 's' : ''}`}
+        <PageHero
+          eyebrow="Performance · Storage"
+          title="Storage"
+          subtitle="Space and health for every volume the system reports. The scan below lists what is actually on disk, not a projection."
+          icon={<HardDrive size={19} />}
+          stats={[
+            { label: 'Used', value: `${percent.toFixed(0)}%`, hint: primary?.mountpoint ?? 'system drive', tone: percent > 90 ? 'bad' : percent > 75 ? 'warn' : 'good' },
+            { label: 'Free', value: formatGb(free), hint: `of ${formatGb(total)}` },
+            { label: 'Volumes', value: String(disks.length), hint: 'mounted' },
+            { label: 'Scanned', value: formatBytes(totalScanBytes), hint: 'reclaimable estimate' },
+          ]}
         />
       </motion.div>
 

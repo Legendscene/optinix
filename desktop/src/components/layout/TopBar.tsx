@@ -1,36 +1,153 @@
-import { Search, Bell } from 'lucide-react'
-import { StatusPill } from '../ui/StatusPill'
+import { Bell, Search, Activity, Loader2, ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { cn } from '../../lib/utils'
+import { ZONE_MAP, TOOL_MAP, type ZoneId } from '../../nav'
 
-interface TopBarProps {
+export interface TopBarVitals {
   cpu?: number
   ram?: number
   disk?: number
-  network?: string
-  temp?: string
+  netDown?: number
+  fps?: number | null
+  temp?: number | null
+  optimizing?: boolean
 }
 
-export function TopBar({ cpu = 0, ram = 0, disk = 0, network = '--', temp = '--' }: TopBarProps) {
+interface TopBarProps {
+  route: string
+  zone: ZoneId
+  vitals: TopBarVitals
+  onOpenPalette: () => void
+  onNavigate: (id: string) => void
+  unreadNotifications?: number
+  optimizing?: boolean
+}
+
+export function TopBar({
+  route, zone, vitals, onOpenPalette, onNavigate, unreadNotifications, optimizing,
+}: TopBarProps) {
+  const tool = TOOL_MAP[route]
+  const zoneMeta = ZONE_MAP[zone]
+  const ZoneIcon = zoneMeta.icon
+
   return (
-    <header className="flex items-center justify-between h-14 px-5 border-b border-border bg-surface-0/80 backdrop-blur-xl shrink-0">
-      <div className="flex items-center gap-3 flex-1 max-w-md">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-text-tertiary text-sm w-full max-w-xs">
-          <Search size={14} />
-          <span className="flex-1">Search...</span>
-          <kbd className="px-1 py-0.5 rounded bg-surface-3 text-[10px] font-mono text-text-tertiary">Ctrl+K</kbd>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <StatusPill label="CPU" value={`${cpu}%`} color={cpu > 80 ? '#ef4444' : '#22c55e'} alert={cpu > 90} />
-        <StatusPill label="RAM" value={`${ram}%`} color={ram > 80 ? '#ef4444' : '#22c55e'} alert={ram > 90} />
-        <StatusPill label="DISK" value={`${disk}%`} color={disk > 85 ? '#ef4444' : '#22c55e'} alert={disk > 95} />
-        <StatusPill label="NET" value={network} />
-        {temp !== '--' && <StatusPill label="TEMP" value={temp} />}
-        <div className="w-px h-5 bg-border mx-1" />
-        <button className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text transition-colors">
-          <Bell size={16} />
+    <header className="relative flex items-center gap-4 h-14 px-5 border-b border-border chrome shrink-0">
+      {/* Hairline catch-light along the top edge — separates the header
+          from the content below like a machined panel lip. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 35%, rgba(255,255,255,0.06) 65%, transparent)',
+        }}
+      />
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 min-w-0 shrink-0" aria-label="Breadcrumb">
+        <button
+          onClick={() => onNavigate(zone)}
+          className="flex items-center gap-1.5 h-6 px-1 -ml-1 rounded-md text-[12.5px] text-text-tertiary hover:text-text-secondary hover:bg-surface-2 transition-colors duration-150"
+        >
+          <ZoneIcon size={13} />
+          <span className="hidden lg:inline">{zoneMeta.label}</span>
         </button>
-        <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white text-xs font-semibold">O</div>
+        {tool && (
+          <>
+            <ChevronRight size={12} className="text-text-tertiary/50" />
+            <span className="text-[12.5px] text-text truncate max-w-[220px]">{tool.label}</span>
+          </>
+        )}
+      </nav>
+
+      {/* Search */}
+      <div className="flex-1 flex justify-center">
+        <button
+          onClick={onOpenPalette}
+          aria-label="Search tools (Ctrl+K)"
+          className={cn(
+            'group flex items-center gap-2.5 h-8 w-full max-w-[340px] px-3 rounded-[9px]',
+            'bg-surface-2 border border-border text-text-tertiary',
+            'hover:border-border-light hover:text-text-secondary',
+            'transition-colors duration-150',
+          )}
+        >
+          <Search size={13} className="shrink-0" />
+          <span className="text-[12.5px] flex-1 text-left truncate">
+            Search tools, games, actions…
+          </span>
+          <kbd className="text-[10px] font-mono px-1 py-px rounded bg-surface-4 border border-border shrink-0">
+            ⌃K
+          </kbd>
+        </button>
       </div>
+
+      {/* Live vitals */}
+      <div className="flex items-center gap-1 shrink-0">
+        <Vital label="CPU" value={vitals.cpu} />
+        <Vital label="RAM" value={vitals.ram} />
+        <Vital label="DISK" value={vitals.disk} />
+        {vitals.fps != null && <Vital label="FPS" value={vitals.fps} raw />}
+        {vitals.temp != null && <Vital label="TEMP" value={vitals.temp} unit="°" />}
+      </div>
+
+      <span className="w-px h-5 bg-border shrink-0" />
+
+      {optimizing && (
+        <span className="flex items-center gap-1.5 text-[11px] text-accent-ink bg-accent-dim px-2 py-1 rounded-md shrink-0">
+          <Loader2 size={11} className="animate-spin" />
+          Optimizing
+        </span>
+      )}
+
+      <button
+        onClick={() => onNavigate('notifications')}
+        aria-label="Notifications"
+        className="relative p-1.5 rounded-lg text-text-tertiary hover:text-text hover:bg-surface-2 transition-colors duration-150"
+      >
+        <Bell size={15} />
+        {!!unreadNotifications && unreadNotifications > 0 && (
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />
+        )}
+      </button>
+
+      <button
+        onClick={() => onNavigate('settings')}
+        aria-label="Settings"
+        className="p-1.5 rounded-lg text-text-tertiary hover:text-text hover:bg-surface-2 transition-colors duration-150"
+      >
+        <SlidersHorizontal size={15} />
+      </button>
     </header>
   )
+}
+
+function Vital({ label, value, unit, raw }: {
+  label: string
+  value?: number
+  unit?: string
+  raw?: boolean
+}) {
+  const tone =
+    value == null ? 'text-text-tertiary'
+      : !raw && value >= 90 ? 'text-red'
+        : !raw && value >= 75 ? 'text-yellow'
+          : 'text-text-secondary'
+
+  return (
+    <div
+      className="flex items-baseline gap-1 px-2 py-1 rounded-md hover:bg-surface-2 transition-colors duration-150 cursor-default"
+      title={value == null ? `${label}: unavailable` : `${label}: ${value}${unit ?? '%'}`}
+    >
+      <span className="text-[10.5px] font-semibold tracking-[0.04em] text-text-tertiary uppercase">
+        {label}
+      </span>
+      <span className={cn('text-[11.5px] font-medium tnum', tone)}>
+        {value == null ? '—' : Math.round(value)}
+        {value != null && unit}
+      </span>
+    </div>
+  )
+}
+
+export function LiveDot({ className }: { className?: string }) {
+  return <Activity size={12} className={cn('text-accent-ink', className)} />
 }

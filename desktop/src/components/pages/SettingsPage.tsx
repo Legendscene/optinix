@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion'
+import { useRef } from 'react'
 import {
   Settings, Palette, Image, Circle, SidebarClose, Sidebar, Monitor,
   Sun, Moon, Droplets, Trees, Sunset, Sparkles, Video, Wind, Blend,
-  Droplet, Eye,
+  Droplet, Eye, FileUp, Zap, Pause, Activity,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
+import { PageHero } from '../ui/PageHero'
 import { Skeleton } from '../ui/Skeleton'
 import { cn } from '../../lib/utils'
 import { usePreferences } from '../../contexts/PreferencesContext'
@@ -13,14 +15,17 @@ import type { SystemInfo } from '../../types'
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
 
+/* Theme chips preview their own palette, so their label colour is fixed to
+   that palette instead of the app's ink — otherwise "Midnight" turns into
+   dark-on-dark the moment the app itself is in light mode. */
 const THEMES = [
   { id: 'dark', label: 'Dark', icon: <Moon size={16} />, cls: 'bg-surface-1 text-text border-border' },
-  { id: 'midnight', label: 'Midnight', icon: <Moon size={16} />, cls: 'bg-[#0a0a1a] text-text border-[#1e1e3a]' },
-  { id: 'purple', label: 'Purple', icon: <Sparkles size={16} />, cls: 'bg-[#0f0a1a] text-text border-[#2d1a4a]' },
-  { id: 'ocean', label: 'Ocean', icon: <Droplets size={16} />, cls: 'bg-[#0a121a] text-text border-[#1a2a3a]' },
-  { id: 'forest', label: 'Forest', icon: <Trees size={16} />, cls: 'bg-[#0a120a] text-text border-[#1a2a1a]' },
-  { id: 'sunset', label: 'Sunset', icon: <Sunset size={16} />, cls: 'bg-[#1a100a] text-text border-[#3a2a1a]' },
-  { id: 'glassy', label: 'Glassy', icon: <Eye size={16} />, cls: 'bg-white/5 text-text backdrop-blur-xl border-white/10' },
+  { id: 'midnight', label: 'Midnight', icon: <Moon size={16} />, cls: 'bg-[#0a0a1a] text-white/85 border-[#1e1e3a]' },
+  { id: 'purple', label: 'Purple', icon: <Sparkles size={16} />, cls: 'bg-[#0f0a1a] text-white/85 border-[#2d1a4a]' },
+  { id: 'ocean', label: 'Ocean', icon: <Droplets size={16} />, cls: 'bg-[#0a121a] text-white/85 border-[#1a2a3a]' },
+  { id: 'forest', label: 'Forest', icon: <Trees size={16} />, cls: 'bg-[#0a120a] text-white/85 border-[#1a2a1a]' },
+  { id: 'sunset', label: 'Sunset', icon: <Sunset size={16} />, cls: 'bg-[#1a100a] text-white/85 border-[#3a2a1a]' },
+  { id: 'glassy', label: 'Glassy', icon: <Eye size={16} />, cls: 'bg-surface-2 text-text backdrop-blur-xl border-border' },
   { id: 'neon', label: 'Neon', icon: <Sun size={16} />, cls: 'bg-[#0a0a0a] text-[#00ff88] border-[#00ff88]/30' },
 ]
 
@@ -48,8 +53,18 @@ const SIDEBAR_MODES = [
   { id: 'hidden', label: 'Hidden', icon: <Monitor size={16} />, desc: 'Auto hide' },
 ]
 
+/* Animation intensity. 'system' defers to the OS reduced-motion setting;
+   this switch exists because the 3D hero and page transitions are JS-driven
+   and would otherwise ignore the Windows preference. */
+const MOTION_MODES = [
+  { id: 'system', label: 'System', icon: <Monitor size={16} />, desc: 'Follow Windows' },
+  { id: 'full', label: 'Full', icon: <Zap size={16} />, desc: 'All animation' },
+  { id: 'reduced', label: 'Reduced', icon: <Pause size={16} />, desc: 'Minimal motion' },
+]
+
 export function SettingsPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const { prefs, update } = usePreferences()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   if (!systemInfo) {
     return (
@@ -61,13 +76,14 @@ export function SettingsPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Settings className="w-6 h-6" style={{ color: prefs.accent }} />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Settings</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Customize appearance, backgrounds, and effects</p>
+        <PageHero
+          eyebrow="Settings"
+          title="Settings"
+          subtitle="Appearance, backgrounds and effects. Every change applies immediately and is remembered on this machine."
+          icon={<Settings size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item}>
@@ -111,17 +127,31 @@ export function SettingsPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
             ))}
           </div>
           {(prefs.background === 'image' || prefs.background === 'video') && (
-            <div>
-              <label className="text-xs text-text-secondary mb-1.5 block">
-                {prefs.background === 'image' ? 'Image URL' : 'Video URL (MP4)'}
-              </label>
-              <input
-                type="text"
-                value={prefs.bgUrl}
-                onChange={e => update('bgUrl', e.target.value)}
-                placeholder={prefs.background === 'image' ? 'https://example.com/background.jpg' : 'https://example.com/background.mp4'}
-                className="w-full px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm text-text placeholder:text-text-tertiary outline-none focus:border-accent/50 transition-colors"
+            <div className="space-y-3">
+              <input ref={fileInputRef} type="file" accept={prefs.background === 'image' ? 'image/*' : 'video/mp4'} className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  update('bgUrl', URL.createObjectURL(f))
+                }}
               />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={prefs.bgUrl}
+                  onChange={e => update('bgUrl', e.target.value)}
+                  placeholder={prefs.background === 'image' ? 'URL ya local file select karein' : 'URL ya local MP4 select karein'}
+                  className="flex-1 px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm text-text placeholder:text-text-tertiary outline-none focus:border-accent/50 transition-colors"
+                />
+                <button onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent text-surface-0 text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
+                >
+                  <FileUp size={14} /> Browse
+                </button>
+              </div>
+              {prefs.bgUrl && prefs.bgUrl.startsWith('blob:') && (
+                <p className="text-xs text-accent">Local file selected</p>
+              )}
             </div>
           )}
         </Card>
@@ -202,6 +232,32 @@ export function SettingsPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
               <div className="flex justify-between text-[10px] text-text-tertiary mt-0.5"><span>Sharp</span><span>Max Blur</span></div>
             </div>
           </div>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="w-5 h-5" style={{ color: prefs.accent }} />
+            <h2 className="text-sm font-semibold text-text">Motion</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {MOTION_MODES.map(m => (
+              <button key={m.id} onClick={() => update('motion', m.id)}
+                className={cn('flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all bg-surface-2',
+                  prefs.motion === m.id ? 'ring-2 ring-offset-2 ring-offset-surface-0' : 'border-border hover:bg-surface-3'
+                )}
+                style={prefs.motion === m.id ? { borderColor: `${prefs.accent}80` } : {}}
+              >
+                {m.icon}<span className="text-text">{m.label}</span>
+                <span className="text-[10px] text-text-tertiary">{m.desc}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-text-tertiary mt-2.5">
+            System follows the Windows reduced-motion setting. Reduced keeps
+            state changes but removes page transitions, parallax and the 3D hero.
+          </p>
         </Card>
       </motion.div>
 

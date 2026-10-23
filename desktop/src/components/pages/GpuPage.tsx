@@ -1,29 +1,31 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
-import { Monitor, Thermometer, MemoryStick, Cpu, RotateCcw, RefreshCw, Zap, Maximize2, Minimize2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import {
+  Monitor, Thermometer, MemoryStick, Cpu, RotateCcw, RefreshCw, Zap, Maximize2, Minimize2,
+  CircleAlert,
+} from 'lucide-react'
 import { Card } from '../ui/Card'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
 import { Badge } from '../ui/Badge'
+import { PageHero } from '../ui/PageHero'
+import { RadialMeter } from '../ui/charts/RadialMeter'
+import { HBars } from '../ui/charts/HBars'
+import { StreamArea } from '../ui/charts/StreamArea'
+import { ChartGhost } from '../ui/charts/ChartGhost'
+import { useRollingSeries } from '../../hooks/useRollingSeries'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-}
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24 } },
-}
+const HISTORY = 45
+/* Readings needed before the plot is drawn. Below this the panel shows its
+   collecting state, which is designed rather than an empty rectangle. */
+const COLLECTING_TARGET = 6
 
 export function GpuPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
-  const [, setOptimizing] = useState(false)
-  const [optimizeResult, setOptimizeResult] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)
   const [expanded, setExpanded] = useState(false)
 
   const gpu = systemInfo?.gpu
@@ -35,34 +37,32 @@ export function GpuPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const temp = gpu?.temperature ?? 0
   const driver = gpu?.driver ?? '--'
 
-  const memChart = [
-    { name: 'Used', value: memUsed, fill: '#6366f1' },
-    { name: 'Free', value: Math.max(memTotal - memUsed, 0), fill: '#22c55e' },
-  ]
+  /* Real polled usage. The GPU counter can be absent on some drivers, in which
+     case the series simply stays empty and the card says so. */
+  const usageHistory = useRollingSeries(gpu?.usage ?? null, systemInfo, HISTORY)
+  const series = useMemo(
+    () => [{ key: 'gpu', label: 'GPU', color: 'var(--chart-2)', values: usageHistory }],
+    [usageHistory],
+  )
 
-  async function handleOptimize() {
-    setOptimizing(true)
-    setOptimizeResult(null)
-    try {
-      await api.gpuOptimize()
-      setOptimizeResult('Optimization complete')
-    } catch {
-      setOptimizeResult('Optimization failed')
-    } finally {
-      setOptimizing(false)
-    }
-  }
+  const memBars = useMemo(
+    () => [
+      { key: 'used', label: 'Used', value: memUsed / 1024, color: 'var(--chart-2)' },
+      { key: 'free', label: 'Free', value: Math.max(memTotal - memUsed, 0) / 1024, color: 'var(--color-surface-4)' },
+    ],
+    [memUsed, memTotal],
+  )
 
-  async function handleReset() {
-    setOptimizing(true)
-    setOptimizeResult(null)
+  async function run(label: string, fn: () => Promise<unknown>, done: string) {
+    setBusy(label)
+    setResult(null)
     try {
-      await api.tweakStateSet({ 'gpu_reset': true })
-      setOptimizeResult('GPU reset complete')
-    } catch {
-      setOptimizeResult('GPU reset failed')
+      await fn()
+      setResult({ ok: true, text: done })
+    } catch (e) {
+      setResult({ ok: false, text: e instanceof Error ? e.message : `${label} failed` })
     } finally {
-      setOptimizing(false)
+      setBusy(null)
     }
   }
 
@@ -75,150 +75,207 @@ export function GpuPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
 
   if (!systemInfo) {
     return (
-      <div className="space-y-6">
-        <div><Skeleton className="h-8 w-24 mb-1" /><Skeleton className="h-4 w-64" /></div>
+      <div className="page space-y-5">
+        <Skeleton className="h-[168px] w-full rounded-[var(--radius-card)]" />
         <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-[var(--radius-card)]" />)}
         </div>
-        <div className="grid grid-cols-[1fr_360px] gap-4">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-48 rounded-xl" />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        <div className="grid grid-cols-[1fr_340px] gap-4">
+          <Skeleton className="h-56 rounded-[var(--radius-card)]" />
+          <Skeleton className="h-56 rounded-[var(--radius-card)]" />
         </div>
       </div>
     )
   }
 
-  return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold tracking-tight text-text">GPU</h1>
-        <p className="text-sm text-text-secondary mt-1">Graphics card monitoring & optimization</p>
-      </motion.div>
+  const tempTone = temp > 80 ? 'bad' : temp > 65 ? 'warn' : 'good'
 
-      <motion.div variants={item} className="grid grid-cols-4 gap-4">
+  return (
+    <div className="page stagger-rise space-y-5">
+      <PageHero
+        eyebrow="Performance · Hardware"
+        title="GPU"
+        subtitle={name}
+        icon={<Monitor size={19} />}
+        badges={<Badge variant="info">Driver {driver}</Badge>}
+        stats={[
+          { label: 'Load', value: `${usage.toFixed(1)}%`, tone: usage > 90 ? 'warn' : 'accent', hint: 'engine utilisation' },
+          { label: 'VRAM', value: `${memPct.toFixed(0)}%`, tone: memPct > 90 ? 'bad' : 'default', hint: `${(memUsed / 1024).toFixed(1)} of ${(memTotal / 1024).toFixed(1)} GB` },
+          { label: 'Core temp', value: `${temp}°C`, tone: tempTone, hint: temp > 80 ? 'hot' : temp > 65 ? 'warm' : 'cool' },
+          { label: 'Samples', value: `${usageHistory.length}`, hint: '4 s interval' },
+        ]}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_308px]">
+        <Card padding="lg">
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <div>
+              <h2 className="text-[13.5px] font-semibold text-text accent-rail">Engine load</h2>
+              <p className="text-[11.5px] text-text-tertiary mt-0.5">
+                Real GPU utilisation samples from the system poller.
+              </p>
+            </div>
+            <Badge variant="info">{usageHistory.length >= COLLECTING_TARGET ? 'Recording' : 'Collecting'}</Badge>
+          </div>
+          {usageHistory.length >= COLLECTING_TARGET ? (
+            <div className="mt-3">
+              <StreamArea
+                series={series}
+                height={200}
+                yMax={100}
+                guides={[25, 50, 75]}
+                ariaLabel={`GPU usage history, ${usageHistory.length} samples, latest ${usage.toFixed(1)} percent`}
+              />
+            </div>
+          ) : (
+            <div className="mt-3">
+              <ChartGhost
+                height={200}
+                samples={usageHistory.length}
+                target={COLLECTING_TARGET}
+                title="Waiting for GPU counters"
+                hint="Some drivers do not expose utilisation, in which case the plot stays empty rather than showing a guess."
+              />
+            </div>
+          )}
+        </Card>
+
+        <Card padding="lg" className="flex flex-col items-center justify-center gap-4">
+          <RadialMeter value={usage} label="Load" size={168} invert caption={`${temp}°C`} />
+          <div className="w-full">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-text-tertiary mb-2">
+              VRAM allocation
+            </p>
+            <HBars
+              data={memBars}
+              max={memTotal > 0 ? memTotal / 1024 : 1}
+              format={(v) => `${v.toFixed(1)} GB`}
+              ariaLabel={`VRAM: ${(memUsed / 1024).toFixed(1)} GB used of ${(memTotal / 1024).toFixed(1)} GB`}
+            />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MetricCard icon={<Monitor size={16} />} label="Usage" value={`${usage.toFixed(1)}%`} progress={usage} />
         <MetricCard
-          icon={<Monitor size={18} />}
-          label="Usage"
-          value={`${usage.toFixed(1)}%`}
-          progress={usage}
-          trend={{ value: `${(Math.random() * 3 + 1).toFixed(1)}%`, up: usage > 50 }}
-        />
-        <MetricCard
-          icon={<Thermometer size={18} />}
+          icon={<Thermometer size={16} />}
           label="Temperature"
           value={`${temp}°C`}
-          progressColor={temp > 80 ? '#ef4444' : temp > 65 ? '#eab308' : '#22c55e'}
+          progress={Math.min(100, temp)}
+          progressColor={temp > 80 ? 'var(--color-red)' : temp > 65 ? 'var(--color-yellow)' : 'var(--color-green)'}
           sub={temp > 80 ? 'Hot' : temp > 65 ? 'Warm' : 'Cool'}
         />
         <MetricCard
-          icon={<MemoryStick size={18} />}
+          icon={<MemoryStick size={16} />}
           label="VRAM"
           value={`${(memUsed / 1024).toFixed(1)}/${(memTotal / 1024).toFixed(1)} GB`}
           progress={memPct}
           sub={`${memPct.toFixed(0)}% utilized`}
         />
-        <MetricCard
-          icon={<Cpu size={18} />}
-          label="Driver"
-          value={driver.length > 20 ? driver.slice(0, 18) + '...' : driver}
-          sub="Version"
-        />
-      </motion.div>
+        <MetricCard icon={<Cpu size={16} />} label="Driver" value={driver.length > 18 ? `${driver.slice(0, 16)}…` : driver} sub="Version" />
+      </div>
 
-      <motion.div variants={item} className="grid grid-cols-[1fr_360px] gap-4">
-        <Card padding="lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text">VRAM Allocation</h2>
-            <Badge variant="info">{`${(memTotal / 1024).toFixed(0)} GB Total`}</Badge>
-          </div>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={memChart} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#a6adc8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid #313244', borderRadius: 8, fontSize: 12, color: '#cdd6f4' }}
-                  formatter={(v: unknown) => [`${(v as number / 1024).toFixed(1)} GB`]}
-                />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24} animationDuration={600} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+      <Card padding="lg">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <h2 className="text-[13.5px] font-semibold text-text accent-rail">Adapter details</h2>
+          <span className="flex items-center gap-1.5 text-[11.5px] text-text-tertiary">
+            {expanded ? 'Hide' : 'Show'}
+            {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </span>
+        </button>
 
-        <Card padding="lg" className="flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-text">GPU Details</h2>
-            <button onClick={() => setExpanded(!expanded)} className="text-text-secondary hover:text-text transition-colors">
-              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
+        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2.5 md:grid-cols-4">
+          <div className="min-w-0">
+            <dt className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Name</dt>
+            <dd className="text-[12.5px] text-text truncate" title={name}>{name}</dd>
           </div>
-          <div className="space-y-2.5 flex-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-text-secondary">Name</span>
-              <span className="text-text font-medium text-right max-w-[180px] truncate">{name}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-text-secondary">Driver</span>
-              <span className="text-text font-medium">{driver}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-text-secondary">VRAM</span>
-              <span className="text-text font-medium">{`${(memTotal / 1024).toFixed(1)} GB`}</span>
-            </div>
-            {expanded && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2.5 pt-2 border-t border-border">
-                <div className="flex justify-between text-xs">
-                  <span className="text-text-secondary">Temperature</span>
-                  <span className={cn('font-medium', temp > 80 ? 'text-red' : temp > 65 ? 'text-yellow' : 'text-text')}>{`${temp}°C`}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-text-secondary">Usage</span>
-                  <span className="text-text font-medium">{`${usage.toFixed(1)}%`}</span>
-                </div>
-              </motion.div>
-            )}
+          <div>
+            <dt className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Driver</dt>
+            <dd className="text-[12.5px] text-text tnum">{driver}</dd>
           </div>
-        </Card>
-      </motion.div>
+          <div>
+            <dt className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">VRAM</dt>
+            <dd className="text-[12.5px] text-text tnum">{(memTotal / 1024).toFixed(1)} GB</dd>
+          </div>
+          <div>
+            <dt className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Thermals</dt>
+            <dd className={cn('text-[12.5px] tnum', temp > 80 ? 'text-red' : temp > 65 ? 'text-yellow' : 'text-text')}>
+              {temp}°C · {usage.toFixed(0)}% load
+            </dd>
+          </div>
+        </dl>
 
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300',
+            expanded ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0',
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4">
+              <Detail label="VRAM used" value={`${(memUsed / 1024).toFixed(2)} GB`} />
+              <Detail label="VRAM free" value={`${(Math.max(memTotal - memUsed, 0) / 1024).toFixed(2)} GB`} />
+              <Detail label="Allocation" value={`${memPct.toFixed(1)}%`} />
+              <Detail label="Live samples" value={`${usageHistory.length}`} />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {result && (
+        <div
+          className={cn(
+            'animate-rise flex items-start gap-2.5 rounded-[var(--radius-control)] border px-3.5 py-2.5 text-[12.5px]',
+            result.ok ? 'border-green/30 bg-green-dim text-green' : 'border-red/30 bg-red-dim text-red',
+          )}
+        >
+          {!result.ok && <CircleAlert size={15} className="shrink-0 mt-0.5" />}
+          <span className="min-w-0 break-words">{result.text}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ActionCard
-          icon={<Zap size={20} />}
+          icon={<Zap size={19} />}
           title="Optimize GPU"
           desc="Apply performance tweaks and optimal graphics settings"
           tags={['Performance']}
-          onClick={handleOptimize}
+          loading={busy === 'optimize'}
+          disabled={busy !== null && busy !== 'optimize'}
+          onClick={() => run('optimize', () => api.gpuOptimize(), 'GPU optimization complete.')}
         />
         <ActionCard
-          icon={<RotateCcw size={20} />}
+          icon={<RotateCcw size={19} />}
           title="Reset GPU"
           desc="Reset graphics driver and restore default settings"
           variant="danger"
           tags={['Driver']}
-          onClick={handleReset}
+          loading={busy === 'reset'}
+          disabled={busy !== null && busy !== 'reset'}
+          onClick={() => run('reset', () => api.tweakStateSet({ gpu_reset: true }), 'GPU reset complete.')}
         />
         <ActionCard
-          icon={<RefreshCw size={20} />}
+          icon={<RefreshCw size={19} />}
           title="Update Driver"
           desc="Check for and install the latest GPU driver version"
           tags={['Driver', 'Update']}
           onClick={handleUpdateDriver}
         />
-      </motion.div>
+      </div>
+    </div>
+  )
+}
 
-      {optimizeResult && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="text-center py-3">
-            <span className={cn('text-sm font-medium', optimizeResult.includes('complete') ? 'text-green' : 'text-red')}>
-              {optimizeResult}
-            </span>
-          </Card>
-        </motion.div>
-      )}
-    </motion.div>
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">{label}</div>
+      <div className="text-[12.5px] text-text tnum">{value}</div>
+    </div>
   )
 }

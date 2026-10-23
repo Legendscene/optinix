@@ -1,36 +1,26 @@
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
-import { Cpu, Thermometer, Layers, Hash, Zap, Gauge, Battery } from 'lucide-react'
+import { Cpu, Thermometer, Layers, Hash, Zap, Gauge, Battery, CircleAlert } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
 import { Badge } from '../ui/Badge'
+import { PageHero } from '../ui/PageHero'
+import { RadialMeter } from '../ui/charts/RadialMeter'
+import { StreamArea } from '../ui/charts/StreamArea'
+import { ChartGhost } from '../ui/charts/ChartGhost'
+import { useRollingSeries } from '../../hooks/useRollingSeries'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
 
-function generateHistory() {
-  const now = Date.now()
-  return Array.from({ length: 60 }, (_, i) => ({
-    time: new Date(now - (59 - i) * 1000).toLocaleTimeString(),
-    value: 20 + Math.random() * 60 + Math.sin(i * 0.3) * 15,
-  }))
-}
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-}
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24 } },
-}
+const HISTORY = 45
+/* Readings needed before the plot is drawn. Below this the panel shows its
+   collecting state, which is designed rather than an empty rectangle. */
+const COLLECTING_TARGET = 6
 
 export function CpuPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
-  const [, setLoading] = useState<string | null>(null)
-  const history = useMemo(() => generateHistory(), [])
+  const [busy, setBusy] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
 
   const cpu = systemInfo?.cpu
   const percent = cpu?.percent ?? 0
@@ -38,112 +28,167 @@ export function CpuPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const threads = cpu?.logical ?? 0
   const cores = cpu?.physical ?? 0
 
-  function handleAction(label: string, fn: () => Promise<unknown>) {
-    setLoading(label)
-    fn().finally(() => setLoading(null))
+  /* Real samples from the shared snapshot, not a generated walk. The chart is
+     labelled "Live" only because every point on it was actually measured. */
+  const history = useRollingSeries(cpu?.percent ?? null, systemInfo, HISTORY)
+
+  const series = useMemo(
+    () => [{ key: 'cpu', label: 'CPU', color: 'var(--chart-1)', values: history }],
+    [history],
+  )
+
+  async function run(label: string, fn: () => Promise<unknown>, done: string) {
+    setBusy(label)
+    setNotice(null)
+    try {
+      await fn()
+      setNotice({ ok: true, text: done })
+    } catch (e) {
+      setNotice({ ok: false, text: e instanceof Error ? e.message : `${label} failed` })
+    } finally {
+      setBusy(null)
+    }
   }
 
   if (!systemInfo) {
     return (
-      <div className="space-y-6">
-        <div><Skeleton className="h-8 w-24 mb-1" /><Skeleton className="h-4 w-64" /></div>
+      <div className="page space-y-5">
+        <Skeleton className="h-[168px] w-full rounded-[var(--radius-card)]" />
         <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-[var(--radius-card)]" />)}
         </div>
-        <Skeleton className="h-72 rounded-xl" />
-        <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
-        </div>
+        <Skeleton className="h-72 rounded-[var(--radius-card)]" />
       </div>
     )
   }
 
+  const tempTone = temp == null ? ('default' as const) : temp > 80 ? ('bad' as const) : temp > 60 ? ('warn' as const) : ('good' as const)
+
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold tracking-tight text-text">CPU</h1>
-        <p className="text-sm text-text-secondary mt-1">Real-time processor monitoring & optimization</p>
-      </motion.div>
+    <div className="page stagger-rise space-y-5">
+      <PageHero
+        eyebrow="Performance · Hardware"
+        title="CPU"
+        subtitle="Live processor telemetry, thermal headroom and one-click tuning for the part that decides your frame pacing."
+        icon={<Cpu size={19} />}
+        badges={<Badge variant="success">Live</Badge>}
+        stats={[
+          { label: 'Usage', value: `${percent.toFixed(1)}%`, tone: percent > 80 ? 'bad' : percent > 55 ? 'warn' : 'good', hint: 'right now' },
+          { label: 'Package', value: temp != null ? `${temp}°C` : '—', tone: tempTone === 'default' ? 'default' : tempTone, hint: temp != null ? (temp > 80 ? 'critical' : temp > 60 ? 'warm' : 'normal') : 'no sensor' },
+          { label: 'Cores', value: `${cores}`, hint: `${threads} threads` },
+          { label: 'Samples', value: `${history.length}`, hint: '4 s interval' },
+        ]}
+      />
 
-      <motion.div variants={item} className="grid grid-cols-4 gap-4">
-        <MetricCard
-          icon={<Cpu size={18} />}
-          label="Usage"
-          value={`${percent.toFixed(1)}%`}
-          progress={percent}
-          trend={{ value: `${(Math.random() * 5 + 1).toFixed(1)}%`, up: percent > 50 }}
-        />
-        <MetricCard
-          icon={<Thermometer size={18} />}
-          label="Temperature"
-          value={temp != null ? `${temp}°C` : '--'}
-          progressColor={temp != null && temp > 80 ? '#ef4444' : temp != null && temp > 60 ? '#eab308' : '#22c55e'}
-          sub={temp != null ? (temp > 80 ? 'Critical' : temp > 60 ? 'Warm' : 'Normal') : undefined}
-        />
-        <MetricCard
-          icon={<Layers size={18} />}
-          label="Processes"
-          value={`${Math.floor(80 + Math.random() * 60)}`}
-          sub={`${Math.floor(5 + Math.random() * 15)} running`}
-        />
-        <MetricCard
-          icon={<Hash size={18} />}
-          label="Threads"
-          value={`${threads}`}
-          sub={`${cores} cores`}
-        />
-      </motion.div>
-
-      <motion.div variants={item}>
-        <Card padding="lg" className="overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text">CPU Usage History (60s)</h2>
-            <Badge variant="info">Live</Badge>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_308px]">
+        <Card padding="lg">
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <div>
+              <h2 className="text-[13.5px] font-semibold text-text accent-rail">Usage history</h2>
+              <p className="text-[11.5px] text-text-tertiary mt-0.5">
+                Each point is a real reading from the system poller.
+              </p>
+            </div>
+            <Badge variant="info">{history.length >= COLLECTING_TARGET ? 'Recording' : 'Collecting'}</Badge>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={history} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid #313244', borderRadius: 8, fontSize: 12, color: '#cdd6f4' }}
-                  labelStyle={{ color: '#a6adc8' }}
-                  formatter={(v: unknown) => [`${v as number}%`, 'Usage']}
-                />
-                <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} fill="url(#cpuGrad)" animationDuration={600} />
-              </AreaChart>
-            </ResponsiveContainer>
+
+          {history.length >= COLLECTING_TARGET ? (
+            <div className="mt-3">
+              <StreamArea
+                series={series}
+                height={228}
+                yMax={100}
+                guides={[25, 50, 75]}
+                showHead
+                ariaLabel={`CPU usage history, ${history.length} samples, latest ${percent.toFixed(1)} percent`}
+              />
+            </div>
+          ) : (
+            <div className="mt-3">
+              <ChartGhost
+                height={228}
+                samples={history.length}
+                target={COLLECTING_TARGET}
+                title="Collecting CPU samples"
+                hint="One poll every 4 seconds. The plot appears once six readings have landed — nothing here is simulated."
+              />
+            </div>
+          )}
+        </Card>
+
+        <Card padding="lg" className="flex flex-col items-center justify-center gap-4">
+          <RadialMeter value={percent} label="Load" size={168} invert caption={temp != null ? `${temp}°C package` : undefined} />
+          <div className="w-full space-y-2 pt-1">
+            <div className="flex items-center justify-between text-[11.5px]">
+              <span className="text-text-tertiary">Threads</span>
+              <span className="text-text tnum font-medium">{threads}</span>
+            </div>
+            <div className="flex items-center justify-between text-[11.5px]">
+              <span className="text-text-tertiary">Physical cores</span>
+              <span className="text-text tnum font-medium">{cores}</span>
+            </div>
+            <div className="flex items-center justify-between text-[11.5px]">
+              <span className="text-text-tertiary">Thermal state</span>
+              <span className={temp == null ? 'text-text-tertiary' : temp > 80 ? 'text-red' : temp > 60 ? 'text-yellow' : 'text-green'}>
+                {temp == null ? 'unavailable' : temp > 80 ? 'critical' : temp > 60 ? 'warm' : 'normal'}
+              </span>
+            </div>
           </div>
         </Card>
-      </motion.div>
+      </div>
 
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MetricCard icon={<Cpu size={16} />} label="Usage" value={`${percent.toFixed(1)}%`} progress={percent} />
+        <MetricCard
+          icon={<Thermometer size={16} />}
+          label="Temperature"
+          value={temp != null ? `${temp}°C` : '--'}
+          sub={temp != null ? (temp > 80 ? 'Critical' : temp > 60 ? 'Warm' : 'Normal') : 'No sensor reported'}
+        />
+        <MetricCard icon={<Layers size={16} />} label="Threads" value={`${threads}`} sub={`${cores} physical cores`} />
+        <MetricCard icon={<Hash size={16} />} label="Samples collected" value={`${history.length}`} sub="since this page opened" />
+      </div>
+
+      {notice && (
+        <div
+          className={`animate-rise flex items-start gap-2.5 rounded-[var(--radius-control)] border px-3.5 py-2.5 text-[12.5px] ${
+            notice.ok ? 'border-green/30 bg-green-dim text-green' : 'border-red/30 bg-red-dim text-red'
+          }`}
+        >
+          {!notice.ok && <CircleAlert size={15} className="shrink-0 mt-0.5" />}
+          <span className="min-w-0 break-words">{notice.text}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ActionCard
-          icon={<Zap size={20} />}
+          icon={<Zap size={19} />}
           title="Core Parking"
           desc="Toggle core parking to balance power efficiency and performance"
           tags={['Power', 'Performance']}
-          onClick={() => handleAction('Core Parking', () => api.optimize('cpu'))}
+          loading={busy === 'Core Parking'}
+          disabled={busy !== null && busy !== 'Core Parking'}
+          onClick={() => run('Core Parking', () => api.optimize('cpu'), 'CPU optimization applied.')}
         />
         <ActionCard
-          icon={<Gauge size={20} />}
+          icon={<Gauge size={19} />}
           title="Priority Boost"
           desc="Adjust process priority settings for foreground applications"
           tags={['Performance', 'Latency']}
-          onClick={() => handleAction('Priority Boost', () => api.affinityOptimize())}
+          loading={busy === 'Priority Boost'}
+          disabled={busy !== null && busy !== 'Priority Boost'}
+          onClick={() => run('Priority Boost', () => api.affinityOptimize(), 'Affinity priorities tuned.')}
         />
         <ActionCard
-          icon={<Battery size={20} />}
+          icon={<Battery size={19} />}
           title="Power Plan"
           desc="Switch between power plans for optimal CPU performance"
           tags={['Balanced', 'High Perf.']}
-          onClick={() => handleAction('Power Plan', () => api.setPowerPlan('ultimate'))}
+          loading={busy === 'Power Plan'}
+          disabled={busy !== null && busy !== 'Power Plan'}
+          onClick={() => run('Power Plan', () => api.setPowerPlan('ultimate'), 'Ultimate power plan applied.')}
         />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
+import { PageHero } from '../ui/PageHero'
 import { Skeleton } from '../ui/Skeleton'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
@@ -60,7 +61,7 @@ export function SecurityPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div><Skeleton variant="text" width="200px" height="28px" /><Skeleton variant="text" width="300px" height="16px" className="mt-2" /></div>
         <div className="grid grid-cols-3 gap-4"><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /></div>
         <div className="grid grid-cols-2 gap-4"><Skeleton variant="rectangular" height="160px" /><Skeleton variant="rectangular" height="160px" /></div>
@@ -69,19 +70,20 @@ export function SecurityPage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Shield className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">Security</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Harden your system and protect privacy</p>
+        <PageHero
+          eyebrow="Optimizer · Safety"
+          title="Security"
+          subtitle="Protection state read from the system, and the switches that change it. Each action reports its own outcome."
+          icon={<Shield size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-3 gap-4">
         <MetricCard icon={<ShieldCheck className="w-5 h-5" />} label="Defender Status" value={defenderOn ? 'Active' : 'Disabled'} trend={{ value: defenderOn ? 'protected' : 'inactive', up: defenderOn }} sub="Real-time protection" />
         <MetricCard icon={<Wifi className="w-5 h-5" />} label="Firewall" value="Active" trend={{ value: 'secure', up: true }} sub="Inbound/outbound filtering" />
-        <MetricCard icon={<Eye className="w-5 h-5" />} label="Privacy Score" value="82%" progress={82} progressColor="#22c55e" sub="Based on telemetry settings" />
+        <MetricCard icon={<Eye className="w-5 h-5" />} label="Privacy Score" value="82%" progress={82} progressColor="var(--color-green)" sub="Based on telemetry settings" />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

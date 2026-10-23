@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
+import { PageHero } from '../ui/PageHero'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Skeleton } from '../ui/Skeleton'
@@ -39,7 +40,8 @@ const QUICK_DOWNLOADS = [
 ]
 
 function driverIcon(name: string) {
-  const l = name.toLowerCase()
+  // Driver records come straight from the OS and the name is not guaranteed.
+  const l = (name || '').toLowerCase()
   if (l.includes('nvidia') || l.includes('gpu') || l.includes('graphics')) return <Monitor size={16} />
   if (l.includes('realtek') || l.includes('audio') || l.includes('sound')) return <Wifi size={16} />
   if (l.includes('intel') || l.includes('chipset')) return <Cpu size={16} />
@@ -102,13 +104,14 @@ export function DriversPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Monitor className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Driver Manager</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Scan and manage drivers</p>
+        <PageHero
+          eyebrow="Diagnostics · Drivers"
+          title="Driver Manager"
+          subtitle="Scan the installed driver set, then act on what the scan actually returned."
+          icon={<Monitor size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="flex flex-wrap gap-2">

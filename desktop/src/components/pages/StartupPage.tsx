@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Power, PowerOff, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { Card } from '../ui/Card'
+import { PageHero } from '../ui/PageHero'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { ProgressBar } from '../ui/ProgressBar'
@@ -97,25 +98,32 @@ export function StartupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <motion.div variants={item} className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <Play className="w-6 h-6 text-accent" />
-            <h1 className="text-2xl font-bold tracking-tight text-text">Startup Manager</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-9">Control which apps run at boot</p>
-        </div>
-        <Button
-          variant="danger"
-          size="sm"
-          icon={<PowerOff className="w-4 h-4" />}
-          loading={disablingAll}
-          disabled={enabledCount === 0}
-          onClick={handleDisableAll}
-        >
-          Disable All
-        </Button>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+      <motion.div variants={item}>
+        <PageHero
+          eyebrow="Optimizer · Startup"
+          title="Startup Manager"
+          subtitle="What runs before you can use the machine. Boot impact is derived from the number of enabled entries, not measured per app."
+          icon={<Play size={19} />}
+          stats={[
+            { label: 'Enabled', value: String(enabledCount), tone: enabledCount > 8 ? 'warn' : 'good' },
+            { label: 'Disabled', value: String(Math.max(apps.length - enabledCount, 0)) },
+            { label: 'Entries', value: String(apps.length), hint: 'detected' },
+            { label: 'Boot impact', value: `${bootImpact}%`, hint: 'estimated', tone: bootImpact > 60 ? 'warn' : 'default' },
+          ]}
+          actions={
+            <Button
+              variant="danger"
+              size="sm"
+              icon={<PowerOff className="w-4 h-4" />}
+              loading={disablingAll}
+              disabled={enabledCount === 0}
+              onClick={handleDisableAll}
+            >
+              Disable all
+            </Button>
+          }
+        />
       </motion.div>
 
       <motion.div variants={item}>

@@ -140,7 +140,12 @@ class InstallerAPI:
 
     def launch_app(self):
         import subprocess
-        subprocess.Popen([sys.executable, os.path.join(BASE_DIR, "main.py")])
+        # No console window over the installer: the app is a GUI process.
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+        subprocess.Popen(
+            [sys.executable, os.path.join(BASE_DIR, "main.py")],
+            creationflags=flags,
+        )
         if self.window:
             self.window.destroy()
 

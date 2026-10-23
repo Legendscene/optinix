@@ -13,6 +13,7 @@ import {
 import { Card } from '../ui/Card'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
@@ -69,13 +70,13 @@ export function ToolboxPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Wifi className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Toolbox</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">System utilities</p>
+        <PageHero
+          title="Toolbox"
+          subtitle="System utilities"
+          icon={<Wifi size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item}>

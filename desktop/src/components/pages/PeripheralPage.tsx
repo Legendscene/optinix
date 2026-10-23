@@ -15,6 +15,7 @@ import {
 import { Card } from '../ui/Card'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -79,13 +80,13 @@ export function PeripheralPage(_props: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-xl bg-accent-dim text-accent"><Mouse className="w-6 h-6" /></div>
-          <h1 className="text-2xl font-bold text-text">Peripheral Optimization</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-11">Fine-tune mouse, keyboard, and USB settings</p>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="Peripheral Optimization"
+          subtitle="Fine-tune mouse, keyboard, and USB settings"
+          icon={<Mouse size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-3 gap-4">

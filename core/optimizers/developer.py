@@ -2,17 +2,20 @@ import os
 import shutil
 import subprocess
 import time
+from core.base import OptimizerBase
+from core.config import CONFIG
 
 
-class DeveloperOptimizer:
+class DeveloperOptimizer(OptimizerBase):
     name = "Developer Cleanup"
-
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    description = "Cleans development tool caches including npm, pip, Python cache, Git, Docker, and IDE caches"
+    category = "safe"
+    benefit = "Frees significant disk space by removing build artifacts and cached package data"
+    risks = "Minimal. Caches will be rebuilt on next use. May slow down first build after cleanup."
+    admin_required = False
+    requirements = {}
 
     def run(self):
-        self.results = []
         deadline = time.time() + 30
         steps = [
             self._clean_npm, self._clean_pip, self._clean_pycache,
@@ -20,13 +23,13 @@ class DeveloperOptimizer:
         ]
         for step in steps:
             if time.time() > deadline:
-                self.results.append({"success": False, "message": "Developer cleanup timed out"})
+                self.add_result(False, "Developer cleanup timed out")
                 break
             try:
                 step(deadline)
             except Exception as e:
-                self.results.append({"success": False, "message": f"{step.__name__.replace('_clean_', '').replace('_', ' ').title()} failed: {e}"})
-        return self.results
+                self.add_result(False, f"{step.__name__.replace('_clean_', '').replace('_', ' ').title()} failed: {e}")
+        return [r.to_dict() for r in self.results]
 
     def _walk_bounded(self, root_dir, deadline):
         try:
@@ -52,20 +55,20 @@ class DeveloperOptimizer:
                         continue
                 if cleaned >= 20 or time.time() > deadline:
                     break
-            self.results.append({"success": True, "message": f"npm cache + {cleaned} node_modules cleaned"})
+            self.add_result(True, f"npm cache + {cleaned} node_modules cleaned")
         except FileNotFoundError:
-            self.results.append({"success": True, "message": "npm not found, skipped"})
+            self.add_result(True, "npm not found, skipped")
         except subprocess.TimeoutExpired:
-            self.results.append({"success": False, "message": "npm timed out"})
+            self.add_result(False, "npm timed out")
 
     def _clean_pip(self, deadline):
         try:
             subprocess.run(["pip", "cache", "purge"], capture_output=True, timeout=30)
-            self.results.append({"success": True, "message": "pip cache cleaned"})
+            self.add_result(True, "pip cache cleaned")
         except FileNotFoundError:
-            self.results.append({"success": True, "message": "pip not found, skipped"})
+            self.add_result(True, "pip not found, skipped")
         except subprocess.TimeoutExpired:
-            self.results.append({"success": False, "message": "pip timed out"})
+            self.add_result(False, "pip timed out")
 
     def _clean_pycache(self, deadline):
         home = os.path.expanduser("~")
@@ -88,7 +91,7 @@ class DeveloperOptimizer:
                         continue
             if cleaned >= 500 or time.time() > deadline:
                 break
-        self.results.append({"success": True, "message": f"Python cache cleaned ({cleaned} items)"})
+        self.add_result(True, f"Python cache cleaned ({cleaned} items)")
 
     def _clean_git(self, deadline):
         try:
@@ -105,23 +108,23 @@ class DeveloperOptimizer:
                     dirs.remove(".git")
                 if cleaned >= 30 or time.time() > deadline:
                     break
-            self.results.append({"success": True, "message": f"Git garbage collected ({cleaned} repos)"})
+            self.add_result(True, f"Git garbage collected ({cleaned} repos)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Git failed: {e}"})
+            self.add_result(False, f"Git failed: {e}")
 
     def _clean_docker(self, deadline):
         try:
             subprocess.run(["docker", "system", "prune", "-f"], capture_output=True, timeout=30)
-            self.results.append({"success": True, "message": "Docker system pruned"})
+            self.add_result(True, "Docker system pruned")
         except FileNotFoundError:
-            self.results.append({"success": True, "message": "Docker not found, skipped"})
+            self.add_result(True, "Docker not found, skipped")
         except subprocess.TimeoutExpired:
-            self.results.append({"success": False, "message": "Docker timed out"})
+            self.add_result(False, "Docker timed out")
 
     def _clean_ide(self, deadline):
         home = os.path.expanduser("~")
         caches = []
-        if self.os_type == "windows":
+        if CONFIG.os_type == "windows":
             caches = [
                 os.path.join(home, "AppData", "Local", "JetBrains"),
                 os.path.join(home, "AppData", "Local", "Microsoft", "VisualStudio"),
@@ -129,13 +132,13 @@ class DeveloperOptimizer:
                 os.path.join(home, "AppData", "Roaming", "Code", "CachedData"),
                 os.path.join(home, ".vscode", "Cache")
             ]
-        elif self.os_type == "macos":
+        elif CONFIG.os_type == "macos":
             caches = [
                 os.path.expanduser("~/Library/Caches/JetBrains"),
                 os.path.expanduser("~/Library/Caches/Code"),
                 os.path.expanduser("~/Library/Caches/com.apple.Xcode")
             ]
-        elif self.os_type == "linux":
+        elif CONFIG.os_type == "linux":
             caches = [
                 os.path.join(home, ".cache", "JetBrains"),
                 os.path.join(home, ".cache", "Code"),
@@ -152,7 +155,7 @@ class DeveloperOptimizer:
                     cleaned += 1
                 except (PermissionError, OSError):
                     continue
-        self.results.append({"success": True, "message": f"IDE caches cleaned ({cleaned} dirs)"})
+        self.add_result(True, f"IDE caches cleaned ({cleaned} dirs)")
 
     def _clean_build_artifacts(self, deadline):
         home = os.path.expanduser("~")
@@ -171,4 +174,4 @@ class DeveloperOptimizer:
                             pass
             if cleaned >= 500 or time.time() > deadline:
                 break
-        self.results.append({"success": True, "message": f"Build artifacts cleaned ({cleaned} files)"})
+        self.add_result(True, f"Build artifacts cleaned ({cleaned} files)")

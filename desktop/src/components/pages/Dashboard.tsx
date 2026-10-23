@@ -1,508 +1,510 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Area, AreaChart, ResponsiveContainer } from 'recharts'
 import {
-  Cpu, Monitor, MemoryStick as MemoryIcon, HardDrive, Wifi,
-  Gauge, Zap, Gamepad2, Eraser, Sparkles, Shield,
-  Clock, Activity, AlertCircle, CheckCircle2, Rocket,
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  Brain,
+  Camera,
+  CheckCircle2,
+  Cpu,
+  Eraser,
+  Gamepad2,
+  MemoryStick as MemoryIcon,
+  Monitor,
+  MousePointer2,
+  Network,
+  Radar,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Timer,
+  Wifi,
+  Zap,
+  ChevronRight,
+  Gauge,
 } from 'lucide-react'
-import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
+import { Button } from '../ui/Button'
+import { Card } from '../ui/Card'
 import { ProgressBar } from '../ui/ProgressBar'
 import { Skeleton } from '../ui/Skeleton'
-import { MiniChart } from '../ui/MiniChart'
-import { cn, healthScore, formatBytes, formatSpeed } from '../../lib/utils'
+import { PageHero } from '../ui/PageHero'
+import { Sparkline } from '../ui/charts/Sparkline'
+import { StreamArea } from '../ui/charts/StreamArea'
+import { RadialMeter } from '../ui/charts/RadialMeter'
+import { useRollingSeries } from '../../hooks/useRollingSeries'
+import { cn, formatBytes, formatSpeed, healthScore } from '../../lib/utils'
 import { api } from '../../lib/api'
-import type { SystemInfo, SmartDetect } from '../../types'
+import type { AiBottleneck, AiHealthScoreResponse, AiRecommendation, SmartDetect, SystemInfo } from '../../types'
 
-export function Dashboard({ systemInfo }: { systemInfo: SystemInfo | null }) {
+interface DashboardProps {
+  systemInfo: SystemInfo | null
+  onNavigate?: (page: string) => void
+}
+
+type ActionTone = 'core' | 'safe' | 'danger' | 'cyan'
+
+/* Tone lives on the icon chip; the tile surface stays neutral so ten actions in
+   a grid do not read as ten alert levels. */
+const toneClass: Record<ActionTone, string> = {
+  core: 'text-accent border-border hover:border-accent/55',
+  safe: 'text-green border-border hover:border-green/55',
+  danger: 'text-red border-border hover:border-red/55',
+  cyan: 'text-cyan border-border hover:border-cyan/55',
+}
+
+const HISTORY = 26
+
+export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
   const [smartDetect, setSmartDetect] = useState<SmartDetect | null>(null)
   const [loadingSmart, setLoadingSmart] = useState(true)
+  const [aiHealth, setAiHealth] = useState<AiHealthScoreResponse | null>(null)
+  const [, setLoadingAiHealth] = useState(true)
+  const [aiRecs, setAiRecs] = useState<AiRecommendation[]>([])
+  const [loadingAiRecs, setLoadingAiRecs] = useState(true)
+  const [bottlenecks, setBottlenecks] = useState<AiBottleneck[]>([])
+  const [loadingBottlenecks, setLoadingBottlenecks] = useState(true)
   const [activeAction, setActiveAction] = useState<string | null>(null)
-  const [actionResult, setActionResult] = useState<string | null>(null)
+  const [actionResult, setActionResult] = useState<{ title: string; message: string; ok: boolean } | null>(null)
+
+  /* Real trends from the shared snapshot — the tiles used to draw random walks. */
+  const cpuSeries = useRollingSeries(systemInfo?.cpu.percent ?? null, systemInfo, HISTORY)
+  const gpuSeries = useRollingSeries(systemInfo?.gpu.usage ?? null, systemInfo, HISTORY)
+  const ramSeries = useRollingSeries(systemInfo?.memory.percent ?? null, systemInfo, HISTORY)
+  const netSeries = useRollingSeries(systemInfo?.network.speed_down ?? null, systemInfo, HISTORY)
 
   useEffect(() => {
-    fetch('/api/smart-detect')
-      .then(r => r.json())
-      .then(d => { setSmartDetect(d); setLoadingSmart(false) })
+    api.smartDetect()
+      .then((d) => { setSmartDetect(d); setLoadingSmart(false) })
       .catch(() => setLoadingSmart(false))
+
+    api.aiHealthScore()
+      .then((d) => { setAiHealth(d); setLoadingAiHealth(false) })
+      .catch(() => setLoadingAiHealth(false))
+
+    api.aiRecommendations()
+      .then((d) => { setAiRecs(d.recommendations ?? []); setLoadingAiRecs(false) })
+      .catch(() => setLoadingAiRecs(false))
+
+    api.aiBottlenecks()
+      .then((d) => { setBottlenecks(d.bottlenecks ?? []); setLoadingBottlenecks(false) })
+      .catch(() => setLoadingBottlenecks(false))
   }, [])
 
-  const actionHandlers: Record<string, () => Promise<Record<string, unknown>>> = {
-    'Optimize Everything': () => api.optimizeAll(),
-    'Game Mode': () => api.gameModeEnable() as Promise<Record<string, unknown>>,
-    'RAM Boost': () => api.ramBoost(),
-    'Disk Clean': () => api.optimize('disk') as Promise<Record<string, unknown>>,
-    'Internet Boost': () => api.optimize('network') as Promise<Record<string, unknown>>,
-    'Extreme Mode': () => api.extreme() as Promise<Record<string, unknown>>,
-  }
+  const getHealthColor = useCallback((val: number) => {
+    if (val < 40) return 'var(--color-red)'
+    if (val < 80) return 'var(--color-yellow)'
+    return 'var(--color-green)'
+  }, [])
 
-  const performAction = async (name: string) => {
-    setActiveAction(name)
-    setActionResult(null)
-    try {
-      const d = await actionHandlers[name]()
-      setActionResult(`${name}|||${(d.message as string) || 'Completed'}`)
-    } catch {
-      setActionResult(`${name}|||Failed`)
-    }
-    setActiveAction(null)
-  }
-
-  const sparkCpu = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-  const sparkGpu = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-  const sparkRam = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-  const sparkVram = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-  const sparkDisk = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-  const sparkNet = useMemo(() => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100)), [])
-
+  /* Session model: unchanged shape, kept explicitly labelled as a model. */
   const trendData = useMemo(() =>
-    Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      cpu: Math.floor(Math.random() * 50 + 20),
-      ram: Math.floor(Math.random() * 40 + 30),
-      gpu: Math.floor(Math.random() * 60 + 10)
+    Array.from({ length: 28 }, (_, i) => ({
+      time: i,
+      latency: Math.max(2, Math.floor(19 - i * 0.35 + Math.random() * 5)),
+      fps: Math.floor(170 + i * 2.4 + Math.random() * 18),
+      load: Math.floor(Math.random() * 36 + 34),
     })), [])
 
-  const recIcons: Record<string, React.ReactNode> = {
-    performance: <Zap size={16} />,
-    disk: <HardDrive size={16} />,
-    memory: <MemoryIcon size={16} />,
-    network: <Wifi size={16} />,
-    security: <Shield size={16} />,
-    tweak: <Sparkles size={16} />,
-    driver: <Monitor size={16} />
-  }
-
-  const priorityVariant: Record<string, 'warning' | 'danger' | 'info' | 'accent'> = {
-    high: 'danger',
-    medium: 'warning',
-    low: 'info'
+  const runAction = async (title: string, fn: () => Promise<unknown>) => {
+    setActiveAction(title)
+    setActionResult(null)
+    try {
+      const result = await fn()
+      const message = typeof result === 'object' && result && 'message' in result
+        ? String((result as { message?: unknown }).message)
+        : 'Optimization completed'
+      setActionResult({ title, message, ok: true })
+    } catch (e) {
+      setActionResult({ title, message: e instanceof Error ? e.message : 'Action failed', ok: false })
+    } finally {
+      setActiveAction(null)
+    }
   }
 
   const actions = [
-    { name: 'Optimize Everything', desc: 'Run full system optimization sweep', icon: <Zap size={20} />, variant: 'default' as const },
-    { name: 'Game Mode', desc: 'Maximize gaming performance', icon: <Gamepad2 size={20} />, variant: 'success' as const },
-    { name: 'RAM Boost', desc: 'Free up memory instantly', icon: <MemoryIcon size={20} />, variant: 'default' as const },
-    { name: 'Disk Clean', desc: 'Remove junk & temporary files', icon: <Eraser size={20} />, variant: 'danger' as const },
-    { name: 'Internet Boost', desc: 'Optimize network settings', icon: <Wifi size={20} />, variant: 'default' as const },
-    { name: 'Extreme Mode', desc: 'Unlock maximum performance', icon: <Rocket size={20} />, variant: 'success' as const },
+    { title: 'Full Optinix Sweep', desc: 'Runs CPU, memory, disk, network, gaming, startup, and service optimizers.', icon: <Rocket size={19} />, tone: 'core' as const, run: () => api.optimizeAll(), tags: ['one click', 'safe first'] },
+    { title: 'Tournament Game Mode', desc: 'Prioritizes active games, applies affinity, and reduces background contention.', icon: <Gamepad2 size={19} />, tone: 'safe' as const, run: () => api.gameModeEnable(), tags: ['fps', 'focus'] },
+    { title: 'GPU Max Performance', desc: 'Applies GPU scheduling and driver-level performance preferences.', icon: <Monitor size={19} />, tone: 'cyan' as const, run: () => api.gpuOptimize(), tags: ['gpu', 'frames'] },
+    { title: 'RAM Purge', desc: 'Frees standby memory and starts automatic memory optimization.', icon: <MemoryIcon size={19} />, tone: 'safe' as const, run: () => api.memoryFree(), tags: ['ram', 'stutter'] },
+    { title: 'Low Ping Network', desc: 'Applies adapter and TCP tuning for lower queueing and smoother packets.', icon: <Network size={19} />, tone: 'cyan' as const, run: () => api.advancedNetwork(), tags: ['ping', 'buffer'] },
+    { title: 'Input Precision', desc: 'Optimizes mouse handling, pointer precision, and peripheral responsiveness.', icon: <MousePointer2 size={19} />, tone: 'core' as const, run: () => api.peripheralOptimize(), tags: ['latency'] },
+    { title: 'Clean Temp Cache', desc: 'Clears temp, cache, and cleanup targets that can drag load times.', icon: <Eraser size={19} />, tone: 'safe' as const, run: () => api.diskCleanAll(), tags: ['storage'] },
+    { title: 'Driver Scan', desc: 'Checks outdated, missing, and risky drivers before deep tuning.', icon: <Radar size={19} />, tone: 'cyan' as const, run: () => api.driverCheckUpdates(), tags: ['drivers'] },
+    { title: 'Create Rollback', desc: 'Saves a restorable snapshot before risky changes.', icon: <Camera size={19} />, tone: 'safe' as const, run: () => api.rollbackCreateSnapshot(), tags: ['safety'] },
+    { title: 'Ultimate Mode', desc: 'Aggressive performance mode for plugged-in gaming rigs.', icon: <Zap size={19} />, tone: 'danger' as const, run: () => api.extreme(), tags: ['advanced'] },
   ]
 
-  const actionVariantBg: Record<string, string> = {
-    default: 'border-border hover:border-accent/50',
-    danger: 'border-red/30 hover:border-red/60',
-    success: 'border-green/30 hover:border-green/60',
-  }
-
-  const actionIconVariant: Record<string, string> = {
-    default: 'text-accent',
-    danger: 'text-red',
-    success: 'text-green',
+  const recTypeToPage: Record<string, string> = {
+    cpu: 'cpu',
+    disk: 'storage',
+    driver: 'drivers-update',
+    gaming: 'gaming',
+    gpu: 'gpu',
+    memory: 'memory',
+    network: 'network',
+    performance: 'extreme',
+    registry: 'registry',
+    security: 'security',
+    services: 'services',
+    startup: 'startup',
+    tweak: 'windows',
   }
 
   if (!systemInfo) {
     return (
-      <div className="space-y-6 p-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-72" />
-          </div>
-          <Skeleton variant="circular" className="h-32 w-32" />
+      <div className="page space-y-5">
+        <Skeleton className="h-[190px] w-full rounded-[var(--radius-card)]" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-[var(--radius-card)]" />)}
         </div>
-        <Card padding="lg">
-          <div className="space-y-3">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-3/4" />
-          </div>
-        </Card>
-        <Skeleton className="h-6 w-36" />
-        <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" className="h-32 w-full" />
-          ))}
-        </div>
-        <Skeleton variant="rectangular" className="h-52 w-full" />
-        <Skeleton variant="rectangular" className="h-40 w-full" />
+        <Skeleton className="h-96 w-full rounded-[var(--radius-card)]" />
       </div>
     )
   }
 
-  const health = healthScore({
+  const fallbackHealth = healthScore({
     cpu: systemInfo.cpu,
     memory: systemInfo.memory,
     gpu: { usage: systemInfo.gpu.usage },
-    disk: { percent: systemInfo.disk[0]?.percent ?? 0 }
+    disk: { percent: systemInfo.disk[0]?.percent ?? 0 },
   })
-
-  const circumference = 2 * Math.PI * 52
+  const score = aiHealth?.score ?? fallbackHealth.score
+  const scoreLabel = aiHealth?.label ?? fallbackHealth.label
   const disk = systemInfo.disk[0]
-  const resultName = actionResult?.split('|||')[0]
-  const resultMsg = actionResult?.split('|||')[1]
+  const profileReadiness = Math.round((100 - systemInfo.cpu.percent) * 0.28 + (100 - systemInfo.memory.percent) * 0.24 + (100 - (disk?.percent ?? 50)) * 0.18 + Math.min(score, 100) * 0.3)
+  const activeWarnings = bottlenecks.filter((b) => ['critical', 'high'].includes(b.severity)).length
+
+  const resourceCards = [
+    { label: 'CPU load', value: `${systemInfo.cpu.percent}%`, sub: `${systemInfo.cpu.physical}C / ${systemInfo.cpu.logical}T`, icon: <Cpu size={16} />, color: 'var(--chart-1)', chart: cpuSeries, progress: systemInfo.cpu.percent },
+    { label: 'GPU load', value: `${systemInfo.gpu.usage}%`, sub: systemInfo.gpu.name || 'GPU not detected', icon: <Monitor size={16} />, color: 'var(--chart-2)', chart: gpuSeries, progress: systemInfo.gpu.usage },
+    { label: 'Memory', value: `${systemInfo.memory.used_gb.toFixed(1)} GB`, sub: `${systemInfo.memory.available_gb.toFixed(1)} GB available`, icon: <MemoryIcon size={16} />, color: 'var(--chart-3)', chart: ramSeries, progress: systemInfo.memory.percent },
+    { label: 'Network', value: formatSpeed(systemInfo.network.speed_down), sub: `${formatSpeed(systemInfo.network.speed_up)} up`, icon: <Wifi size={16} />, color: 'var(--color-violet)', chart: netSeries, progress: Math.min(100, Math.round(systemInfo.network.speed_down / 1024)) },
+  ]
+
+  const lanes = [
+    { title: 'Base Sweep', label: 'Automated', desc: 'Cleanup, startup, services, registry, memory, drivers, and health checks.', page: 'oneclick', progress: 88 },
+    { title: 'Game Layer', label: 'Latency', desc: 'Game Mode, raw input, timer resolution, GPU priority, and power policy.', page: 'gaming', progress: profileReadiness },
+    { title: 'Deep Tune', label: 'Advanced', desc: 'BIOS recommendations, rollback, compatibility checks, and extreme tuning.', page: 'bios', progress: score },
+  ]
+
+  const healthRows = aiHealth
+    ? Object.entries(aiHealth.components)
+    : [['cpu', systemInfo.cpu.percent], ['memory', systemInfo.memory.percent], ['disk', disk?.percent ?? 0], ['gpu', systemInfo.gpu.usage]] as [string, number][]
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text flex items-center gap-3">
-            <Gauge className="text-accent" size={28} />
-            Dashboard
-          </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            {systemInfo.os.os_name} {systemInfo.os.release} &mdash; {systemInfo.system.processor}
-          </p>
-        </div>
-        <div className="relative flex items-center justify-center shrink-0" style={{ width: 130, height: 130 }}>
-          <svg width="130" height="130" viewBox="0 0 130 130" className="absolute inset-0">
-            <circle cx="65" cy="65" r="52" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-3" />
-            <motion.circle
-              cx="65" cy="65" r="52"
-              fill="none"
-              stroke={health.color}
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: circumference * (1 - health.score / 100) }}
-              transition={{ duration: 1.5, ease: 'easeOut' }}
-              transform="rotate(-90 65 65)"
-              style={{ filter: `drop-shadow(0 0 6px ${health.color}40)` }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <motion.span
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
-              className="text-2xl font-bold"
-              style={{ color: health.color }}
+    <div className="page stagger-rise space-y-5">
+      <PageHero
+        eyebrow="Performance bay"
+        title="One surface for the whole rig"
+        subtitle="FPS, input latency, network stability, cleanup, drivers, power, BIOS guidance, rollback and AI health scoring — in the order that actually moves your numbers."
+        icon={<Gauge size={19} />}
+        badges={
+          <>
+            <Badge variant="success">Live rig profile</Badge>
+            <Badge variant={activeWarnings ? 'danger' : 'accent'}>
+              {activeWarnings ? `${activeWarnings} priority ${activeWarnings === 1 ? 'fix' : 'fixes'}` : 'Tournament ready'}
+            </Badge>
+            <span className="text-[11px] text-text-tertiary">{systemInfo.os.os_name} {systemInfo.os.release}</span>
+          </>
+        }
+        stats={[
+          { label: 'Gaming readiness', value: `${profileReadiness}%`, tone: 'accent' },
+          { label: 'Health score', value: `${score}/100`, tone: score >= 80 ? 'good' : score >= 60 ? 'warn' : 'bad', hint: scoreLabel },
+          { label: 'Free memory', value: `${systemInfo.memory.available_gb.toFixed(1)} GB` },
+          { label: 'Primary disk', value: disk ? `${100 - Math.round(disk.percent)}% free` : '—' },
+        ]}
+        actions={
+          <>
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Rocket size={17} />}
+              loading={activeAction === 'Full Optinix Sweep'}
+              onClick={() => runAction('Full Optinix Sweep', () => api.optimizeAll())}
             >
-              {health.score}
-            </motion.span>
-            <span className="text-[10px] text-text-tertiary -mt-0.5">/ 100</span>
-            <span className="text-[11px] font-medium mt-0.5" style={{ color: health.color }}>{health.label}</span>
+              Optimize now
+            </Button>
+            <Button variant="secondary" size="lg" icon={<Gamepad2 size={17} />} onClick={() => onNavigate?.('gaming')}>
+              Open Gaming Lab
+            </Button>
+            <Button variant="ghost" size="lg" icon={<Camera size={17} />} onClick={() => runAction('Create Rollback', () => api.rollbackCreateSnapshot())}>
+              Snapshot
+            </Button>
+          </>
+        }
+      />
+
+      {actionResult && (
+        <div className={cn('animate-rise rounded-[var(--radius-control)] border px-4 py-3 text-[12.5px]', actionResult.ok ? 'border-green/30 bg-green-dim text-green' : 'border-red/30 bg-red-dim text-red')}>
+          <span className="font-semibold">{actionResult.title}:</span> {actionResult.message}
+        </div>
+      )}
+
+      <section className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <Card padding="lg" className="flex flex-col items-center">
+          <div className="flex w-full items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[13.5px] font-semibold text-text accent-rail">System health</h2>
+              <p className="mt-1 text-[11.5px] text-text-tertiary">{scoreLabel} · AI scored</p>
+            </div>
+            <Badge variant={score >= 80 ? 'success' : score >= 60 ? 'warning' : 'danger'}>{score}</Badge>
           </div>
-        </div>
-      </div>
 
-      <Card padding="lg" glass>
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={18} className="text-accent" />
-          <h2 className="text-sm font-semibold text-text">AI Recommendations</h2>
-          {loadingSmart && (
-            <div className="ml-auto flex items-center gap-2">
-              <div className="animate-spin h-3 w-3 border-2 border-accent border-t-transparent rounded-full" />
-              <span className="text-[11px] text-text-tertiary">Scanning system...</span>
-            </div>
-          )}
-        </div>
-        {loadingSmart ? (
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-2/40 animate-pulse">
-                <Skeleton variant="circular" className="h-8 w-8" />
-                <Skeleton className="h-4 flex-1" />
-                <Skeleton className="h-5 w-14 rounded-md" />
-              </div>
-            ))}
+          <RadialMeter
+            value={score}
+            label="Health"
+            size={172}
+            caption={scoreLabel}
+            /* Explicit tone: the dial has to agree with the badge beside it, and
+               the default auto rule treats 80-84 as "warn" while the score band
+               calls it good. */
+            tone={score >= 80 ? 'good' : score >= 60 ? 'warn' : 'bad'}
+            className="my-2"
+          />
+
+          <div className="w-full space-y-2.5">
+            {healthRows.map(([key, raw]) => {
+              const value = Number(raw)
+              const normalized = aiHealth ? value : Math.max(0, 100 - value)
+              return (
+                <div key={key}>
+                  <div className="mb-1 flex justify-between text-[11px]">
+                    <span className="capitalize text-text-secondary">{key}</span>
+                    <span className="font-semibold tnum" style={{ color: getHealthColor(normalized) }}>{Math.round(normalized)}</span>
+                  </div>
+                  <ProgressBar value={normalized} color={getHealthColor(normalized)} size="sm" />
+                </div>
+              )
+            })}
           </div>
-        ) : smartDetect?.recommendations?.length ? (
-          <div className="space-y-2">
-            {smartDetect.recommendations.slice(0, 4).map((rec, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-2/60 hover:bg-surface-2 transition-colors"
-              >
-                <div className="p-1.5 rounded-lg bg-surface-3 text-accent shrink-0">
-                  {recIcons[rec.type] ?? <AlertCircle size={16} />}
-                </div>
-                <p className="text-xs text-text-secondary flex-1 leading-relaxed">{rec.message}</p>
-                <Badge variant={priorityVariant[rec.priority] ?? 'default'}>{rec.priority}</Badge>
-              </motion.div>
-            ))}
-            {smartDetect.recommendations.length > 4 && (
-              <p className="text-[11px] text-text-tertiary text-center pt-1 border-t border-border mt-2">
-                +{smartDetect.recommendations.length - 4} more recommendation{smartDetect.recommendations.length - 4 > 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 py-2">
-            <CheckCircle2 size={16} className="text-green shrink-0" />
-            <span className="text-xs text-text-secondary">System is in great shape — no recommendations at this time.</span>
-          </div>
-        )}
-      </Card>
+        </Card>
 
-      <div>
-        <h2 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
-          <Activity size={16} className="text-accent" />
-          Live Resources
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-accent">
-                <Cpu size={18} />
+        <div className="grid grid-cols-2 gap-4">
+          {resourceCards.map((card) => (
+            <Card key={card.label} hover padding="md">
+              <div className="flex items-start justify-between gap-3">
+                <span className="icon-chip h-9 w-9" style={{ color: card.color }}>{card.icon}</span>
+                <Sparkline
+                  values={card.chart}
+                  width={86}
+                  height={30}
+                  stroke={card.color}
+                  ariaLabel={`${card.label} trend over ${card.chart.length} samples`}
+                />
               </div>
-              <MiniChart data={sparkCpu} color="#7c3aed" />
-            </div>
-            <div className="text-2xl font-semibold tracking-tight text-text">{systemInfo.cpu.percent}%</div>
-            <div className="text-xs text-text-secondary mt-0.5">CPU Usage</div>
-            <ProgressBar value={systemInfo.cpu.percent} className="mt-2" size="sm" />
-            <div className="text-[11px] text-text-tertiary mt-1">
-              {systemInfo.cpu.temperature != null ? `${systemInfo.cpu.temperature}°C · ` : ''}{systemInfo.cpu.physical}C / {systemInfo.cpu.logical}T
-            </div>
-          </Card>
-
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-[#f59e0b]">
-                <Monitor size={18} />
-              </div>
-              <MiniChart data={sparkGpu} color="#f59e0b" />
-            </div>
-            <div className="text-2xl font-semibold tracking-tight text-text">{systemInfo.gpu.usage}%</div>
-            <div className="text-xs text-text-secondary mt-0.5">GPU Usage</div>
-            <ProgressBar value={systemInfo.gpu.usage} className="mt-2" size="sm" color="#f59e0b" />
-            <div className="text-[11px] text-text-tertiary mt-1">
-              {systemInfo.gpu.name ? systemInfo.gpu.name.split(' ').slice(0, 2).join(' ') : 'GPU'} &middot; {systemInfo.gpu.temperature}°C
-            </div>
-          </Card>
-
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-[#06b6d4]">
-                <MemoryIcon size={18} />
-              </div>
-              <MiniChart data={sparkRam} color="#06b6d4" />
-            </div>
-            <div className="text-2xl font-semibold tracking-tight text-text">
-              {systemInfo.memory.used_gb.toFixed(1)}
-              <span className="text-sm text-text-tertiary font-normal"> / {systemInfo.memory.total_gb} GB</span>
-            </div>
-            <div className="text-xs text-text-secondary mt-0.5">RAM Usage</div>
-            <ProgressBar value={systemInfo.memory.percent} className="mt-2" size="sm" />
-            <div className="text-[11px] text-text-tertiary mt-1">{formatBytes(systemInfo.memory.available_gb * 1073741824)} available</div>
-          </Card>
-
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-[#8b5cf6]">
-                <MemoryIcon size={18} />
-              </div>
-              <MiniChart data={sparkVram} color="#8b5cf6" />
-            </div>
-            <div className="text-2xl font-semibold tracking-tight text-text">
-              {systemInfo.gpu.memory_used}
-              <span className="text-sm text-text-tertiary font-normal"> / {systemInfo.gpu.memory_total} GB</span>
-            </div>
-            <div className="text-xs text-text-secondary mt-0.5">VRAM</div>
-            <ProgressBar
-              value={systemInfo.gpu.memory_total ? (systemInfo.gpu.memory_used / systemInfo.gpu.memory_total) * 100 : 0}
-              className="mt-2"
-              size="sm"
-              color="#8b5cf6"
-            />
-            <div className="text-[11px] text-text-tertiary mt-1">{systemInfo.gpu.driver || systemInfo.gpu.name}</div>
-          </Card>
-
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-[#10b981]">
-                <HardDrive size={18} />
-              </div>
-              <MiniChart data={sparkDisk} color="#10b981" />
-            </div>
-            {disk ? (
-              <>
-                <div className="text-2xl font-semibold tracking-tight text-text">
-                  {formatBytes(disk.used)}
-                  <span className="text-sm text-text-tertiary font-normal"> / {formatBytes(disk.total)}</span>
-                </div>
-                <div className="text-xs text-text-secondary mt-0.5">{disk.mountpoint} &middot; {disk.device}</div>
-                <ProgressBar value={disk.percent} className="mt-2" size="sm" />
-                <div className="text-[11px] text-text-tertiary mt-1">
-                  {disk.fstype.toUpperCase()} &middot; {disk.is_ssd ? 'SSD' : disk.is_ssd === false ? 'HDD' : 'Drive'}
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-text-tertiary py-4">No disk data available</div>
-            )}
-          </Card>
-
-          <Card hover padding="md" className="relative overflow-hidden">
-            <div className="flex items-start justify-between mb-3">
-              <div className="p-2 rounded-lg bg-surface-2 text-[#3b82f6]">
-                <Wifi size={18} />
-              </div>
-              <MiniChart data={sparkNet} color="#3b82f6" />
-            </div>
-            <div className="text-2xl font-semibold tracking-tight text-text">{formatSpeed(systemInfo.network.speed_down)}</div>
-            <div className="text-xs text-text-secondary mt-0.5">Download Speed</div>
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex-1 space-y-0.5">
-                <div className="flex justify-between text-[11px] text-text-tertiary">
-                  <span>↓ Down</span>
-                  <span>{formatSpeed(systemInfo.network.speed_down)}</span>
-                </div>
-                <div className="flex justify-between text-[11px] text-text-tertiary">
-                  <span>↑ Up</span>
-                  <span>{formatSpeed(systemInfo.network.speed_up)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-[11px] text-text-tertiary mt-1">
-              {formatBytes(systemInfo.network.bytes_recv)} received
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <Card padding="lg" glass>
-        <div className="flex items-center gap-2 mb-4">
-          <Activity size={16} className="text-accent" />
-          <h2 className="text-sm font-semibold text-text">Performance Trend</h2>
-          <span className="text-[10px] text-text-tertiary ml-auto">Last 24 hours</span>
-        </div>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="ramGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gpuGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="cpu" stroke="#7c3aed" strokeWidth={2} fill="url(#cpuGrad)" />
-              <Area type="monotone" dataKey="ram" stroke="#06b6d4" strokeWidth={2} fill="url(#ramGrad)" />
-              <Area type="monotone" dataKey="gpu" stroke="#f59e0b" strokeWidth={2} fill="url(#gpuGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-          {[{ label: 'CPU', color: '#7c3aed' }, { label: 'RAM', color: '#06b6d4' }, { label: 'GPU', color: '#f59e0b' }].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-              {item.label}
-            </div>
+              <div className="mt-3.5 text-[23px] font-semibold leading-none tracking-[-0.02em] text-text tnum">{card.value}</div>
+              <div className="mt-1.5 text-[11.5px] text-text-secondary">{card.label}</div>
+              <ProgressBar value={card.progress} color={card.color} size="sm" className="mt-3" />
+              <div className="mt-2 truncate text-[10.5px] text-text-tertiary" title={card.sub}>{card.sub}</div>
+            </Card>
           ))}
         </div>
-      </Card>
+      </section>
 
-      <div>
-        <h2 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
+      <section className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-4">
+        <Card padding="lg">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck size={17} className="text-accent" />
+            <h2 className="text-[13.5px] font-semibold text-text">Optimization stack</h2>
+          </div>
+          <div className="space-y-3">
+            {lanes.map((lane) => (
+              <button
+                key={lane.title}
+                onClick={() => onNavigate?.(lane.page)}
+                className="group card-depth sheen w-full rounded-[var(--radius-control)] border border-border bg-surface-2/45 p-4 text-left transition-colors hover:border-accent/45 hover:bg-surface-2"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-accent">{lane.label}</div>
+                    <div className="mt-1 flex items-center gap-1 text-[13.5px] font-semibold text-text">
+                      {lane.title}
+                      <ChevronRight size={14} className="text-text-tertiary transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-1 text-[11.5px] leading-5 text-text-secondary">{lane.desc}</p>
+                  </div>
+                  <div className="text-xl font-semibold text-text tnum">{lane.progress}%</div>
+                </div>
+                <ProgressBar value={lane.progress} className="mt-3" size="sm" />
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <Card padding="lg">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity size={17} className="text-cyan" />
+            <h2 className="text-[13.5px] font-semibold text-text">FPS / latency projection</h2>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">session model</span>
+          </div>
+
+          <StreamArea
+            series={[{ key: 'fps', label: 'FPS', color: 'var(--chart-1)', values: trendData.map((d) => d.fps) }]}
+            height={150}
+            unit=" fps"
+            ariaLabel="Projected frame rate across the session model"
+          />
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Latency</span>
+                <span className="text-[11.5px] font-medium text-text tnum">{trendData[trendData.length - 1].latency} ms</span>
+              </div>
+              <Sparkline values={trendData.map((d) => d.latency)} width={150} height={26} stroke="var(--chart-4)" ariaLabel="Projected latency" />
+            </div>
+            <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Render load</span>
+                <span className="text-[11.5px] font-medium text-text tnum">{trendData[trendData.length - 1].load}%</span>
+              </div>
+              <Sparkline values={trendData.map((d) => d.load)} width={150} height={26} stroke="var(--chart-2)" ariaLabel="Projected render load" />
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-3 border-t border-border pt-3">
+            {[
+              { label: 'FPS target', value: 'Stable' },
+              { label: 'Frame time', value: '< 8 ms' },
+              { label: 'Queueing', value: 'Reduced' },
+            ].map((m) => (
+              <div key={m.label}>
+                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{m.label}</div>
+                <div className="text-[12.5px] font-semibold text-text">{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center gap-2">
           <Zap size={16} className="text-accent" />
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
+          <h2 className="text-[13.5px] font-semibold text-text">Tuning actions</h2>
+          <span className="text-[11px] text-text-tertiary">safe, advanced, and gaming-focused controls</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
           {actions.map((action) => (
-            <div key={action.name} className="relative">
-              <motion.div
-                whileHover={activeAction ? undefined : { y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                onClick={() => !activeAction && performAction(action.name)}
-                className={cn(
-                  'relative rounded-2xl border bg-surface-1 p-5 cursor-pointer group transition-all duration-200',
-                  'hover:shadow-lg',
-                  activeAction === action.name
-                    ? 'opacity-60 pointer-events-none border-accent/40'
-                    : actionVariantBg[action.variant],
-                )}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={cn(
-                    'p-3 rounded-xl bg-surface-2 shrink-0 transition-colors',
-                    activeAction === action.name ? 'text-accent' : actionIconVariant[action.variant],
-                    activeAction === action.name && 'animate-pulse'
-                  )}>
-                    {activeAction === action.name ? (
-                      <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                        <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
-                      </svg>
-                    ) : action.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-text group-hover:text-accent transition-colors">
-                      {action.name}
-                    </h3>
-                    <p className="text-xs text-text-secondary mt-1 leading-relaxed">{action.desc}</p>
-                    {activeAction === action.name && (
-                      <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] text-accent font-medium">
-                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
-                        </svg>
-                        Running...
-                      </span>
-                    )}
-                    {resultName === action.name && !activeAction && (
-                      <motion.span
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-1 mt-2 text-[11px] text-green font-medium"
-                      >
-                        <CheckCircle2 size={12} />
-                        {resultMsg || 'Completed'}
-                      </motion.span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
+            <motion.button
+              key={action.title}
+              whileHover={activeAction ? undefined : { y: -3 }}
+              whileTap={activeAction ? undefined : { scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+              disabled={Boolean(activeAction)}
+              onClick={() => runAction(action.title, action.run)}
+              className={cn(
+                'card-depth sheen rounded-[var(--radius-card)] border bg-surface-1 p-4 text-left shadow-e1 transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                toneClass[action.tone],
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="icon-chip h-9 w-9">
+                  {activeAction === action.title ? <Sparkles className="animate-spin" size={18} /> : action.icon}
+                </span>
+                {action.tone === 'danger' && <AlertTriangle size={14} className="text-yellow" />}
+              </div>
+              <div className="mt-3.5 text-[13px] font-semibold text-text">{action.title}</div>
+              <p className="mt-1 min-h-[50px] text-[11.5px] leading-[1.5] text-text-secondary">{action.desc}</p>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {action.tags.map((tag) => (
+                  <span key={tag} className="rounded border border-border bg-surface-3/70 px-1.5 py-0.5 text-[10px] font-medium text-text-tertiary">{tag}</span>
+                ))}
+              </div>
+            </motion.button>
           ))}
         </div>
-      </div>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Card padding="lg">
+          <div className="mb-4 flex items-center gap-2">
+            <Brain size={17} className="text-accent" />
+            <h2 className="text-[13.5px] font-semibold text-text">AI recommendations</h2>
+            {loadingAiRecs && <span className="ml-auto text-[11px] text-text-tertiary">Scanning…</span>}
+          </div>
+          <div className="space-y-2">
+            {loadingAiRecs ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-[var(--radius-control)]" />) : (
+              aiRecs.length ? aiRecs.slice(0, 5).map((rec, i) => (
+                <button
+                  key={`${rec.title}-${i}`}
+                  onClick={() => onNavigate?.(recTypeToPage[rec.type] ?? 'oneclick')}
+                  className="group w-full rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-3 text-left transition-colors hover:border-accent/45"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={13} className="text-accent" />
+                    <span className="text-[12.5px] font-semibold text-text">{rec.title}</span>
+                    <Badge variant={rec.priority === 'high' ? 'danger' : rec.priority === 'medium' ? 'warning' : 'info'}>{rec.priority}</Badge>
+                    <ChevronRight size={13} className="ml-auto text-text-tertiary transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <p className="mt-1 text-[11.5px] leading-5 text-text-secondary">{rec.description}</p>
+                </button>
+              )) : (
+                <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-green/25 bg-green-dim p-3 text-[12.5px] text-green">
+                  <CheckCircle2 size={15} />
+                  No AI recommendations right now.
+                </div>
+              )
+            )}
+          </div>
+        </Card>
+
+        <Card padding="lg">
+          <div className="mb-4 flex items-center gap-2">
+            <AlertCircle size={17} className="text-red" />
+            <h2 className="text-[13.5px] font-semibold text-text">Bottleneck watch</h2>
+            {loadingSmart && <span className="ml-auto text-[11px] text-text-tertiary">Hardware scan…</span>}
+          </div>
+          <div className="space-y-2">
+            {loadingBottlenecks ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-[var(--radius-control)]" />) : (
+              bottlenecks.length ? bottlenecks.slice(0, 4).map((bn, i) => (
+                <button
+                  key={`${bn.type}-${i}`}
+                  onClick={() => onNavigate?.(recTypeToPage[bn.type] ?? 'diagnostics')}
+                  className="group w-full rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-3 text-left transition-colors hover:border-red/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <Timer size={13} className={bn.severity === 'critical' || bn.severity === 'high' ? 'text-red' : 'text-yellow'} />
+                    <span className="text-[12.5px] font-semibold capitalize text-text">{bn.type} bottleneck</span>
+                    <Badge variant={bn.severity === 'critical' || bn.severity === 'high' ? 'danger' : 'warning'}>{bn.severity}</Badge>
+                    <ChevronRight size={13} className="ml-auto text-text-tertiary transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <p className="mt-1 text-[11.5px] leading-5 text-text-secondary">{bn.recommendation || bn.description}</p>
+                </button>
+              )) : (
+                <div className="space-y-2">
+                  {(smartDetect?.recommendations ?? []).slice(0, 3).map((rec, i) => (
+                    <div key={`${rec.type}-${i}`} className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-3 text-[11.5px] leading-5 text-text-secondary">
+                      {rec.message}
+                    </div>
+                  ))}
+                  {!smartDetect?.recommendations?.length && (
+                    <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-green/25 bg-green-dim p-3 text-[12.5px] text-green">
+                      <CheckCircle2 size={15} />
+                      No obvious bottlenecks detected.
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        </Card>
+      </section>
 
       <Card padding="lg">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock size={16} className="text-accent" />
-          <h2 className="text-sm font-semibold text-text">System Information</h2>
-        </div>
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">Operating System</span>
-            <p className="text-sm text-text mt-1">{systemInfo.os.os_name} {systemInfo.os.release}</p>
-          </div>
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">Processor</span>
-            <p className="text-sm text-text mt-1 truncate" title={systemInfo.system.processor}>{systemInfo.system.processor}</p>
-          </div>
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">Uptime</span>
-            <p className="text-sm text-text mt-1">{systemInfo.system.uptime}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-6 mt-4 pt-4 border-t border-border">
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">Total Memory</span>
-            <p className="text-sm text-text mt-1">{systemInfo.memory.total_gb} GB</p>
-          </div>
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">GPU</span>
-            <p className="text-sm text-text mt-1 truncate" title={systemInfo.gpu.name}>{systemInfo.gpu.name || 'Not detected'}</p>
-          </div>
-          <div>
-            <span className="text-[11px] text-text-tertiary uppercase tracking-wider font-medium">Disk</span>
-            <p className="text-sm text-text mt-1">
-              {disk ? `${formatBytes(disk.total)} · ${disk.is_ssd ? 'SSD' : disk.is_ssd === false ? 'HDD' : 'Drive'}` : 'N/A'}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Processor', value: systemInfo.system.processor, title: systemInfo.system.processor },
+            { label: 'Graphics', value: systemInfo.gpu.name || 'Not detected', title: systemInfo.gpu.name },
+            { label: 'Storage', value: disk ? `${formatBytes(disk.used)} used of ${formatBytes(disk.total)}` : 'No disk data' },
+            { label: 'Uptime', value: systemInfo.system.uptime },
+          ].map((row) => (
+            <div key={row.label} className="min-w-0">
+              <div className="text-[10px] uppercase tracking-widest text-text-tertiary">{row.label}</div>
+              <div className="mt-1 truncate text-[12.5px] text-text" title={row.title}>{row.value}</div>
+            </div>
+          ))}
         </div>
       </Card>
     </div>

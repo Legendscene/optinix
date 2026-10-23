@@ -9,6 +9,7 @@ import { MetricCard } from '../ui/MetricCard'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -38,13 +39,13 @@ export function BiosPage(_props: { systemInfo: SystemInfo | null }) {
   useEffect(() => { load() }, [load])
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-xl bg-accent-dim text-accent"><Cpu className="w-6 h-6" /></div>
-          <h1 className="text-2xl font-bold text-text">BIOS Optimization</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-11">Motherboard-specific BIOS/UEFI recommendations</p>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="BIOS Optimization"
+          subtitle="Motherboard-specific BIOS/UEFI recommendations"
+          icon={<Cpu size={19} />}
+        />
       </motion.div>
 
       {loading ? (

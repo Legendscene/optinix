@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Undo2, History, Clock, CheckCircle2, AlertTriangle,
-  Shield, RotateCcw, FileText,
+  Shield, RotateCcw, FileText, AlertCircle,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 
@@ -24,6 +25,9 @@ export default function RollbackPage() {
   const [restoring, setRestoring] = useState<string | null>(null)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [creating, setCreating] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetResult, setResetResult] = useState<{ success: boolean; message: string; total?: number } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -35,6 +39,20 @@ export default function RollbackPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const resetToDefaults = async () => {
+    setResetting(true)
+    setResetResult(null)
+    try {
+      const res = await api.resetToDefaults()
+      setResetResult({ success: res.success, message: res.message, total: res.total })
+      load()
+    } catch (e) {
+      setResetResult({ success: false, message: e instanceof Error ? e.message : 'Reset failed' })
+    }
+    setResetting(false)
+    setConfirmReset(false)
+  }
 
   const createSnapshot = async () => {
     setCreating(true)
@@ -61,13 +79,13 @@ export default function RollbackPage() {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Undo2 className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">Rollback & Restore</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">One-click restore Windows to previous state</p>
+        <PageHero
+          title="Rollback & Restore"
+          subtitle="One-click restore Windows to previous state"
+          icon={<Undo2 size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="flex items-center gap-3">
@@ -121,6 +139,40 @@ export default function RollbackPage() {
                   </Button>
                 </div>
               ))}
+            </div>
+          )}
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg" className="border-red-dim/30">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-5 h-5 text-red" />
+            <h2 className="text-sm font-semibold text-text">Reset to Windows Defaults</h2>
+            <Badge variant="danger">Danger</Badge>
+          </div>
+          <p className="text-xs text-text-secondary mb-4">
+            Removes all tweaks applied by any optimizer, including:
+            registry changes, BCD edits, power plan changes, service changes,
+            and network settings. Creates a snapshot before resetting.
+          </p>
+          {resetResult && (
+            <div className={cn('p-3 rounded-xl border mb-4', resetResult.success ? 'bg-green-dim border-green/30' : 'bg-red-dim border-red/30')}>
+              <div className="flex items-center gap-2">
+                {resetResult.success ? <CheckCircle2 className="w-4 h-4 text-green" /> : <AlertTriangle className="w-4 h-4 text-red" />}
+                <p className={cn('text-xs font-medium', resetResult.success ? 'text-green' : 'text-red')}>{resetResult.message}{resetResult.total != null ? ` (${resetResult.total} changes)` : ''}</p>
+              </div>
+            </div>
+          )}
+          {!confirmReset ? (
+            <Button variant="danger" onClick={() => setConfirmReset(true)} disabled={resetting}>
+              Reset to Windows Defaults
+            </Button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-red">Are you sure?</p>
+              <Button variant="danger" size="sm" onClick={resetToDefaults} loading={resetting}>Confirm</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>Cancel</Button>
             </div>
           )}
         </Card>

@@ -1,0 +1,51 @@
+name: check
+
+on:
+  push:
+    paths:
+      - 'desktop/**'
+      - 'tests/**'
+      - 'app.py'
+      - 'pytest.ini'
+      - 'requirements.txt'
+      - '.github/workflows/check.yml'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'tests/**'
+      - 'app.py'
+      - 'pytest.ini'
+      - 'requirements.txt'
+      - '.github/workflows/check.yml'
+
+jobs:
+  frontend:
+    name: desktop (typecheck, lint, test, build)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: cd desktop && npm ci
+      - run: cd desktop && npx tsc -p tsconfig.app.json --noEmit
+      - run: cd desktop && npm run lint
+      - run: cd desktop && npm run test
+      - run: cd desktop && npm run build
+
+  backend:
+    name: backend (pytest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest

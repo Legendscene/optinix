@@ -12,3 +12,23 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+
+# Runtime artwork cache (downloaded covers)
+data/artwork_cache/
+
+# Local logs and debug snapshots
+logs/
+archive/
+.freebuff/
+
+# Playwright / tooling output
+desktop/output/
+.playwright-cli/
+
+# Dev artifacts: screenshot captures, server pid, design workbench mockup
+screenshots/
+server_pid.txt
+WORKSPACE_ROOT/
+
+# Runtime data the app writes (metrics, history, reports, timeline, caches)
+data/

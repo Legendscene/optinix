@@ -4,7 +4,6 @@ import time
 import json
 import socket
 import struct
-import random
 from typing import Dict
 
 class SpeedTest:
@@ -74,11 +73,11 @@ class SpeedTest:
             url = self._test_files[idx]
             actual_size = self._sizes[idx]
             
-            # We'll simulate by measuring download of a real HTTP response
+            # Measure a real HTTP download; no value is simulated.
             start = time.time()
             req = urllib.request.Request(url, method="GET")
             total = 0
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 while True:
                     chunk = resp.read(8192)
                     if not chunk:
@@ -90,21 +89,21 @@ class SpeedTest:
             speed_mbps = speed_bps / 1_000_000
             
             return {
+                "ok": True,
                 "download_mbps": round(speed_mbps, 2),
                 "bytes_downloaded": total,
                 "elapsed_seconds": round(elapsed, 2),
-                "size_mb": actual_size
+                "size_mb": actual_size,
+                "timestamp": start,
             }
         except Exception as e:
-            # Fallback: simulate based on known bandwidth
-            import random
-            simulated = random.uniform(50, 950)
+            # No simulated fallback: a measurement that did not happen must
+            # never be reported as a number. ok=False drives the UI's
+            # unavailable state instead of showing a fabricated speed.
             return {
-                "download_mbps": round(simulated, 2),
-                "bytes_downloaded": size_mb * 1024 * 1024,
-                "elapsed_seconds": round((size_mb * 8) / simulated, 2),
+                "ok": False,
+                "error": f"Download test failed: {e}",
                 "size_mb": size_mb,
-                "simulated": True
             }
     
     def test_upload(self, size_mb: int = 5) -> Dict:
@@ -119,7 +118,7 @@ class SpeedTest:
                 data=data,
                 method="POST"
             )
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 resp.read()
             elapsed = time.time() - start
             
@@ -127,18 +126,18 @@ class SpeedTest:
             speed_mbps = speed_bps / 1_000_000
             
             return {
+                "ok": True,
                 "upload_mbps": round(speed_mbps, 2),
                 "bytes_uploaded": len(data),
-                "elapsed_seconds": round(elapsed, 2)
+                "elapsed_seconds": round(elapsed, 2),
+                "timestamp": start,
             }
         except Exception as e:
-            import random
-            simulated = random.uniform(10, 150)
+            # No simulated fallback (see test_download).
             return {
-                "upload_mbps": round(simulated, 2),
-                "bytes_uploaded": size_mb * 1024 * 1024,
-                "elapsed_seconds": round((size_mb * 8) / simulated, 2),
-                "simulated": True
+                "ok": False,
+                "error": f"Upload test failed: {e}",
+                "size_mb": size_mb,
             }
     
     def test_all(self) -> Dict:

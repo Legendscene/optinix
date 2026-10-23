@@ -20,7 +20,7 @@ export function useWebSocket(onStatus?: (status: SystemStatus) => void) {
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${proto}//localhost:5000/ws/status`
+    const url = `${proto}//localhost:5420/ws/status`
     const ws = new WebSocket(url)
     ws.onopen = () => setConnected(true)
     ws.onclose = () => setConnected(false)

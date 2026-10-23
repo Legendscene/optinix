@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -62,13 +63,13 @@ export function SchedulerPage(_props: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-xl bg-accent-dim text-accent"><Clock className="w-6 h-6" /></div>
-          <h1 className="text-2xl font-bold text-text">Maintenance Scheduler</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-11">Schedule automatic optimization tasks</p>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="Maintenance Scheduler"
+          subtitle="Schedule automatic optimization tasks"
+          icon={<Clock size={19} />}
+        />
       </motion.div>
 
       {loading ? (
@@ -102,7 +103,7 @@ export function SchedulerPage(_props: { systemInfo: SystemInfo | null }) {
                   <div className="flex gap-2">
                     {[2, 4, 6, 12, 24].map(h => (
                       <button key={h} onClick={() => setInterval(h)}
-                        className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all', interval === h ? 'bg-accent text-white' : 'bg-surface-2 text-text-secondary hover:bg-surface-3')}
+                        className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-all', interval === h ? 'bg-accent text-surface-0' : 'bg-surface-2 text-text-secondary hover:bg-surface-3')}
                       >
                         {h}h
                       </button>

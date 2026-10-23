@@ -9,17 +9,53 @@ export interface Preferences {
   bgOpacity: number
   blurIntensity: number
   glassEffect: boolean
+  /** Light/dark surface palette. Applied to <html data-theme>. */
+  mode: 'dark' | 'light'
+  /** Named accent palette preset. Applied to <html data-accent>. */
+  accentPreset: 'teal' | 'indigo' | 'amber' | 'rose'
+  /** Comfortable/compact spacing rhythm. <html data-density>. */
+  density: 'comfortable' | 'compact'
+  /** Animation intensity. 'system' follows prefers-reduced-motion;
+      'reduced' forces minimal motion; 'full' opts into full motion even
+      when the OS asks for reduced. <html data-motion>. */
+  motion: 'system' | 'reduced' | 'full'
 }
 
 const DEFAULTS: Preferences = {
   theme: 'dark',
   background: 'none',
-  accent: '#7c3aed',
+  accent: '#00e5cc',
   sidebarMode: 'full',
   bgUrl: '',
   bgOpacity: 50,
   blurIntensity: 20,
   glassEffect: false,
+  mode: 'dark',
+  accentPreset: 'teal',
+  density: 'comfortable',
+  motion: 'system',
+}
+
+/** Preset id -> representative hex, used to keep the legacy hex
+ *  `accent` (still read by SettingsPage for swatches) in sync when the
+ *  preset changes, and to map a legacy hex pick back to a preset. */
+export const ACCENT_PRESETS: Record<Preferences['accentPreset'], string> = {
+  teal: '#00e5cc',
+  indigo: '#7a6af0',
+  amber: '#ffb020',
+  rose: '#ff6b8a',
+}
+
+const HEX_TO_PRESET: Record<string, Preferences['accentPreset']> = {
+  '#00e5cc': 'teal',
+  '#06b6d4': 'teal',
+  '#7c3aed': 'indigo',
+  '#7a6af0': 'indigo',
+  '#eab308': 'amber',
+  '#ffb020': 'amber',
+  '#f97316': 'amber',
+  '#ef4444': 'rose',
+  '#ec4899': 'rose',
 }
 
 function loadPrefs(): Preferences {
@@ -65,10 +101,31 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const update = useCallback((key: keyof Preferences, value: string | number | boolean) => {
     setPrefs(prev => {
       const next = { ...prev, [key]: value }
+      /* Legacy bridge: a hex pick from the old SettingsPage colour row
+         maps back to a preset; a preset change rewrites the hex so every
+         consumer (swatches, inline icon colours) stays consistent. */
+      if (key === 'accent' && typeof value === 'string') {
+        const preset = HEX_TO_PRESET[value.toLowerCase()]
+        if (preset) next.accentPreset = preset
+      }
+      if (key === 'accentPreset' && typeof value === 'string' && value in ACCENT_PRESETS) {
+        next.accent = ACCENT_PRESETS[value as Preferences['accentPreset']]
+      }
       savePrefs(next)
       return next
     })
   }, [])
+
+  /* Mode/accent/density live on <html> so the token overrides in
+     index.css (and Tailwind utilities built on them) follow along. */
+  useEffect(() => {
+    if (!ready) return
+    const html = document.documentElement
+    html.dataset.theme = prefs.mode === 'light' ? 'light' : 'dark'
+    html.dataset.accent = prefs.accentPreset
+    html.dataset.density = prefs.density
+    html.dataset.motion = prefs.motion
+  }, [prefs.mode, prefs.accentPreset, prefs.density, prefs.motion, ready])
 
   useEffect(() => {
     if (!ready) return
@@ -79,11 +136,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent-dim', `${prefs.accent}26`)
     root.style.setProperty('--accent-hover', prefs.accent)
 
-    const bgColor = themeBgMap[prefs.theme] || '#09090b'
+    /* Light mode owns its surface; the legacy dark background presets
+       only make sense on a dark canvas. */
+    const bgColor = prefs.mode === 'light'
+      ? '#f6f7f9'
+      : themeBgMap[prefs.theme] || '#09090b'
     root.style.setProperty('--bg-color', bgColor)
     root.style.backgroundColor = bgColor
 
-    if (prefs.background === 'image' && prefs.bgUrl) {
+    if (prefs.mode === 'light' && prefs.background !== 'image') {
+      root.style.backgroundImage = 'none'
+    } else if (prefs.background === 'image' && prefs.bgUrl) {
       root.style.backgroundImage = `url(${prefs.bgUrl})`
       root.style.backgroundSize = 'cover'
       root.style.backgroundPosition = 'center'

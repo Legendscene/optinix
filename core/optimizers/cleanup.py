@@ -1,26 +1,30 @@
 import os
 import subprocess
+from core.base import OptimizerBase
+from core.config import CONFIG
 
-class CleanupOptimizer:
+
+class CleanupOptimizer(OptimizerBase):
     name = "System Cleanup"
-
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    description = "Cleans temporary files and empties the recycle bin"
+    category = "safe"
+    benefit = "Frees up disk space by removing temporary files and emptying the recycle bin"
+    risks = "Minimal. May remove files currently in use by applications."
+    admin_required = False
+    requirements = {}
 
     def run(self):
-        self.results = []
-        if self.os_type == "windows":
+        if CONFIG.os_type == "windows":
             self._clean_temp_files()
             self._empty_recycle_bin()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
     def _clean_temp_files(self):
         try:
             import shutil
             tp = os.environ.get("TEMP", "")
             if not tp or not os.path.exists(tp):
-                self.results.append({"success": True, "message": "Temp folder not found"})
+                self.add_result(True, "Temp folder not found")
                 return
             cleaned = 0
             for f in os.listdir(tp):
@@ -34,9 +38,9 @@ class CleanupOptimizer:
                         cleaned += 1
                 except (PermissionError, OSError):
                     continue
-            self.results.append({"success": True, "message": f"Cleaned {cleaned} temp files"})
+            self.add_result(True, f"Cleaned {cleaned} temp files")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Temp cleanup: {e}"})
+            self.add_result(False, f"Temp cleanup: {e}")
 
     def _empty_recycle_bin(self):
         try:
@@ -44,6 +48,6 @@ class CleanupOptimizer:
                 ["powershell", "-Command", "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"],
                 capture_output=True, timeout=30
             )
-            self.results.append({"success": True, "message": "Recycle Bin emptied"})
+            self.add_result(True, "Recycle Bin emptied")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Recycle Bin: {e}"})
+            self.add_result(False, f"Recycle Bin: {e}")

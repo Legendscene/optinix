@@ -1,0 +1,7 @@
+{
+  "name": "Sample Optimizer",
+  "version": "1.0.0",
+  "author": "Optinix",
+  "description": "A sample plugin that demonstrates the plugin system",
+  "min_app_version": "1.0.0"
+}

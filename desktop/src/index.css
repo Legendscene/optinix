@@ -1,46 +1,1573 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Optinix design system
+   Premium dark desktop product. Graphite foundation, one
+   refined indigo primary, restrained cyan secondary, semantic
+   colours reserved for status. Quality comes from typography,
+   spacing and hierarchy - not from glow.
+   ============================================================ */
+
 @theme {
-  --color-surface-0: #09090b;
-  --color-surface-1: #0f0f12;
-  --color-surface-2: #18181b;
-  --color-surface-3: #1f1f23;
-  --color-surface-4: #27272a;
-  --color-border: #27272a;
-  --color-border-light: #3f3f46;
-  --color-accent: #7c3aed;
-  --color-accent-hover: #8b5cf6;
-  --color-accent-dim: rgba(124, 58, 237, 0.15);
-  --color-cyan: #06b6d4;
-  --color-cyan-dim: rgba(6, 182, 212, 0.15);
-  --color-green: #22c55e;
-  --color-green-dim: rgba(34, 197, 94, 0.15);
-  --color-yellow: #eab308;
-  --color-yellow-dim: rgba(234, 179, 8, 0.15);
-  --color-red: #ef4444;
-  --color-red-dim: rgba(239, 68, 68, 0.15);
-  --color-text: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-tertiary: #71717a;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* -- Surfaces: layered graphite, never pure black -------- */
+  --color-surface-0: #0a0b0d;
+  --color-surface-1: #0e0f13;
+  --color-surface-2: #14161a;
+  --color-surface-3: #1b1e24;
+  --color-surface-4: #232730;
+
+  /* -- Lines: thin, low contrast --------------------------- */
+  --color-border: #212429;
+  --color-border-light: #2c3039;
+
+  /* -- Primary: Optinix teal. Bright on dark surfaces; the light theme
+        overrides these with darker values so white text still passes AA. */
+  --color-accent: #00e5cc;
+  --color-accent-hover: #33ecdb;
+  --color-accent-dim: rgba(0, 229, 204, 0.14);
+  --color-accent-ink: #4df0e1;
+  --color-accent-line: rgba(0, 229, 204, 0.32);
+  /* Text drawn on top of accent-filled controls (buttons, badges). */
+  --color-on-accent: #06120f;
+
+  /* -- Chart series (recharts reads these via var()) -------- */
+  --chart-1: var(--color-accent);
+  --chart-2: #4aa8c4;
+  --chart-3: #c9962f;
+  --chart-4: #d9534f;
+
+  /* -- Secondary: subtle cyan ----------------------------- */
+  --color-cyan: #4aa8c4;
+  --color-cyan-dim: rgba(74, 168, 196, 0.14);
+
+  /* -- Atmosphere: restrained violet. Only for hero/ambient
+        lighting and the 3D scene — never on body components. --- */
+  --color-violet: #8b7bf7;
+  --color-violet-dim: rgba(139, 123, 247, 0.13);
+  --color-violet-line: rgba(139, 123, 247, 0.28);
+
+  /* -- Semantic: status only ------------------------------ */
+  --color-green: #3ea86a;
+  --color-green-dim: rgba(62, 168, 106, 0.14);
+  --color-yellow: #c9962f;
+  --color-yellow-dim: rgba(201, 150, 47, 0.14);
+  --color-red: #d9534f;
+  --color-red-dim: rgba(217, 83, 79, 0.14);
+
+  /* -- Text: three levels, all AA (4.5:1) on every surface they sit on.
+        The muted level is deliberately not dimmer than #8f96a8: anything
+        darker drops under 4.5:1 on surface-3 and on the raised kbd chips. --- */
+  --color-text: #e8eaef;
+  --color-text-secondary: #b3bac7;
+  --color-text-tertiary: #8f96a8;
+
+  /* -- Radii ---------------------------------------------- */
+  --radius-card: 14px;
+  --radius-control: 10px;
+
+  /* -- Soft elevation, no coloured glow ------------------- */
+  --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-e2: 0 2px 8px rgb(0 0 0 / 0.32);
+  --shadow-e3: 0 14px 36px -10px rgb(0 0 0 / 0.6);
+  --shadow-e4: 0 24px 64px -16px rgb(0 0 0 / 0.7);
+
+  --font-sans: "Inter var", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Chakra Petch", "Inter var", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+
+  /* -- ExitLag-mode accents: used only by the Optimizer console. The #22eba3
+        green is ExitLag's own brand value, scoped here after user request to
+        match their optimizer look. Semantic app colours stay untouched. --- */
+  --color-eg-green: #22eba3;
+  --color-eg-green-dim: rgba(34, 235, 163, 0.14);
+  --color-eg-line: rgba(34, 235, 163, 0.32);
+  --color-eg-ink: #04130e;
+
+  /* -- Gradient system: one accent ramp (teal -> cyan -> violet) reused by
+        hero bands, icon chips and display type, so every gradient in the app
+        comes from the same three stops instead of a new pair per page. --- */
+  --grad-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-cyan) 52%, var(--color-violet) 100%);
+  --grad-accent-rail: linear-gradient(90deg, var(--color-accent) 0%, var(--color-cyan) 58%, var(--color-violet) 100%);
+  --grad-title: linear-gradient(104deg, var(--color-text) 0%, var(--color-accent-ink) 44%, var(--color-violet) 100%);
+  /* Filled controls: the same ramp, held back so white/ink text still passes
+     contrast at every stop. Light theme drops the violet stop entirely. */
+  --grad-control: linear-gradient(96deg, var(--color-accent) 0%, var(--color-cyan) 70%, color-mix(in srgb, var(--color-violet) 55%, var(--color-cyan)) 100%);
+  /* Faint corner tint that gives a flat card depth without a glow. */
+  --wash-accent: color-mix(in srgb, var(--color-accent-dim) 45%, transparent);
+  --wash-violet: color-mix(in srgb, var(--color-violet-dim) 55%, transparent);
+
+  /* 150-250ms. Slow enough to read, fast enough to feel instant. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+
+  /* -- Motion ladder: fast = controls, base = panels,
+        slow = page/scene transitions. -------------------- */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+
+  /* -- One controlled glow, for the single focal element of a
+        page (hero CTA, running-game card). Never on chrome. -- */
+  --shadow-glow-accent: 0 0 0 1px var(--color-accent-line),
+    0 12px 40px -12px rgba(0, 229, 204, 0.25);
 }
 
-* { scrollbar-width: thin; scrollbar-color: #27272a transparent; }
-body { margin: 0; font-family: var(--font-sans); background: var(--color-surface-0); color: var(--color-text); -webkit-font-smoothing: antialiased; overflow: hidden; }
+/* ============================================================
+   Base
+   ============================================================ */
 
-#root { height: 100vh; display: flex; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-4) transparent;
+}
 
-@keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fillBar { from { width: 0; } to { width: var(--w); } }
-@keyframes countUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+html,
+body,
+#root {
+  height: 100%;
+}
 
-.animate-pulse-subtle { animation: pulse-subtle 2s ease-in-out infinite; }
-.animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
-.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+  color: var(--color-text);
+  background: var(--color-surface-0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+/* Depth without decoration: a single soft vertical lift. */
+#app-root {
+  background:
+    linear-gradient(180deg, #0f1014 0%, var(--color-surface-0) 220px);
+}
+
+/* -- ExitLag-mode Optimizer console (scoped styles) ---------------- */
+
+/* Dark hero band with a single green glow, not a gradient wash. */
+.eg-hero {
+  background:
+    radial-gradient(120% 95% at 15% 0%, rgba(34, 235, 163, 0.09), transparent 58%),
+    linear-gradient(180deg, #12151a 0%, var(--color-surface-0) 100%);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* The one loud element on the page: the master activation button. */
+.eg-activate {
+  background: linear-gradient(180deg, #2bf2ae 0%, #17b184 100%);
+  color: var(--color-eg-ink);
+  box-shadow: 0 12px 32px -12px rgba(34, 235, 163, 0.5);
+}
+.eg-activate:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.eg-activate:disabled {
+  filter: saturate(0.6) brightness(0.85);
+  cursor: default;
+}
+
+/* Run-progress bar. Width is set inline from REAL step outcomes only; the
+   green head marks the constantly-moving edge. */
+.eg-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-surface-3);
+  overflow: hidden;
+}
+.eg-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1fb98a 0%, var(--color-eg-green) 100%);
+  transition: width 480ms var(--ease-out-quart);
+}
+/* While the blocking request is in flight the true fraction is unknown, so the
+   fill runs the sweep - an honest "in progress", never a fake percent. */
+.eg-bar-fill[data-indeterminate="true"] {
+  width: 100% !important;
+  mask-image: linear-gradient(90deg, transparent 25%, black 75%);
+  animation: eg-sweep 1.6s linear infinite;
+}
+@keyframes eg-sweep {
+  from { transform: translateX(-75%); }
+  to { transform: translateX(0%); }
+}
+
+/* Step rows wait their turn: queued steps render dimmed until the response
+   promotes them to a real outcome. */
+.eg-step-queued {
+  opacity: 0.45;
+}
+
+/* Feed rows for the live step checklist. */
+.eg-feed {
+  border-left: 1px solid var(--color-border);
+}
+.eg-feed-row {
+  animation: eg-row-in 260ms var(--ease-out-quart) both;
+}
+@keyframes eg-row-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-text);
+}
+
+/* Inputs stay selectable, everything else is app chrome. */
+input,
+textarea,
+[data-selectable] {
+  user-select: text;
+  cursor: text;
+}
+
+button {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+/* Keyboard focus only - never a ring on mouse click. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   Scrollbars
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-4);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333844;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ============================================================
+   Typography helpers
+   ============================================================ */
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* Shared page container: every route uses the same width, so a maximized
+   window keeps a consistent centered column instead of one page filling
+   1440px while the next stops at 1280px or hugs the left edge. */
+.page {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Component primitives
+   ============================================================ */
+
+/* Default card. Flat surface + hairline, no glow. */
+.surface-card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-e1);
+}
+
+/* Page titles drawn without their own icon join the display ramp. The icon
+   is excluded because background-clip:text would make a Lucide stroke inside
+   the heading inherit `color: transparent` and disappear.
+   Falls back to solid ink where :has() or background-clip is unsupported. */
+main h1:not(:has(svg)) {
+  background-image: var(--grad-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+/* Interactive card: lift is a border + shadow change, 180ms. */
+.surface-card-interactive {
+  transition:
+    border-color 180ms var(--ease-out-quart),
+    background-color 180ms var(--ease-out-quart),
+    transform 180ms var(--ease-out-quart),
+    box-shadow 180ms var(--ease-out-quart);
+}
+
+.surface-card-interactive:hover {
+  background: var(--color-surface-3);
+  border-color: var(--color-border-light);
+}
+
+/* Layered card: hairline top catch-light, like a machined edge. */
+.surface-card-layered {
+  position: relative;
+  overflow: hidden;
+}
+.surface-card-layered::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 4%,
+    rgba(255, 255, 255, 0.09) 38%,
+    rgba(255, 255, 255, 0.045) 62%,
+    transparent 96%
+  );
+  pointer-events: none;
+}
+
+/* Translucent floating panel (TaskEZ-style depth). Used for detail
+   popovers and hero overlays — sparingly, not on every card. */
+.surface-glass {
+  background: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.15);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-e3);
+}
+
+/* ============================================================
+   Gradient + 3D surface language
+   Shared by every page: hero bands, cards, icon chips and display
+   type draw from the same ramp so the app reads as one product.
+   ============================================================ */
+
+/* Page hero band. Depth comes from two light fields (accent front-left,
+   violet top-right) over the surface, never from a flat colour block. */
+.band-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-1);
+  background-image:
+    radial-gradient(115% 150% at 92% -30%, var(--wash-violet), transparent 58%),
+    radial-gradient(95% 130% at 4% -20%, var(--wash-accent), transparent 56%),
+    linear-gradient(168deg, color-mix(in srgb, var(--color-surface-3) 55%, transparent) 0%, transparent 58%);
+  box-shadow: var(--shadow-e2);
+}
+
+/* Machined top edge: a hairline that catches the light. */
+.band-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent-line) 30%, var(--color-violet-line) 62%, transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Card depth: a top-down sheen plus a corner tint. Composes with a
+   background-colour utility, so pages can still override the surface. */
+.card-depth {
+  background-image:
+    radial-gradient(120% 96% at 100% 0%, var(--wash-accent), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 38%, transparent) 0%, transparent 46%);
+}
+
+/* Gradient icon tile. Inherits the tone of its parent via currentColor, so
+   one rule covers accent/cyan/violet/semantic chips. */
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  background-color: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
+  background-image: linear-gradient(150deg, color-mix(in srgb, currentColor 20%, transparent) 0%, transparent 78%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+/* Display type that carries the accent ramp. Falls back to solid ink when
+   background-clip:text is unavailable. */
+.grad-text {
+  background-image: var(--grad-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+   Page atmosphere
+   The light behind every route. Two large, very low-alpha fields
+   plus a grid, drifting on a long slow loop so the background is
+   alive without touching the content above it.
+   ============================================================ */
+
+.atmosphere-field {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.atmosphere-field-a {
+  width: 860px;
+  height: 860px;
+  top: -420px;
+  right: -280px;
+  background: radial-gradient(closest-side, var(--color-accent-dim), transparent 72%);
+  animation: atmos-drift-a 42s ease-in-out infinite alternate;
+}
+
+.atmosphere-field-b {
+  width: 980px;
+  height: 980px;
+  bottom: -620px;
+  left: -340px;
+  background: radial-gradient(closest-side, var(--color-violet-dim), transparent 74%);
+  animation: atmos-drift-b 54s ease-in-out infinite alternate;
+}
+
+.atmosphere-horizon {
+  background: radial-gradient(58% 100% at 50% 0%, var(--color-accent-dim), transparent 78%);
+}
+
+@keyframes atmos-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-4%, 5%, 0) scale(1.12); }
+}
+
+@keyframes atmos-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to   { transform: translate3d(5%, -4%, 0) scale(1); }
+}
+
+/* Thin accent rail: the section marker that replaced a plain heading rule. */
+.accent-rail {
+  position: relative;
+  padding-left: 12px;
+}
+.accent-rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.22em;
+  bottom: 0.22em;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--grad-accent-rail);
+}
+
+/* Pointer-tracked sheen for interactive surfaces (CSS only; the reduced-motion
+   rules collapse the transition, leaving a static tint). */
+.sheen {
+  position: relative;
+  isolation: isolate;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 260ms var(--ease-out-quart);
+  background: linear-gradient(102deg, transparent 24%, rgb(255 255 255 / 0.055) 46%, transparent 68%);
+}
+.sheen:hover::after,
+.sheen:focus-visible::after {
+  opacity: 1;
+}
+
+/* Slow travelling light along the top edge of a hero band. */
+.scanline {
+  background: linear-gradient(90deg, transparent, var(--color-accent) 45%, var(--color-violet) 62%, transparent);
+  opacity: 0.55;
+  animation: scan-drift 9s var(--ease-out-quart) infinite;
+}
+@keyframes scan-drift {
+  0%   { transform: translateX(-60%); opacity: 0; }
+  18%  { opacity: 0.6; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+/* -- CSS 3D orb: three orbiting rings around a gradient core. Pure CSS so a
+      page can carry a 3D focal point without a second WebGL context. ---- */
+.orb {
+  position: relative;
+  perspective: 640px;
+  transform-style: preserve-3d;
+}
+.orb-rig {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: orb-spin 30s linear infinite;
+}
+.orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-accent-line);
+  box-shadow: 0 0 18px -10px var(--color-accent);
+}
+.orb-ring:nth-child(2) {
+  border-color: var(--color-violet-line);
+  box-shadow: 0 0 20px -12px var(--color-violet);
+}
+.orb-ring:nth-child(3) {
+  inset: 16%;
+  border-color: var(--color-border-light);
+}
+.orb-core {
+  position: absolute;
+  inset: 32%;
+  transform: rotate(45deg) translateZ(14px);
+  border-radius: 9px;
+  background-image: conic-gradient(
+    from 120deg at 50% 50%,
+    var(--color-accent),
+    var(--color-cyan) 38%,
+    var(--color-violet) 68%,
+    var(--color-accent)
+  );
+  opacity: 0.92;
+  box-shadow:
+    0 0 30px -6px var(--color-accent),
+    inset 0 0 14px rgb(255 255 255 / 0.22);
+}
+@keyframes orb-spin {
+  from { transform: rotateX(-16deg) rotateY(0deg); }
+  to   { transform: rotateX(-16deg) rotateY(360deg); }
+}
+/* Ring tilts live on the rig's children so the spin stays readable. */
+.orb-ring:nth-child(1) { transform: rotateY(0deg) rotateX(74deg); }
+.orb-ring:nth-child(2) { transform: rotateY(60deg) rotateX(74deg); }
+.orb-ring:nth-child(3) { transform: rotateY(-40deg) rotateX(62deg); }
+
+/* Orb accessories: the halo behind the rig, beads riding the same orbits
+   and the specular flare on the core. All transforms, so the global
+   reduced-motion rules park them with everything else. */
+.orb-halo {
+  position: absolute;
+  inset: -16%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--color-accent-dim), transparent 72%);
+  animation: orb-halo 9s ease-in-out infinite alternate;
+}
+@keyframes orb-halo {
+  from { opacity: 0.5; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1.06); }
+}
+
+.orb-rig-reverse {
+  animation-direction: reverse;
+  animation-duration: 52s;
+}
+
+.orb-sat {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+}
+.orb-sat > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  animation: orb-sat-turn 13s linear infinite;
+}
+.orb-sat > i::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px 2px var(--color-accent-dim);
+}
+.orb-sat:nth-child(1) { transform: rotateX(74deg); }
+.orb-sat:nth-child(2) { transform: rotateY(58deg) rotateX(72deg); }
+.orb-sat:nth-child(2) > i { animation-duration: 17s; animation-direction: reverse; }
+.orb-sat:nth-child(2) > i::after {
+  background: var(--color-violet);
+  box-shadow: 0 0 12px 2px var(--color-violet-dim);
+}
+.orb-sat:nth-child(3) { transform: rotateY(-42deg) rotateX(62deg); }
+.orb-sat:nth-child(3) > i { animation-duration: 21s; }
+.orb-sat:nth-child(3) > i::after {
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  background: var(--color-cyan);
+  box-shadow: 0 0 10px 1px var(--color-cyan-dim);
+}
+@keyframes orb-sat-turn {
+  from { transform: rotateZ(0deg); }
+  to   { transform: rotateZ(360deg); }
+}
+
+.orb-axis {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--color-accent-line) 24%,
+    var(--color-violet-line) 76%,
+    transparent
+  );
+  opacity: 0.5;
+  transform: rotate(18deg);
+}
+
+.orb-flare {
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  transform: translateZ(24px);
+  background: radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.55), transparent 46%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Atmospheric backdrop for hero bands: cyan focal light + one violet
+   corner wash. Tokens keep the light theme calm (lighter opacities). */
+.atmosphere {
+  background:
+    radial-gradient(110% 85% at 82% -10%, var(--color-violet-dim), transparent 55%),
+    radial-gradient(95% 80% at 12% 0%, var(--color-accent-dim), transparent 52%);
+}
+
+/* CSS 3D helpers for perspective hover on game cards. */
+.perspective-900 {
+  perspective: 900px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Slow ambient wash for hero bands: two offset radial fields on a pseudo
+   element that only translates. No repaint of the card content, and the
+   reduced-motion rules below collapse it to a static frame. */
+.aurora {
+  position: relative;
+  isolation: isolate;
+}
+.aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(36% 44% at 24% 28%, var(--color-accent-dim), transparent 68%),
+    radial-gradient(32% 40% at 76% 12%, var(--color-violet-dim), transparent 70%);
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 2%, 0) scale(1.07); }
+}
+
+.hairline-t {
+  border-top: 1px solid var(--color-border);
+}
+.hairline-b {
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Chrome surfaces sit above content, separated by a hairline. */
+.chrome {
+  background: var(--color-surface-1);
+}
+
+/* ============================================================
+   Motion
+   Kept minimal. Every animation carries state, none idle.
+   ============================================================ */
+
+@keyframes optinix-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes optinix-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes optinix-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.animate-fade-in {
+  animation: optinix-fade 180ms var(--ease-out-quart) both;
+}
+
+.animate-rise {
+  animation: optinix-rise 240ms var(--ease-out-quart) both;
+}
+
+/* Sequential entrance for a page built from stacked bands: the page
+   composes itself instead of snapping in as one block. Delays stay small so
+   it never delays reading, and the reduced-motion rules collapse it. */
+.stagger-rise > * {
+  animation: optinix-rise 320ms var(--ease-out-quart) both;
+}
+.stagger-rise > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-rise > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-rise > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-rise > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-rise > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-rise > *:nth-child(n + 6) { animation-delay: 200ms; }
+
+/* Determinant progress sweep, used only while a job runs. */
+.animate-sweep {
+  animation: optinix-sweep 1.4s var(--ease-out-quart) infinite;
+}
+
+/* Legacy hooks retained for existing pages. */
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.4s ease-in-out infinite;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slideUp 240ms var(--ease-out-quart) both;
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-count-up {
+  animation: countUp 200ms var(--ease-out-quart) both;
+}
+
+@keyframes fillBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Static texture, no animation. Used as a page backdrop at low opacity. */
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 60%);
+}
+
+/* ============================================================
+   Accessibility
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Explicit in-app motion setting (<html data-motion>): the app-level
+   choice wins over the OS preference in both directions. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Windows high-contrast: let the OS win. */
+@media (forced-colors: active) {
+  .surface-card,
+  .chrome {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ============================================================
+   Light theme — applied via <html data-theme="light">.
+   Same layering logic inverted: paper surfaces, ink text. Accent
+   goes dark so accent-filled buttons (which use --color-on-accent
+   as text) and accent text both clear 4.5:1 on paper.
+   ============================================================ */
+
+:root[data-theme="light"] {
+  --color-surface-0: #f6f7f9;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #eef0f4;
+  --color-surface-4: #e2e5eb;
+
+  --color-border: #e3e6ec;
+  --color-border-light: #d2d7e0;
+
+  --color-accent: #0b7f70;
+  --color-accent-hover: #096b5f;
+  --color-accent-dim: rgba(11, 127, 112, 0.1);
+  --color-accent-ink: #0a6e62;
+  --color-accent-line: rgba(11, 127, 112, 0.32);
+  --color-on-accent: #ffffff;
+
+  --color-cyan: #1f7e99;
+  --color-cyan-dim: rgba(31, 126, 153, 0.1);
+
+  --color-green: #1d7f4c;
+  --color-green-dim: rgba(29, 127, 76, 0.1);
+  --color-yellow: #96701c;
+  --color-yellow-dim: rgba(150, 112, 28, 0.1);
+  --color-red: #b93b38;
+  --color-red-dim: rgba(185, 59, 56, 0.1);
+
+  --color-text: #171a20;
+  --color-text-secondary: #454b57;
+  --color-text-tertiary: #646c7c;
+
+  --shadow-e1: 0 1px 2px rgb(16 20 28 / 0.06);
+  --shadow-e2: 0 2px 8px rgb(16 20 28 / 0.08);
+  --shadow-e3: 0 14px 36px -10px rgb(16 20 28 / 0.16);
+  --shadow-e4: 0 24px 64px -16px rgb(16 20 28 / 0.22);
+
+  --chart-1: var(--color-accent);
+  --chart-2: #1f7e99;
+  --chart-3: #96701c;
+  --chart-4: #b93b38;
+}
+
+:root[data-theme="light"] body {
+  color: var(--color-text);
+  background: var(--color-surface-0);
+}
+
+:root[data-theme="light"] #app-root {
+  background: linear-gradient(180deg, #ffffff 0%, var(--color-surface-0) 220px);
+}
+
+:root[data-theme="light"] {
+  /* Paper needs a darker ramp: teal -> indigo, no pale violet. */
+  --grad-title: linear-gradient(104deg, var(--color-text) 0%, var(--color-accent-ink) 52%, var(--color-accent) 100%);
+  --grad-control: linear-gradient(96deg, var(--color-accent) 0%, var(--color-cyan) 100%);
+  --wash-accent: color-mix(in srgb, var(--color-accent-dim) 70%, transparent);
+  --wash-violet: color-mix(in srgb, var(--color-violet-dim) 60%, transparent);
+}
+
+:root[data-theme="light"] .sheen::after {
+  background: linear-gradient(102deg, transparent 24%, rgb(255 255 255 / 0.5) 46%, transparent 68%);
+}
+
+:root[data-theme="light"] .grid-overlay {
+  background-image:
+    linear-gradient(rgb(16 20 28 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(16 20 28 / 0.03) 1px, transparent 1px);
+}
+
+:root[data-theme="light"] ::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-text);
+}
+
+/* ============================================================
+   Accent presets — <html data-accent="…">. Dark-theme values only;
+   the light theme keeps its own darker accents above, so presets
+   do not override light mode (the [data-theme] block wins by
+   specificity because both are single-class selectors on :root,
+   so presets are scoped to default dark with :not()).
+   ============================================================ */
+
+:root:not([data-theme="light"])[data-accent="indigo"] {
+  --color-accent: #7a6af0;
+  --color-accent-hover: #8c7ef7;
+  --color-accent-dim: rgba(122, 106, 240, 0.14);
+  --color-accent-ink: #a99cff;
+  --color-accent-line: rgba(122, 106, 240, 0.32);
+  --color-on-accent: #0d0a1f;
+  --chart-1: var(--color-accent);
+}
+
+:root:not([data-theme="light"])[data-accent="amber"] {
+  --color-accent: #ffb020;
+  --color-accent-hover: #ffc04d;
+  --color-accent-dim: rgba(255, 176, 32, 0.14);
+  --color-accent-ink: #ffc75c;
+  --color-accent-line: rgba(255, 176, 32, 0.32);
+  --color-on-accent: #241500;
+  --chart-1: var(--color-accent);
+}
+
+:root:not([data-theme="light"])[data-accent="rose"] {
+  --color-accent: #ff6b8a;
+  --color-accent-hover: #ff8aa4;
+  --color-accent-dim: rgba(255, 107, 138, 0.14);
+  --color-accent-ink: #ff96ac;
+  --color-accent-line: rgba(255, 107, 138, 0.32);
+  --color-on-accent: #26060f;
+  --chart-1: var(--color-accent);
+}
+
+/* Light-theme accent variants — dark enough for white button text and
+   for accent-coloured text on paper to clear 4.5:1. */
+
+:root[data-theme="light"][data-accent="teal"] {
+  --color-accent: #0b7f70;
+  --color-accent-hover: #096b5f;
+  --color-accent-dim: rgba(11, 127, 112, 0.1);
+  --color-accent-ink: #0a6e62;
+  --color-accent-line: rgba(11, 127, 112, 0.32);
+  --color-on-accent: #ffffff;
+  --chart-1: var(--color-accent);
+}
+
+:root[data-theme="light"][data-accent="indigo"] {
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-dim: rgba(79, 70, 229, 0.1);
+  --color-accent-ink: #463cc9;
+  --color-accent-line: rgba(79, 70, 229, 0.3);
+  --color-on-accent: #ffffff;
+  --chart-1: var(--color-accent);
+}
+
+:root[data-theme="light"][data-accent="amber"] {
+  --color-accent: #9a6700;
+  --color-accent-hover: #855800;
+  --color-accent-dim: rgba(154, 103, 0, 0.1);
+  --color-accent-ink: #8a5b00;
+  --color-accent-line: rgba(154, 103, 0, 0.3);
+  --color-on-accent: #ffffff;
+  --chart-1: var(--color-accent);
+}
+
+:root[data-theme="light"][data-accent="rose"] {
+  --color-accent: #c2185b;
+  --color-accent-hover: #a6144e;
+  --color-accent-dim: rgba(194, 24, 91, 0.1);
+  --color-accent-ink: #ad1450;
+  --color-accent-line: rgba(194, 24, 91, 0.3);
+  --color-on-accent: #ffffff;
+  --chart-1: var(--color-accent);
+}
+
+/* ============================================================
+   Density — <html data-density="compact"> tightens rhythm for
+   power users who want more on screen. Applies to shell chrome
+   and cards; page content opts in via the same variables.
+   ============================================================ */
+
+:root {
+  --density-gap: 1rem;
+  --density-card-pad: 1rem;
+  --density-row-h: 2rem;
+}
+
+:root[data-density="compact"] {
+  --density-gap: 0.625rem;
+  --density-card-pad: 0.75rem;
+  --density-row-h: 1.75rem;
+}
+
+.density-card {
+  padding: var(--density-card-pad);
+}
+
+/* ============================================================
+   Depth
+   The app is a 3D product, not a dashboard of flat rectangles:
+   every route sits inside a receding grid floor, hero bands float
+   their instrument cluster over it in real perspective, and cards
+   catch the light along their top edge.
+   Every animation below is a transform/opacity or a background
+   position on a tiny surface, so it runs on the compositor; the
+   reduced-motion rules in the accessibility block park all of them.
+   ============================================================ */
+
+/* --- Route backdrop: the room the page sits in ---------------- */
+
+.scene-3d {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 900px;
+  perspective-origin: 50% -20%;
+  pointer-events: none;
+}
+
+/* Grid floor receding toward the horizon. One element, one moving
+   background; no per-frame work on the main thread. */
+.scene-floor {
+  position: absolute;
+  left: -40%;
+  right: -40%;
+  bottom: -52%;
+  height: 150%;
+  overflow: hidden;
+  transform: rotateX(74deg);
+  transform-origin: 50% 100%;
+  opacity: 0.42;
+  mask-image: radial-gradient(46% 58% at 50% 82%, #000 0%, transparent 84%);
+  -webkit-mask-image: radial-gradient(46% 58% at 50% 82%, #000 0%, transparent 84%);
+}
+
+/* The grid is one promoted layer sliding by exactly one tile: the drift is a
+   compositor transform, never a repaint of the (very large) floor surface. */
+.scene-floor::before {
+  content: "";
+  position: absolute;
+  inset: -80px 0;
+  background-image:
+    linear-gradient(to right, var(--color-accent-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-accent-line) 1px, transparent 1px);
+  background-size: 68px 68px;
+  animation: scene-floor-run 22s linear infinite;
+  will-change: transform;
+}
+
+@keyframes scene-floor-run {
+  to { transform: translate3d(0, 68px, 0); }
+}
+
+/* Two wireframe halls behind the content: one leaning left, one right,
+   so the backdrop has parallax depth instead of a single flat decal. */
+.scene-hall {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--color-accent-line);
+  opacity: 0.65;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.scene-hall-a {
+  width: 1180px;
+  height: 1180px;
+  top: -44%;
+  right: -10%;
+  transform: rotateX(72deg) rotateZ(-8deg);
+  animation: scene-hall-spin 64s linear infinite;
+}
+
+.scene-hall-b {
+  width: 900px;
+  height: 900px;
+  bottom: -38%;
+  left: -12%;
+  border-color: var(--color-violet-line);
+  opacity: 0.55;
+  transform: rotateX(76deg) rotateZ(14deg);
+  animation: scene-hall-spin 88s linear infinite reverse;
+}
+
+@keyframes scene-hall-spin {
+  to { transform: rotateX(72deg) rotateZ(352deg); }
+}
+
+/* Suspended specks, each on its own slow drift. */
+.scene-speck {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 9px 1px var(--color-accent-dim);
+  opacity: 0.7;
+  animation: scene-speck-float 15s ease-in-out infinite alternate;
+}
+
+.scene-speck:nth-child(2n) {
+  background: var(--color-violet);
+  box-shadow: 0 0 8px 1px var(--color-violet-dim);
+  animation-duration: 21s;
+}
+
+@keyframes scene-speck-float {
+  from { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0.2; }
+  to   { transform: translate3d(18px, -46px, 0) scale(1.15); opacity: 0.65; }
+}
+
+/* --- Hero band: a stage, not a header ------------------------- */
+
+.band-hero {
+  --mx: 0.5;
+  --my: 0.5;
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+
+/* The band's own floor, tighter than the page floor so the band reads
+   as a lit plinth rather than a printed rectangle. */
+.hero-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  perspective: 620px;
+  perspective-origin: 78% 0%;
+}
+
+.hero-stage-floor {
+  position: absolute;
+  left: 18%;
+  right: -30%;
+  bottom: -120%;
+  height: 240%;
+  overflow: hidden;
+  transform: rotateX(70deg) translate3d(calc((var(--mx, 0.5) - 0.5) * -22px), 0, 0);
+  transform-origin: 50% 100%;
+  opacity: 0.34;
+  mask-image: radial-gradient(50% 55% at 62% 78%, #000 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(50% 55% at 62% 78%, #000 0%, transparent 80%);
+}
+
+.hero-stage-floor::before {
+  content: "";
+  position: absolute;
+  inset: -60px 0;
+  background-image:
+    linear-gradient(to right, var(--color-accent-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-accent-line) 1px, transparent 1px);
+  background-size: 54px 54px;
+  animation: hero-floor-run 17s linear infinite;
+  will-change: transform;
+}
+
+@keyframes hero-floor-run {
+  to { transform: translate3d(0, 54px, 0); }
+}
+
+/* Light leaking in from above the ornament, the band's key light. */
+.hero-beacon {
+  position: absolute;
+  top: -58%;
+  right: -6%;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--wash-accent), transparent 72%);
+  transform: translate3d(calc((var(--mx, 0.5) - 0.5) * 26px), calc((var(--my, 0.5) - 0.5) * 14px), 0);
+  animation: hero-beacon-breathe 14s ease-in-out infinite alternate;
+}
+
+.hero-beacon-violet {
+  top: auto;
+  right: auto;
+  bottom: -76%;
+  left: 4%;
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(closest-side, var(--wash-violet), transparent 74%);
+  animation-duration: 19s;
+}
+
+@keyframes hero-beacon-breathe {
+  from { opacity: 0.55; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1.1); }
+}
+
+/* Orbiting hairline that crosses the band behind the copy. */
+.hero-orbit {
+  position: absolute;
+  top: 50%;
+  right: 4%;
+  width: 430px;
+  height: 430px;
+  margin-top: -215px;
+  border-radius: 50%;
+  border: 1px dashed var(--color-accent-line);
+  opacity: 0.28;
+  transform: rotateX(68deg) rotateZ(0deg);
+  animation: hero-orbit-turn 40s linear infinite;
+}
+
+@keyframes hero-orbit-turn {
+  to { transform: rotateX(68deg) rotateZ(360deg); }
+}
+
+/* Second orbit, tilted the other way and turning the other direction: two
+   crossing paths read as a volume, one reads as a circle. */
+.hero-orbit-b {
+  top: 22%;
+  right: 22%;
+  width: 300px;
+  height: 300px;
+  margin-top: -150px;
+  border-style: solid;
+  border-color: var(--color-violet-line);
+  opacity: 0.22;
+  animation-name: hero-orbit-b-turn;
+  animation-duration: 56s;
+}
+
+@keyframes hero-orbit-b-turn {
+  to { transform: rotateX(76deg) rotateZ(-360deg); }
+}
+
+/* A slow band of light travelling along the top edge. */
+.hero-scanline {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent) 45%, var(--color-violet) 62%, transparent);
+  opacity: 0.55;
+  animation: scan-drift 11s var(--ease-out-quart) infinite;
+  pointer-events: none;
+}
+
+/* Content sits above the stage and receives the pointer parallax. */
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* The ornament cluster floats furthest forward and tilts with the pointer. */
+.hero-ornament {
+  transform-style: preserve-3d;
+  transform:
+    translate3d(calc((var(--mx, 0.5) - 0.5) * 18px), calc((var(--my, 0.5) - 0.5) * 12px), 30px)
+    rotateX(calc((var(--my, 0.5) - 0.5) * -14deg))
+    rotateY(calc((var(--mx, 0.5) - 0.5) * 18deg));
+  transition: transform 260ms var(--ease-out-quart);
+}
+
+/* Hero stat tiles: small machined plates that lift toward the reader. */
+.stat-grid {
+  perspective: 780px;
+  transform-style: preserve-3d;
+}
+
+.stat-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  background-color: color-mix(in srgb, var(--color-surface-0) 48%, transparent);
+  background-image:
+    radial-gradient(120% 96% at 100% 0%, var(--wash-accent), transparent 62%),
+    linear-gradient(158deg, color-mix(in srgb, var(--color-surface-3) 78%, transparent) 0%, transparent 74%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 10px 22px -18px rgb(0 0 0 / 0.9);
+  transform-style: preserve-3d;
+  transition:
+    transform 220ms var(--ease-out-quart),
+    border-color 220ms var(--ease-out-quart),
+    box-shadow 220ms var(--ease-out-quart);
+}
+
+.stat-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent-line) 40%, transparent);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.stat-tile:hover {
+  transform: translateZ(14px) translateY(-2px);
+  border-color: var(--color-accent-line);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 20px 32px -22px rgb(0 0 0 / 0.95),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+/* --- Cards: bevel, top catch-light and a slow hover sweep ------ */
+
+.card-depth {
+  position: relative;
+  background-image:
+    radial-gradient(120% 96% at 100% 0%, var(--wash-accent), transparent 58%),
+    radial-gradient(96% 90% at 0% 104%, var(--wash-violet), transparent 66%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 38%, transparent) 0%, transparent 46%);
+}
+
+/* The machined edge every panel shares. */
+.card-depth::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 2%,
+    rgb(255 255 255 / 0.1) 34%,
+    rgb(255 255 255 / 0.05) 62%,
+    transparent 98%
+  );
+  pointer-events: none;
+}
+
+/* Chart surface: a lit plate for the plot to sit on, with the plot's
+   colour bleeding up from the baseline. */
+.chart-stage {
+  position: relative;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background-image:
+    radial-gradient(88% 130% at 50% 122%, var(--wash-accent), transparent 72%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--color-surface-0) 40%, transparent) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+/* Light theme: the same construction, held back so paper stays paper. */
+:root[data-theme="light"] .scene-floor {
+  opacity: 0.16;
+}
+
+:root[data-theme="light"] .hero-stage-floor {
+  opacity: 0.18;
+}
+
+:root[data-theme="light"] .scene-hall {
+  opacity: 0.28;
+}
+
+:root[data-theme="light"] .scene-hall-b {
+  opacity: 0.22;
+}
+
+:root[data-theme="light"] .scene-speck {
+  opacity: 0.32;
+}
+
+:root[data-theme="light"] .stat-tile {
+  background-color: color-mix(in srgb, #ffffff 72%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 10px 22px -20px rgb(16 20 28 / 0.5);
+}
+
+:root[data-theme="light"] .card-depth::before,
+:root[data-theme="light"] .stat-tile::before {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.9) 40%, transparent);
+}
+
+/* Instrument ticks down the band's right edge, plus the hairline scale they
+   hang from. Small, but it is what makes the band read as a gauge rather
+   than a banner. */
+.hero-ticks {
+  position: absolute;
+  top: 16%;
+  bottom: 16%;
+  right: 10px;
+  width: 16px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-accent-line) 0 1px,
+    transparent 1px 11px
+  );
+  opacity: 0.5;
+  mask-image: linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent);
+}
+
+.hero-ticks::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--color-accent-line), transparent);
+}
+
+/* Chart plate texture: faint column rules so a chart with few samples still
+   has structure under it, fading out before it reaches the top. */
+.chart-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 84px 100%;
+  opacity: 0.5;
+  mask-image: linear-gradient(180deg, transparent 8%, #000 62%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 8%, #000 62%);
+}
+
+/* Pointer spotlight: the card's own light source follows the cursor. The
+   vars are written by TiltCard-style handlers only where a card is
+   interactive, so static panels keep the default centred warm patch. */
+.card-depth {
+  background-image:
+    radial-gradient(
+      280px circle at var(--gx, 50%) var(--gy, 50%),
+      color-mix(in srgb, var(--color-accent) 9%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(120% 96% at 100% 0%, var(--wash-accent), transparent 58%),
+    radial-gradient(96% 90% at 0% 104%, var(--wash-violet), transparent 66%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 38%, transparent) 0%, transparent 46%);
+}
+
+/* The plate itself: a catch-light along the top edge and a soft inner
+   shadow at the base, so a card has a near edge and a far edge. */
+.card-depth {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    inset 0 -28px 44px -34px rgb(0 0 0 / 0.8),
+    var(--shadow-e1);
+}
+
+:root[data-theme="light"] .card-depth {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 1),
+    inset 0 -26px 40px -34px rgb(16 20 28 / 0.16),
+    var(--shadow-e1);
+}
+
+:root[data-theme="light"] .card-depth {
+  background-image:
+    radial-gradient(
+      280px circle at var(--gx, 50%) var(--gy, 50%),
+      color-mix(in srgb, var(--color-accent) 7%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(120% 96% at 100% 0%, var(--wash-accent), transparent 60%),
+    radial-gradient(96% 90% at 0% 104%, var(--wash-violet), transparent 68%),
+    linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--color-surface-3) 42%, transparent) 48%);
+}
+
+/* ============================================================
+   Ghost chart
+   The plate a panel shows while it is still collecting samples:
+   guide rules, an axis and a fixed silhouette, never a trend.
+   ============================================================ */
+
+.chart-ghost {
+  border: 1px dashed var(--color-border);
+  background-color: color-mix(in srgb, var(--color-surface-0) 42%, transparent);
+  background-image: radial-gradient(88% 130% at 50% 122%, var(--wash-accent), transparent 72%);
+}
+
+.chart-ghost .ghost-guide {
+  stroke: var(--color-border);
+  stroke-dasharray: 2 7;
+}
+
+.chart-ghost .ghost-axis {
+  stroke: var(--color-border-light);
+}
+
+.chart-ghost .ghost-bar {
+  fill: var(--color-surface-4);
+  opacity: 0.5;
+}
+
+:root[data-theme="light"] .chart-ghost {
+  background-color: #ffffff;
+  background-image: radial-gradient(88% 130% at 50% 122%, var(--wash-accent), transparent 74%);
+}
+
+:root[data-theme="light"] .chart-ghost .ghost-bar {
+  fill: var(--color-surface-3);
+  opacity: 0.9;
+}

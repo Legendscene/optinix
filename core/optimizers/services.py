@@ -1,15 +1,25 @@
 import subprocess
+from typing import Dict, Any, List
+from core.base import OptimizerBase, OPTIMIZER_CATEGORY_SAFE
+from core.config import CONFIG
 
 
-class ServicesOptimizer:
+class ServicesOptimizer(OptimizerBase):
     name = "Services Optimization"
+    description = "Disables heavy Windows services, startup apps, and scheduled tasks for reduced resource usage"
+    category = OPTIMIZER_CATEGORY_SAFE
+    benefit = "Faster boot, lower RAM usage, fewer background processes"
+    risks = "Disabling some services may break features like Xbox gaming, Bluetooth, or printing"
+    admin_required = True
+    requirements = {}
 
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    def __init__(self):
+        super().__init__()
+        self.os_type = CONFIG.os_type
 
-    def run(self):
+    def run(self) -> List[Dict[str, Any]]:
         self.results = []
+        self.logger.info("Starting services optimization")
         if self.os_type == "windows":
             self._disable_heavy_services()
             self._disable_startup_apps()
@@ -18,18 +28,11 @@ class ServicesOptimizer:
             self._disable_linux_services()
         elif self.os_type == "macos":
             self._disable_macos_agents()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
-    def disable_basic_debloat(self):
-        self.results = []
-        basic = [
-            "DiagTrack", "WSearch", "MapsBroker", "lfsvc",
-            "RemoteRegistry", "wisvc", "PhoneSvc", "XblAuthManager",
-            "XblGameSave", "XboxNetApiSvc", "XboxGipSvc",
-            "edgeupdate", "edgeupdatem", "WerSvc", "PcaSvc",
-        ]
+    def _disable_service_list(self, services: List[str]) -> int:
         disabled = 0
-        for svc in basic:
+        for svc in services:
             try:
                 subprocess.run(
                     ["powershell", "-Command",
@@ -40,11 +43,30 @@ class ServicesOptimizer:
                 disabled += 1
             except Exception:
                 continue
-        self.results.append({"success": True, "message": f"Basic debloat: disabled {disabled} services"})
-        return self.results
+        return disabled
+
+    def disable_basic_debloat(self):
+        self.results = []
+        basic = [
+            "DiagTrack", "WSearch", "MapsBroker", "lfsvc",
+            "RemoteRegistry", "wisvc", "PhoneSvc", "XblAuthManager",
+            "XblGameSave", "XboxNetApiSvc", "XboxGipSvc",
+            "edgeupdate", "edgeupdatem", "WerSvc", "PcaSvc",
+        ]
+        disabled = self._disable_service_list(basic)
+        self.add_result(True, f"Basic debloat: disabled {disabled} services")
+        return [r.to_dict() for r in self.results]
 
     def disable_advanced_debloat(self):
-        self.results = self.disable_basic_debloat()
+        self.results = []
+        basic = [
+            "DiagTrack", "WSearch", "MapsBroker", "lfsvc",
+            "RemoteRegistry", "wisvc", "PhoneSvc", "XblAuthManager",
+            "XblGameSave", "XboxNetApiSvc", "XboxGipSvc",
+            "edgeupdate", "edgeupdatem", "WerSvc", "PcaSvc",
+        ]
+        disabled_basic = self._disable_service_list(basic)
+        self.add_result(True, f"Basic debloat: disabled {disabled_basic} services")
         advanced = [
             "SysMain", "TabletInputService", "RetailDemo",
             "SharedAccess", "WpcMonSvc", "TapiSrv",
@@ -56,20 +78,9 @@ class ServicesOptimizer:
             "PimIndexMaintenanceSvc", "UnistoreSvc",
             "UserDataSvc", "WpnService", "BcastDVRUserService",
         ]
-        disabled = 0
-        for svc in advanced:
-            try:
-                subprocess.run(
-                    ["powershell", "-Command",
-                     f"Stop-Service -Name '{svc}' -Force -ErrorAction SilentlyContinue; "
-                     f"Set-Service -Name '{svc}' -StartupType Disabled -ErrorAction SilentlyContinue"],
-                    capture_output=True, timeout=15
-                )
-                disabled += 1
-            except Exception:
-                continue
-        self.results.append({"success": True, "message": f"Advanced debloat: disabled {disabled} additional services"})
-        return self.results
+        disabled = self._disable_service_list(advanced)
+        self.add_result(True, f"Advanced debloat: disabled {disabled} additional services")
+        return [r.to_dict() for r in self.results]
 
     def _disable_heavy_services(self):
         services = [
@@ -83,19 +94,8 @@ class ServicesOptimizer:
             "WerSvc", "PcaSvc", "TrkWks", "DPS", "CscService",
             "StorSvc", "OneSyncSvc"
         ]
-        disabled = 0
-        for svc in services:
-            try:
-                r = subprocess.run(
-                    ["powershell", "-Command",
-                     f"Stop-Service -Name '{svc}' -Force -ErrorAction SilentlyContinue; "
-                     f"Set-Service -Name '{svc}' -StartupType Disabled -ErrorAction SilentlyContinue"],
-                    capture_output=True, timeout=15
-                )
-                disabled += 1
-            except Exception:
-                continue
-        self.results.append({"success": True, "message": f"Disabled {disabled} Windows services"})
+        disabled = self._disable_service_list(services)
+        self.add_result(True, f"Disabled {disabled} Windows services")
 
     def _disable_startup_apps(self):
         try:
@@ -108,9 +108,9 @@ class ServicesOptimizer:
             apps = json.loads(r.stdout) if r.stdout.strip() else []
             if isinstance(apps, dict):
                 apps = [apps]
-            self.results.append({"success": True, "message": f"Found {len(apps)} startup apps (review recommended)"})
+            self.add_result(True, f"Found {len(apps)} startup apps (review recommended)")
         except Exception:
-            self.results.append({"success": True, "message": "Startup apps scanned"})
+            self.add_result(True, "Startup apps scanned")
 
     def _disable_unwanted_tasks(self):
         tasks = [
@@ -132,7 +132,7 @@ class ServicesOptimizer:
             r = subprocess.run(["schtasks", "/Change", "/TN", t, "/Disable"], capture_output=True, timeout=10)
             if r.returncode == 0:
                 disabled += 1
-        self.results.append({"success": True, "message": f"Disabled {disabled} scheduled tasks"})
+        self.add_result(True, f"Disabled {disabled} scheduled tasks")
 
     def _disable_linux_services(self):
         services = [
@@ -147,7 +147,7 @@ class ServicesOptimizer:
                 disabled += 1
             except Exception:
                 continue
-        self.results.append({"success": True, "message": f"Disabled {disabled} Linux services"})
+        self.add_result(True, f"Disabled {disabled} Linux services")
 
     def _disable_macos_agents(self):
         agents = [
@@ -163,4 +163,4 @@ class ServicesOptimizer:
                 disabled += 1
             except Exception:
                 continue
-        self.results.append({"success": True, "message": f"Disabled {disabled} macOS agents"})
+        self.add_result(True, f"Disabled {disabled} macOS agents")

@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  MemoryStick, HardDrive, Trash2, Zap, RefreshCw,
+  MemoryStick, Trash2, Zap, RefreshCw,
   Search, X, Loader2, Activity,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
-import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
+import { PageHero } from '../ui/PageHero'
 import { ProgressBar } from '../ui/ProgressBar'
 import { Skeleton } from '../ui/Skeleton'
 import { Badge } from '../ui/Badge'
@@ -62,8 +62,8 @@ export function MemoryPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const percent = mem?.percent ?? 0
 
   const memSegments = useMemo(() => [
-    { label: 'Used', value: used, pct: percent, color: '#6366f1' },
-    { label: 'Available', value: available, pct: 100 - percent, color: '#22c55e' },
+    { label: 'Used', value: used, pct: percent, color: 'var(--chart-1)' },
+    { label: 'Available', value: available, pct: 100 - percent, color: 'var(--color-green)' },
   ], [used, available, percent])
 
   useEffect(() => {
@@ -187,31 +187,22 @@ export function MemoryPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+      {/* One band carries the four readings the three tiles used to repeat, so
+          the page opens with an instrument panel instead of three cards that
+          echoed the hero below them. */}
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold tracking-tight text-text">Memory</h1>
-        <p className="text-sm text-text-secondary mt-1">RAM usage monitoring & optimization tools</p>
-      </motion.div>
-
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
-        <MetricCard
-          icon={<MemoryStick size={18} />}
-          label="Usage"
-          value={`${percent.toFixed(1)}%`}
-          progress={percent}
-          trend={{ value: `${(Math.random() * 2 + 0.5).toFixed(1)}%`, up: percent > 60 }}
-        />
-        <MetricCard
-          icon={<HardDrive size={18} />}
-          label="Available"
-          value={`${available.toFixed(1)} GB`}
-          sub={`${((available / total) * 100).toFixed(0)}% of total`}
-        />
-        <MetricCard
-          icon={<HardDrive size={18} />}
-          label="Total"
-          value={`${total.toFixed(1)} GB`}
-          sub={`${used.toFixed(1)} GB in use`}
+        <PageHero
+          eyebrow="Performance"
+          title="Memory"
+          subtitle="RAM usage monitoring and optimization — live figures come from the system snapshot, never from a running average."
+          icon={<MemoryStick size={19} />}
+          stats={[
+            { label: 'In use', value: `${percent.toFixed(0)}%`, hint: `${used.toFixed(1)} GB`, tone: percent > 85 ? 'bad' : percent > 70 ? 'warn' : 'good' },
+            { label: 'Available', value: `${available.toFixed(1)} GB`, hint: total ? `${Math.round((available / total) * 100)}% of total` : undefined },
+            { label: 'Installed', value: `${total.toFixed(1)} GB`, hint: 'physical' },
+            { label: 'Swap', value: memoryInfo ? `${memoryInfo.swap_percent.toFixed(0)}%` : '—', hint: memoryInfo ? `${memoryInfo.swap_used_gb.toFixed(1)} of ${memoryInfo.swap_total_gb.toFixed(1)} GB` : 'not reported', tone: memoryInfo && memoryInfo.swap_percent > 50 ? 'warn' : 'default' },
+          ]}
         />
       </motion.div>
 
@@ -224,7 +215,7 @@ export function MemoryPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
             </div>
           </div>
 
-          <ProgressBar value={percent} size="lg" color="#6366f1" />
+          <ProgressBar value={percent} size="lg" color="var(--chart-1)" />
 
           <div className="grid grid-cols-2 gap-4 mt-5">
             {memSegments.map((seg) => (

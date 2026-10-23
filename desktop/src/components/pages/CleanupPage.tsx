@@ -6,6 +6,7 @@ import {
   Wifi, Layers, Bomb, CheckCircle2, Loader2,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
+import { PageHero } from '../ui/PageHero'
 import { MetricCard } from '../ui/MetricCard'
 import { Button } from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
@@ -84,7 +85,7 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div><Skeleton variant="text" width="200px" height="28px" /><Skeleton variant="text" width="300px" height="16px" className="mt-2" /></div>
         <div className="grid grid-cols-3 gap-4"><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /></div>
         <div className="grid grid-cols-2 gap-4"><Skeleton variant="rectangular" height="160px" /><Skeleton variant="rectangular" height="160px" /></div>
@@ -98,13 +99,20 @@ export function CleanupPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const windowsUpdate = scanResults?.find(c => /update/i.test(c.name))?.bytes ?? 0
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Trash2 className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">System Cleanup</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Scan and remove system junk, cache, and temporary files</p>
+        <PageHero
+          eyebrow="Optimizer · Junk"
+          title="System Cleanup"
+          subtitle="Every figure below comes from a real disk scan of the system drive. Cleaning removes only the categories the backend reports."
+          icon={<Trash2 size={19} />}
+          stats={[
+            { label: 'Reclaimable', value: formatBytes(scanTotal), tone: scanTotal > 0 ? 'warn' : 'default' },
+            { label: 'Categories', value: String(scanResults?.length ?? 0), hint: 'scanned' },
+            { label: 'Temp files', value: formatBytes(tempFiles), hint: 'in temp folders' },
+            { label: 'Cleaned', value: String(cleanedCategories.size), hint: 'this session', tone: cleanedCategories.size ? 'good' : 'default' },
+          ]}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

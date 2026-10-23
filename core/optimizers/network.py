@@ -1,15 +1,25 @@
 import subprocess
+from typing import Dict, Any, List
+from core.base import OptimizerBase, OPTIMIZER_CATEGORY_SAFE
+from core.config import CONFIG
 
 
-class NetworkOptimizer:
+class NetworkOptimizer(OptimizerBase):
     name = "Network Optimization"
+    description = "Optimizes TCP/IP stack, DNS flush, and network adapter settings for lower latency"
+    category = OPTIMIZER_CATEGORY_SAFE
+    benefit = "Reduced network latency, faster DNS resolution, improved throughput"
+    risks = "DNS changes may cause issues on enterprise-managed networks; some settings require reboot"
+    admin_required = True
+    requirements = {}
 
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    def __init__(self):
+        super().__init__()
+        self.os_type = CONFIG.os_type
 
-    def run(self):
+    def run(self) -> List[Dict[str, Any]]:
         self.results = []
+        self.logger.info("Starting network optimization")
         self._flush_dns()
         self._optimize_tcp()
         self._set_fast_dns()
@@ -19,7 +29,7 @@ class NetworkOptimizer:
             self._optimize_macos_network()
         elif self.os_type == "linux":
             self._optimize_linux_network()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
     def _flush_dns(self):
         try:
@@ -30,9 +40,10 @@ class NetworkOptimizer:
                 subprocess.run(["sudo", "killall", "-HUP", "mDNSResponder"], capture_output=True, timeout=10)
             elif self.os_type == "linux":
                 subprocess.run(["sudo", "systemd-resolve", "--flush-caches"], capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "DNS cache flushed"})
+            self.add_result(True, "DNS cache flushed")
         except Exception as e:
-            self.results.append({"success": False, "message": f"DNS flush failed: {e}"})
+            self.logger.error(f"DNS flush failed: {e}")
+            self.add_result(False, f"DNS flush failed: {e}")
 
     def _optimize_tcp(self):
         try:
@@ -51,8 +62,7 @@ class NetworkOptimizer:
                 ]
                 for cmd in cmds:
                     subprocess.run(cmd.split(), capture_output=True, timeout=10)
-                self.results.append({"success": True, "message": "TCP/IP stack optimized (autotune, RSS, fast open)"})
-
+                self.add_result(True, "TCP/IP stack optimized (autotune, RSS, fast open)")
             elif self.os_type == "linux":
                 settings = {
                     "net.ipv4.tcp_fastopen": "3",
@@ -70,8 +80,7 @@ class NetworkOptimizer:
                 }
                 for key, val in settings.items():
                     subprocess.run(["sudo", "sysctl", "-w", f"{key}={val}"], capture_output=True, timeout=5)
-                self.results.append({"success": True, "message": "Linux TCP/IP optimized (BBR congestion control)"})
-
+                self.add_result(True, "Linux TCP/IP optimized (BBR congestion control)")
             elif self.os_type == "macos":
                 cmds = [
                     "sudo sysctl -w net.inet.tcp.delayed_ack=0",
@@ -84,9 +93,10 @@ class NetworkOptimizer:
                 ]
                 for cmd in cmds:
                     subprocess.run(cmd.split(), capture_output=True, timeout=10)
-                self.results.append({"success": True, "message": "macOS TCP/IP optimized (buffer sizes, no delay)"})
+                self.add_result(True, "macOS TCP/IP optimized (buffer sizes, no delay)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"TCP optimization failed: {e}"})
+            self.logger.error(f"TCP optimization failed: {e}")
+            self.add_result(False, f"TCP optimization failed: {e}")
 
     def _set_fast_dns(self):
         try:
@@ -110,13 +120,11 @@ class NetworkOptimizer:
                                  f"name={adapter}", "1.0.0.1", "index=2"],
                                 capture_output=True, timeout=10
                             )
-                self.results.append({"success": True, "message": "DNS set to Cloudflare (1.1.1.1 / 1.0.0.1)"})
-
+                self.add_result(True, "DNS set to Cloudflare (1.1.1.1 / 1.0.0.1)")
             elif self.os_type == "linux":
                 with open("/etc/resolv.conf", "w") as f:
                     f.write("# Optimized DNS\nnameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\n")
-                self.results.append({"success": True, "message": "DNS set to Cloudflare + Google fallback"})
-
+                self.add_result(True, "DNS set to Cloudflare + Google fallback")
             elif self.os_type == "macos":
                 result = subprocess.run(
                     ["/usr/sbin/networksetup", "-listallnetworkservices"],
@@ -127,9 +135,10 @@ class NetworkOptimizer:
                         ["/usr/sbin/networksetup", "-setdnsservers", service, "1.1.1.1", "1.0.0.1"],
                         capture_output=True, timeout=10
                     )
-                self.results.append({"success": True, "message": "DNS set to Cloudflare (1.1.1.1)"})
+                self.add_result(True, "DNS set to Cloudflare (1.1.1.1)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"DNS change failed: {e}"})
+            self.logger.error(f"DNS change failed: {e}")
+            self.add_result(False, f"DNS change failed: {e}")
 
     def _optimize_windows_network(self):
         try:
@@ -145,23 +154,23 @@ class NetworkOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
-
             sub_cmds = [
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{*" /v TcpAckFrequency /t REG_DWORD /d 1 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{*" /v TCPNoDelay /t REG_DWORD /d 1 /f'
             ]
             for cmd in sub_cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-
-            self.results.append({"success": True, "message": "Windows network registry optimized (Nagle off, ports 65534, TTL 128)"})
+            self.add_result(True, "Windows network registry optimized (Nagle off, ports 65534, TTL 128)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Network registry failed: {e}"})
+            self.logger.error(f"Network registry failed: {e}")
+            self.add_result(False, f"Network registry failed: {e}")
 
     def _optimize_macos_network(self):
         try:
-            self.results.append({"success": True, "message": "macOS network stack optimized"})
+            self.add_result(True, "macOS network stack optimized")
         except Exception as e:
-            self.results.append({"success": False, "message": f"macOS network failed: {e}"})
+            self.logger.error(f"macOS network failed: {e}")
+            self.add_result(False, f"macOS network failed: {e}")
 
     def _optimize_linux_network(self):
         try:
@@ -170,6 +179,7 @@ class NetworkOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "Linux network driver optimized (TX queue 1000)"})
+            self.add_result(True, "Linux network driver optimized (TX queue 1000)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Linux network failed: {e}"})
+            self.logger.error(f"Linux network failed: {e}")
+            self.add_result(False, f"Linux network failed: {e}")

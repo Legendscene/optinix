@@ -1,15 +1,25 @@
 import subprocess
+from typing import Dict, Any, List
+from core.base import OptimizerBase, OPTIMIZER_CATEGORY_SAFE
+from core.config import CONFIG
 
 
-class SecurityOptimizer:
+class SecurityOptimizer(OptimizerBase):
     name = "Security & Privacy"
+    description = "Disables telemetry, bloatware, advertising ID, location tracking, Cortana, and hardens firewall"
+    category = OPTIMIZER_CATEGORY_SAFE
+    benefit = "Enhanced privacy, reduced background data usage, cleaner system"
+    risks = "Some enterprise or school environments may rely on telemetry; bloatware removal is per-user"
+    admin_required = True
+    requirements = {}
 
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    def __init__(self):
+        super().__init__()
+        self.os_type = CONFIG.os_type
 
-    def run(self):
+    def run(self) -> List[Dict[str, Any]]:
         self.results = []
+        self.logger.info("Starting security & privacy optimization")
         if self.os_type == "windows":
             self._disable_telemetry()
             self._remove_bloatware()
@@ -21,7 +31,7 @@ class SecurityOptimizer:
             self._linux_privacy()
         elif self.os_type == "macos":
             self._macos_privacy()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
     def _disable_telemetry(self):
         try:
@@ -40,9 +50,10 @@ class SecurityOptimizer:
                 r = subprocess.run(["schtasks", "/Change", "/TN", t, "/Disable"], capture_output=True, timeout=10)
                 if r.returncode == 0:
                     disabled += 1
-            self.results.append({"success": True, "message": f"Disabled {disabled} telemetry tasks"})
+            self.add_result(True, f"Disabled {disabled} telemetry tasks")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Telemetry failed: {e}"})
+            self.logger.error(f"Telemetry failed: {e}")
+            self.add_result(False, f"Telemetry failed: {e}")
 
     def _remove_bloatware(self):
         try:
@@ -60,22 +71,28 @@ class SecurityOptimizer:
             for app in bloatware:
                 r = subprocess.run(
                     ["powershell", "-Command",
-                     f"Get-AppxPackage -Name {app} -ErrorAction SilentlyContinue | Remove-AppxPackage -ErrorAction SilentlyContinue"],
-                    capture_output=True, timeout=30
+                     f"$pkg = Get-AppxPackage -Name '{app}' -ErrorAction SilentlyContinue; if ($pkg) {{ $pkg | Remove-AppxPackage -ErrorAction SilentlyContinue; $true }} else {{ $false }}"],
+                    capture_output=True, text=True, timeout=30
                 )
-                removed += 1
-            self.results.append({"success": True, "message": f"Removed {len(bloatware)} bloatware apps"})
+                if r.returncode == 0 and "True" in r.stdout:
+                    removed += 1
+            if removed > 0:
+                self.add_result(True, f"Removed {removed} bloatware apps")
+            else:
+                self.add_result(True, "No bloatware apps found to remove")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Bloatware failed: {e}"})
+            self.logger.error(f"Bloatware failed: {e}")
+            self.add_result(False, f"Bloatware failed: {e}")
 
     def _optimize_firewall(self):
         try:
             subprocess.run(["netsh", "advfirewall", "set", "allprofiles", "state", "on"], capture_output=True, timeout=10)
             subprocess.run(["netsh", "advfirewall", "set", "allprofiles", "firewallpolicy",
                            "blockinbound,allowoutbound"], capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "Firewall enabled (block inbound, allow outbound)"})
+            self.add_result(True, "Firewall enabled (block inbound, allow outbound)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Firewall failed: {e}"})
+            self.logger.error(f"Firewall failed: {e}")
+            self.add_result(False, f"Firewall failed: {e}")
 
     def _disable_advertising_id(self):
         try:
@@ -87,9 +104,10 @@ class SecurityOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "Advertising ID and suggestions disabled"})
+            self.add_result(True, "Advertising ID and suggestions disabled")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Ad ID failed: {e}"})
+            self.logger.error(f"Ad ID failed: {e}")
+            self.add_result(False, f"Ad ID failed: {e}")
 
     def _disable_location_tracking(self):
         try:
@@ -99,9 +117,10 @@ class SecurityOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "Location tracking disabled"})
+            self.add_result(True, "Location tracking disabled")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Location disable failed: {e}"})
+            self.logger.error(f"Location disable failed: {e}")
+            self.add_result(False, f"Location disable failed: {e}")
 
     def _disable_cortana(self):
         try:
@@ -112,9 +131,10 @@ class SecurityOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "Cortana and web search disabled"})
+            self.add_result(True, "Cortana and web search disabled")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Cortana failed: {e}"})
+            self.logger.error(f"Cortana failed: {e}")
+            self.add_result(False, f"Cortana failed: {e}")
 
     def _linux_privacy(self):
         try:
@@ -127,9 +147,10 @@ class SecurityOptimizer:
             }
             for k, v in settings.items():
                 subprocess.run(["sudo", "sysctl", "-w", f"{k}={v}"], capture_output=True, timeout=5)
-            self.results.append({"success": True, "message": "Linux network privacy hardened"})
+            self.add_result(True, "Linux network privacy hardened")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Linux privacy failed: {e}"})
+            self.logger.error(f"Linux privacy failed: {e}")
+            self.add_result(False, f"Linux privacy failed: {e}")
 
     def _macos_privacy(self):
         try:
@@ -139,6 +160,7 @@ class SecurityOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd.split(), capture_output=True, timeout=10)
-            self.results.append({"success": True, "message": "macOS privacy settings optimized"})
+            self.add_result(True, "macOS privacy settings optimized")
         except Exception as e:
-            self.results.append({"success": False, "message": f"macOS privacy failed: {e}"})
+            self.logger.error(f"macOS privacy failed: {e}")
+            self.add_result(False, f"macOS privacy failed: {e}")

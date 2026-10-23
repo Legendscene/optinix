@@ -12,6 +12,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        # The React build in desktop/dist is the current UI. It is bundled at
+        # the same relative path that core/config.py prefers, so a frozen build
+        # serves the same frontend as a dev run instead of the stale ui/ copy.
+        ("desktop/dist", "desktop/dist"),
         ("ui", "ui"),
         ("core", "core"),
     ],
@@ -26,6 +30,12 @@ a = Analysis(
         "core.extreme_tuner",
         "core.ultimate_tweaks",
         "core.toolbox",
+        "core.memory_manager",
+        "core.network_priority",
+        "core.disk_analyzer",
+        "core.game_profiles",
+        "core.intelligence.health_scorer",
+        "core.api.overview",
         "core.optimizers.cleanup",
         "core.optimizers.network",
         "core.optimizers.disk",
@@ -35,9 +45,19 @@ a = Analysis(
         "core.optimizers.security",
         "core.optimizers.overclock",
         "core.optimizers.developer",
+        "core.optimizers.gpu",
+        "core.optimizers.startup",
+        "core.optimizers.peripheral",
+        "core.optimizers.affinity",
+        "core.optimizers.debloat",
         "core.platforms.windows",
         "core.platforms.linux",
         "core.platforms.macos",
+        # python-socketio picks its async driver at runtime via dynamic
+        # imports that PyInstaller cannot see; pin the threading driver so
+        # the frozen exe boots instead of raising "Invalid async_mode".
+        "engineio.async_drivers",
+        "engineio.async_drivers.threading",
     ],
     hookspath=[],
     hooksconfig={},

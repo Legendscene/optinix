@@ -10,3 +10,11 @@ from .overclock import OverclockOptimizer
 from .affinity import AffinityOptimizer
 from .gpu import GPUOptimizer
 from .peripheral import PeripheralOptimizer
+from .debloat import DebloatOptimizer
+from .game_mode import GameModeOptimizer
+from .network_boost import NetworkBoostOptimizer
+from .speed_test import SpeedTestOptimizer
+from .bios_recs import BIOSRecommendationOptimizer
+from .startup_timer import StartupTimerOptimizer
+from .system_report import SystemReportOptimizer
+from .process_optimizer import ProcessOptimizer

@@ -1,22 +1,32 @@
 import subprocess
+from typing import Dict, Any, List
+from core.base import OptimizerBase, OPTIMIZER_CATEGORY_ADVANCED
+from core.config import CONFIG
 
 
-class PeripheralOptimizer:
+class PeripheralOptimizer(OptimizerBase):
     name = "Peripheral & USB Optimization"
+    description = "Disables mouse acceleration, USB power saving, keyboard delays, filter keys, and NVMe tweaks"
+    category = OPTIMIZER_CATEGORY_ADVANCED
+    benefit = "Lower input latency, faster USB response, improved NVMe performance"
+    risks = "USB suspend disable increases power consumption; NVMe tweaks may cause instability on some hardware"
+    admin_required = True
+    requirements = {}
 
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    def __init__(self):
+        super().__init__()
+        self.os_type = CONFIG.os_type
 
-    def run(self):
+    def run(self) -> List[Dict[str, Any]]:
         self.results = []
+        self.logger.info("Starting peripheral optimization")
         if self.os_type == "windows":
             self._optimize_mouse()
             self._optimize_usb()
             self._optimize_keyboard()
             self._disable_filter_keys()
             self._optimize_nvme()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
     def _optimize_mouse(self):
         try:
@@ -30,9 +40,10 @@ class PeripheralOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-            self.results.append({"success": True, "message": "Mouse: acceleration off, precision curves zeroed"})
+            self.add_result(True, "Mouse: acceleration off, precision curves zeroed")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Mouse optimization failed: {e}"})
+            self.logger.error(f"Mouse optimization failed: {e}")
+            self.add_result(False, f"Mouse optimization failed: {e}")
 
     def _optimize_usb(self):
         try:
@@ -45,7 +56,6 @@ class PeripheralOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-
             subprocess.run(
                 ["powercfg", "/setacvalueindex", "SCHEME_CURRENT",
                  "USB", "USB_SETTING", "0"],
@@ -55,9 +65,10 @@ class PeripheralOptimizer:
                 ["powercfg", "/setactive", "SCHEME_CURRENT"],
                 capture_output=True, timeout=10
             )
-            self.results.append({"success": True, "message": "USB: selective suspend disabled, no power saving"})
+            self.add_result(True, "USB: selective suspend disabled, no power saving")
         except Exception as e:
-            self.results.append({"success": False, "message": f"USB optimization failed: {e}"})
+            self.logger.error(f"USB optimization failed: {e}")
+            self.add_result(False, f"USB optimization failed: {e}")
 
     def _optimize_keyboard(self):
         try:
@@ -70,9 +81,10 @@ class PeripheralOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-            self.results.append({"success": True, "message": "Keyboard: minimum delay, fastest repeat rate"})
+            self.add_result(True, "Keyboard: minimum delay, fastest repeat rate")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Keyboard optimization failed: {e}"})
+            self.logger.error(f"Keyboard optimization failed: {e}")
+            self.add_result(False, f"Keyboard optimization failed: {e}")
 
     def _disable_filter_keys(self):
         try:
@@ -83,21 +95,23 @@ class PeripheralOptimizer:
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-            self.results.append({"success": True, "message": "Filter Keys, Sticky Keys, Toggle Keys disabled"})
+            self.add_result(True, "Filter Keys, Sticky Keys, Toggle Keys disabled")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Filter keys failed: {e}"})
+            self.logger.error(f"Filter keys failed: {e}")
+            self.add_result(False, f"Filter keys failed: {e}")
 
     def _optimize_nvme(self):
         try:
             cmds = [
-                'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\\PrefetchParameters" /v EnablePrefetcher /t REG_DWORD /d 0 /f',
-                'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\\PrefetchParameters" /v EnableSuperfetch /t REG_DWORD /d 0 /f',
+                'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\\PrefetchParameters" /v EnablePrefetcher /t REG_DWORD /d 3 /f',
+                'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\\PrefetchParameters" /v EnableSuperfetch /t REG_DWORD /d 1 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device" /v EnableMSI /t REG_DWORD /d 1 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device" /v QueueDepth /t REG_DWORD /d 256 /f',
                 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\stornvme\\Parameters\\Device" /v ThreadPriority /t REG_DWORD /d 7 /f',
             ]
             for cmd in cmds:
                 subprocess.run(cmd, capture_output=True, timeout=10, shell=True)
-            self.results.append({"success": True, "message": "NVMe: MSI enabled, queue depth 256, thread priority 7"})
+            self.add_result(True, "NVMe: MSI enabled, queue depth 256, thread priority 7, prefetch/superfetch enabled (SSD safe)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"NVMe optimization failed: {e}"})
+            self.logger.error(f"NVMe optimization failed: {e}")
+            self.add_result(False, f"NVMe optimization failed: {e}")

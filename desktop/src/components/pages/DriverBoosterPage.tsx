@@ -16,6 +16,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Skeleton } from '../ui/Skeleton'
 import { MetricCard } from '../ui/MetricCard'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 
@@ -90,13 +91,13 @@ export function DriverBoosterPage() {
   )
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Shield className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold tracking-tight text-text">Driver Booster</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Scan, download, and install driver updates</p>
+        <PageHero
+          title="Driver Booster"
+          subtitle="Scan, download, and install driver updates"
+          icon={<Shield size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="flex flex-wrap gap-2">

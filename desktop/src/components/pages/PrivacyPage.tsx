@@ -19,6 +19,7 @@ import { Card } from '../ui/Card'
 import { MetricCard } from '../ui/MetricCard'
 import { Skeleton } from '../ui/Skeleton'
 import { ActionCard } from '../ui/ActionCard'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -85,7 +86,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -109,19 +110,15 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
   }
 
   return (
-    <motion.div initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-surface-2 text-accent"><Shield className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Privacy</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Control data collection and tracking</p>
-        </div>
-      </motion.div>
+    <motion.div initial="hidden" animate="show" className="page space-y-6">
+            <PageHero
+        title="Privacy"
+        subtitle="Control data collection and tracking"
+        icon={<Shield size={19} />}
+      />
 
       <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={<Shield className="w-5 h-5" />} label="Tracking Score" value="92%" progress={92} progressColor="#22c55e" sub="Excellent" />
+        <MetricCard icon={<Shield className="w-5 h-5" />} label="Tracking Score" value="92%" progress={92} progressColor="var(--color-green)" sub="Excellent" />
         <MetricCard icon={<Eye className="w-5 h-5" />} label="Telemetry" value={telemetryEnabled ? 'Disabled' : 'Active'} sub={telemetryEnabled ? 'Protected' : 'Exposed'} />
         <MetricCard icon={<X className="w-5 h-5" />} label="Advertising ID" value={adIdEnabled ? 'Disabled' : 'Active'} sub={adIdEnabled ? 'Private' : 'Tracked'} />
         <MetricCard icon={<Mic className="w-5 h-5" />} label="Microphone" value={micEnabled ? 'Disabled' : 'Active'} sub={micEnabled ? 'Private' : 'Accessible'} />
@@ -139,7 +136,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
                   <p className="text-xs text-text-secondary">Send diagnostic data to Microsoft</p>
                 </div>
               </div>
-              <button onClick={toggleTelemetry} disabled={loadingAction === 'telemetry'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', telemetryEnabled ? 'bg-green text-white' : 'bg-red text-white')}>
+              <button onClick={toggleTelemetry} disabled={loadingAction === 'telemetry'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', telemetryEnabled ? 'bg-green text-surface-0' : 'bg-red text-surface-0')}>
                 {loadingAction === 'telemetry' ? <Loader2 className="w-4 h-4 animate-spin" /> : telemetryEnabled ? 'Disabled' : 'Enabled'}
               </button>
             </div>
@@ -167,7 +164,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
                   <p className="text-xs text-text-secondary">Allow apps to access your location</p>
                 </div>
               </div>
-              <button onClick={toggleLocation} disabled={loadingAction === 'location'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', locationEnabled ? 'bg-green text-white' : 'bg-red text-white')}>
+              <button onClick={toggleLocation} disabled={loadingAction === 'location'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', locationEnabled ? 'bg-green text-surface-0' : 'bg-red text-surface-0')}>
                 {loadingAction === 'location' ? <Loader2 className="w-4 h-4 animate-spin" /> : locationEnabled ? 'On' : 'Off'}
               </button>
             </div>
@@ -179,7 +176,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
                   <p className="text-xs text-text-secondary">Allow apps to access microphone</p>
                 </div>
               </div>
-              <button onClick={toggleMic} disabled={loadingAction === 'mic'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', micEnabled ? 'bg-green text-white' : 'bg-red text-white')}>
+              <button onClick={toggleMic} disabled={loadingAction === 'mic'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', micEnabled ? 'bg-green text-surface-0' : 'bg-red text-surface-0')}>
                 {loadingAction === 'mic' ? <Loader2 className="w-4 h-4 animate-spin" /> : micEnabled ? 'On' : 'Off'}
               </button>
             </div>
@@ -191,7 +188,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
                   <p className="text-xs text-text-secondary">Allow apps to use advertising ID for personalized ads</p>
                 </div>
               </div>
-              <button onClick={toggleAdId} disabled={loadingAction === 'adid'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', adIdEnabled ? 'bg-green text-white' : 'bg-red text-white')}>
+              <button onClick={toggleAdId} disabled={loadingAction === 'adid'} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', adIdEnabled ? 'bg-green text-surface-0' : 'bg-red text-surface-0')}>
                 {loadingAction === 'adid' ? <Loader2 className="w-4 h-4 animate-spin" /> : adIdEnabled ? 'Disabled' : 'Enabled'}
               </button>
             </div>
@@ -206,7 +203,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
       </motion.div>
 
       <motion.div className="mt-6 p-4 rounded-xl bg-surface-1 border border-border">
-        <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><Info className="w-4 h-4 text-blue" />Privacy Best Practices</h3>
+        <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><Info className="w-4 h-4 text-cyan" />Privacy Best Practices</h3>
         <ul className="space-y-2 text-xs text-text-secondary">
           <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green" />Disable Windows telemetry and diagnostic data</li>
           <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green" />Turn off advertising ID for personalized ads</li>
@@ -217,7 +214,7 @@ export default function PrivacyPage({ systemInfo }: { systemInfo: SystemInfo | n
       </motion.div>
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>

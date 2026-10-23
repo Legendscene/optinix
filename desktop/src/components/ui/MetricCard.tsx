@@ -8,6 +8,7 @@ interface MetricCardProps {
   label: string
   value: string
   progress?: number
+  /** Any CSS colour; defaults to the accent ramp. Tokens preferred. */
   progressColor?: string
   trend?: { value: string; up: boolean }
   sub?: string
@@ -15,21 +16,29 @@ interface MetricCardProps {
   onClick?: () => void
 }
 
-export function MetricCard({ icon, label, value, progress, trend, sub, className, onClick }: MetricCardProps) {
+/**
+ * Single-reading tile: gradient icon chip, tabular value, optional progress.
+ * The reading is the loudest thing on the card — label and helper text stay
+ * quiet so a wall of these scans as data rather than as decoration.
+ *
+ * These are the app's KPI walls, so they take the shared 3D tilt: the grid
+ * leans toward the pointer instead of sitting there as flat rectangles.
+ */
+export function MetricCard({ icon, label, value, progress, progressColor, trend, sub, className, onClick }: MetricCardProps) {
   return (
-    <Card hover onClick={onClick} className={cn('relative overflow-hidden', className)}>
-      <div className="flex items-start justify-between mb-2">
-        <div className="p-2 rounded-lg bg-surface-2 text-accent">{icon}</div>
+    <Card hover tilt onClick={onClick} className={cn('relative overflow-hidden', className)}>
+      <div className="flex items-start justify-between mb-2.5">
+        <span className="icon-chip text-accent h-9 w-9">{icon}</span>
         {trend && (
-          <span className={cn('text-xs font-medium flex items-center gap-0.5', trend.up ? 'text-green' : 'text-red')}>
-            <span>{trend.up ? '↑' : '↓'}</span>{trend.value}
+          <span className={cn('text-[11px] font-semibold flex items-center gap-0.5 tnum', trend.up ? 'text-green' : 'text-red')}>
+            <span aria-hidden>{trend.up ? '↑' : '↓'}</span>{trend.value}
           </span>
         )}
       </div>
-      <div className="text-2xl font-semibold tracking-tight text-text">{value}</div>
-      <div className="text-xs text-text-secondary mt-0.5">{label}</div>
-      {progress !== undefined && <ProgressBar value={progress} className="mt-2" size="sm" />}
-      {sub && <div className="text-[11px] text-text-tertiary mt-1">{sub}</div>}
+      <div className="text-[23px] font-semibold leading-none tracking-[-0.02em] text-text tnum">{value}</div>
+      <div className="text-[11.5px] text-text-secondary mt-1.5">{label}</div>
+      {progress !== undefined && <ProgressBar value={progress} color={progressColor} className="mt-3" size="sm" />}
+      {sub && <div className="text-[10.5px] text-text-tertiary mt-1.5">{sub}</div>}
     </Card>
   )
 }

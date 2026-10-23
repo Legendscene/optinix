@@ -2,9 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Network,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Database,
   Wifi,
   Zap,
   RefreshCw,
@@ -15,14 +12,17 @@ import {
   Shield,
   AlertCircle,
   Loader2,
+  Activity,
+  Route,
 } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
-import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
+import { MetricCard } from '../ui/MetricCard'
+import { PageHero } from '../ui/PageHero'
 import { Skeleton } from '../ui/Skeleton'
 import { cn, formatBytes, formatSpeed } from '../../lib/utils'
-import type { SystemInfo, NetworkAdapter } from '../../types'
+import type { SystemInfo, NetworkAdapter, NetworkAnalyzeResult, NetworkTraceResult } from '../../types'
 import { api } from '../../lib/api'
 
 const container = {
@@ -44,6 +44,13 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [pingHost, setPingHost] = useState('8.8.8.8')
   const [pingLoading, setPingLoading] = useState(false)
   const [pingResult, setPingResult] = useState<string | null>(null)
+  const [intelHost, setIntelHost] = useState('1.1.1.1')
+  const [analyzeLoading, setAnalyzeLoading] = useState(false)
+  const [analyzeResult, setAnalyzeResult] = useState<NetworkAnalyzeResult | null>(null)
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
+  const [traceLoading, setTraceLoading] = useState(false)
+  const [traceResult, setTraceResult] = useState<NetworkTraceResult | null>(null)
+  const [traceError, setTraceError] = useState<string | null>(null)
 
   const dnsProviders = [
     { id: 'cloudflare', name: 'Cloudflare', icon: <Cloud className="w-5 h-5" />, primary: '1.1.1.1', secondary: '1.0.0.1' },
@@ -81,11 +88,45 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
     }
   }
 
+  const runAnalyze = async () => {
+    setAnalyzeLoading(true)
+    setAnalyzeError(null)
+    setAnalyzeResult(null)
+    try {
+      setAnalyzeResult(await api.networkAnalyze(intelHost))
+    } catch (e) {
+      setAnalyzeError(e instanceof Error ? e.message : 'Analysis failed')
+    } finally {
+      setAnalyzeLoading(false)
+    }
+  }
+
+  const runTrace = async () => {
+    setTraceLoading(true)
+    setTraceError(null)
+    setTraceResult(null)
+    try {
+      setTraceResult(await api.networkTrace(intelHost))
+    } catch (e) {
+      setTraceError(e instanceof Error ? e.message : 'Trace failed')
+    } finally {
+      setTraceLoading(false)
+    }
+  }
+
   const loadAdapters = useCallback(async () => {
     setAdaptersLoading(true)
     try {
       const res = await api.networkAdapters()
-      setAdapters(res.adapters)
+      // The tuner reports WMI-cased fields (Name/InterfaceDescription/…);
+      // adapt them to the UI shape so cards never render "undefined" and the
+      // list keys stay unique.
+      setAdapters((res.adapters as unknown as Record<string, unknown>[]).map((a) => ({
+        name: String(a.name ?? a.Name ?? 'Unknown adapter'),
+        description: String(a.description ?? a.InterfaceDescription ?? ''),
+        speed: String(a.speed ?? a.LinkSpeed ?? ''),
+        enabled: Boolean(a.enabled ?? /up|connected/i.test(String(a.Status ?? ''))),
+      })))
     } catch {
       setAdapters([])
     } finally {
@@ -110,7 +151,7 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div><Skeleton variant="text" width="200px" height="28px" /><Skeleton variant="text" width="300px" height="16px" className="mt-2" /></div>
         <div className="grid grid-cols-3 gap-4"><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /><Skeleton variant="rectangular" height="120px" /></div>
         <Skeleton variant="rectangular" height="200px" />
@@ -120,22 +161,22 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   const net = systemInfo.network
-  const totalData = net.bytes_sent + net.bytes_recv
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <Network className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-bold text-text">Network</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-9">Monitor and optimize network performance</p>
-      </motion.div>
-
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
-        <MetricCard icon={<ArrowDownToLine className="w-5 h-5" />} label="Download Speed" value={formatSpeed(net.speed_down)} trend={{ value: 'active', up: true }} sub="Current throughput" />
-        <MetricCard icon={<ArrowUpFromLine className="w-5 h-5" />} label="Upload Speed" value={formatSpeed(net.speed_up)} trend={{ value: 'active', up: true }} sub="Current throughput" />
-        <MetricCard icon={<Database className="w-5 h-5" />} label="Total Data" value={formatBytes(totalData)} sub={`${formatBytes(net.bytes_recv)} down / ${formatBytes(net.bytes_sent)} up`} />
+        <PageHero
+          eyebrow="Network · Tuning"
+          title="Network"
+          subtitle="Throughput, adapters, DNS and latency tools for the connection this machine already has. Changes are listed as they are applied."
+          icon={<Network size={19} />}
+          stats={[
+            { label: 'Download', value: formatSpeed(net.speed_down), hint: 'current throughput', tone: 'accent' },
+            { label: 'Upload', value: formatSpeed(net.speed_up), hint: 'current throughput', tone: 'accent' },
+            { label: 'Received', value: formatBytes(net.bytes_recv), hint: 'this session' },
+            { label: 'Sent', value: formatBytes(net.bytes_sent), hint: 'this session' },
+          ]}
+        />
       </motion.div>
 
       <motion.div variants={item}>
@@ -257,6 +298,85 @@ export function NetworkPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
           </div>
           {pingResult && (
             <p className="mt-3 text-xs text-text-secondary">{pingResult}</p>
+          )}
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card padding="lg">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="w-4 h-4 text-accent" />
+            <h2 className="text-sm font-semibold text-text">Network Intelligence</h2>
+          </div>
+          <p className="text-xs text-text-tertiary mb-4">
+            Latency, jitter and packet loss measured against a target you choose. Optinix measures diagnostics only — it does not reroute traffic.
+          </p>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={intelHost}
+              onChange={(e) => setIntelHost(e.target.value)}
+              placeholder="Hostname or IP"
+              aria-label="Network intelligence target"
+              className="flex-1 px-3 py-2 text-sm rounded-xl bg-surface-2 border border-border text-text placeholder-text-tertiary focus:outline-none focus:border-accent/50"
+            />
+            <Button variant="default" size="sm" icon={<Activity className="w-4 h-4" />} loading={analyzeLoading} onClick={runAnalyze}>
+              Measure
+            </Button>
+            <Button variant="ghost" size="sm" icon={<Route className="w-4 h-4" />} loading={traceLoading} onClick={runTrace}>
+              Run trace
+            </Button>
+          </div>
+
+          {analyzeError && (
+            <div className="mt-4 p-3 rounded-xl border bg-red-dim border-red/30">
+              <p className="text-sm font-medium text-red">{analyzeError}</p>
+            </div>
+          )}
+
+          {analyzeResult && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="intel-metrics">
+              {analyzeResult.latency.ok ? (
+                <>
+                  <MetricCard icon={<Gauge className="w-5 h-5" />} label="Avg Latency" value={`${analyzeResult.latency.avg_ms} ms`} sub={`min ${analyzeResult.latency.min_ms} / max ${analyzeResult.latency.max_ms}`} />
+                  <MetricCard icon={<Activity className="w-5 h-5" />} label="Jitter" value={`${analyzeResult.latency.jitter_ms} ms`} sub="Population stddev" />
+                  <MetricCard icon={<AlertCircle className="w-5 h-5" />} label="Packet Loss" value={`${analyzeResult.latency.packet_loss_pct ?? 0}%`} sub={`${analyzeResult.latency.received}/${analyzeResult.latency.sent} replies`} />
+                  <MetricCard icon={<Globe className="w-5 h-5" />} label="DNS Resolve" value={analyzeResult.dns.ok ? `${analyzeResult.dns.resolve_ms} ms` : 'Failed'} sub={analyzeResult.dns.addresses?.join(', ') ?? 'No addresses'} />
+                </>
+              ) : (
+                <div className="col-span-2 md:col-span-4 p-4 rounded-xl border bg-yellow-dim border-yellow/30">
+                  <p className="text-sm font-medium text-yellow">No reply from {analyzeResult.latency.host}</p>
+                  <p className="text-xs text-text-tertiary mt-1">{analyzeResult.latency.error ?? 'The target did not respond to ICMP probes. Values are unavailable rather than reported as zero.'}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {traceError && (
+            <div className="mt-4 p-3 rounded-xl border bg-red-dim border-red/30">
+              <p className="text-sm font-medium text-red">{traceError}</p>
+            </div>
+          )}
+
+          {traceResult && (
+            <div className="mt-4" data-testid="intel-trace">
+              <h3 className="text-xs font-semibold text-text-secondary mb-2">Route trace — {traceResult.host}</h3>
+              {traceResult.ok && traceResult.hops.length > 0 ? (
+                <ol className="space-y-1">
+                  {traceResult.hops.map((hop, i) => (
+                    <li key={`${hop.ip}-${i}`} className="flex items-center gap-3 text-xs py-1 px-2 rounded-lg bg-surface-2">
+                      <span className="w-6 text-right text-text-tertiary">{i + 1}</span>
+                      <span className="font-mono text-text w-32">{hop.ip}</span>
+                      <span className={cn(hop.ok ? 'text-text-secondary' : 'text-yellow')}>
+                        {hop.ok ? `${hop.avg_ms} ms` : 'Timed out'}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-xs text-text-tertiary">{traceResult.error ?? 'No hops returned.'}</p>
+              )}
+            </div>
           )}
         </Card>
       </motion.div>

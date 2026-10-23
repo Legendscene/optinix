@@ -55,7 +55,7 @@ export function ExtremePage({ systemInfo }: { systemInfo: SystemInfo | null }) {
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div><Skeleton variant="text" width="250px" height="28px" /><Skeleton variant="text" width="300px" height="16px" className="mt-2" /></div>
         <Skeleton variant="rectangular" height="140px" />
         <Skeleton variant="rectangular" height="60px" />
@@ -65,7 +65,7 @@ export function ExtremePage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item}>
         <div className="flex items-center gap-3 mb-1">
           <Flame className="w-6 h-6 text-red" />

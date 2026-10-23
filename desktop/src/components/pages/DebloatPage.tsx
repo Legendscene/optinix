@@ -7,6 +7,7 @@ import {
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -76,21 +77,23 @@ export function DebloatPage(_props: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item} className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-red-dim text-red"><Trash2 className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Custom Debloater</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Remove bloatware and disable telemetry</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" icon={<Save className="w-3 h-3" />} onClick={createRestorePoint} loading={applying}>Restore Point</Button>
-          <Button variant="primary" icon={<Trash2 className="w-4 h-4" />} onClick={applySelected} disabled={selected.size === 0} loading={applying}>
-            {`Debloat (${selected.size})`}
-          </Button>
-        </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="Custom Debloater"
+          subtitle="Remove bloatware and disable telemetry"
+          icon={<Trash2 size={19} />}
+          actions={
+            <>
+    <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" icon={<Save className="w-3 h-3" />} onClick={createRestorePoint} loading={applying}>Restore Point</Button>
+              <Button variant="primary" icon={<Trash2 className="w-4 h-4" />} onClick={applySelected} disabled={selected.size === 0} loading={applying}>
+                {`Debloat (${selected.size})`}
+              </Button>
+            </div>
+            </>
+          }
+        />
       </motion.div>
 
       <motion.div variants={item} className="flex items-center gap-2">

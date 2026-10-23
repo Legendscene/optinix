@@ -7,6 +7,7 @@ import {
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 import { api } from '../../lib/api'
@@ -16,9 +17,9 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
 
 const plans = [
   { id: 'high', label: 'High Performance', desc: 'Maximum performance at cost of power usage', icon: <Zap className="w-5 h-5" />, color: 'text-green', bg: 'bg-green-dim', badge: 'Best for Gaming' },
-  { id: 'balanced', label: 'Balanced', desc: 'Good balance of performance and efficiency', icon: <BatteryMedium className="w-5 h-5" />, color: 'text-blue', bg: 'bg-blue-dim', badge: 'Default' },
+  { id: 'balanced', label: 'Balanced', desc: 'Good balance of performance and efficiency', icon: <BatteryMedium className="w-5 h-5" />, color: 'text-cyan', bg: 'bg-cyan-dim', badge: 'Default' },
   { id: 'power-saver', label: 'Power Saver', desc: 'Minimize power usage for extended battery', icon: <BatteryWarning className="w-5 h-5" />, color: 'text-yellow', bg: 'bg-yellow-dim', badge: 'Laptop' },
-  { id: 'ultimate', label: 'Ultimate Performance', desc: 'Removes all power saving for max throughput', icon: <Battery className="w-5 h-5" />, color: 'text-purple', bg: 'bg-accent-dim', badge: 'Extreme' },
+  { id: 'ultimate', label: 'Ultimate Performance', desc: 'Removes all power saving for max throughput', icon: <Battery className="w-5 h-5" />, color: 'text-violet', bg: 'bg-accent-dim', badge: 'Extreme' },
 ]
 
 const advancedTweaks = [
@@ -73,13 +74,13 @@ export function PowerPlansPage(_props: { systemInfo: SystemInfo | null }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div variants={item}>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-xl bg-accent-dim text-accent"><Battery className="w-6 h-6" /></div>
-          <h1 className="text-2xl font-bold text-text">Power Plans</h1>
-        </div>
-        <p className="text-sm text-text-secondary ml-11">Manage system power profiles for performance or efficiency</p>
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
+            <motion.div variants={item}>
+        <PageHero
+          title="Power Plans"
+          subtitle="Manage system power profiles for performance or efficiency"
+          icon={<Battery size={19} />}
+        />
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 gap-4">

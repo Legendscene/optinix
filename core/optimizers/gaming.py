@@ -10,23 +10,27 @@ Removed:
 - TdrDelay/TdrDdiDelay → Longer timeout masks GPU issues, no performance benefit
 """
 import subprocess
+from core.base import OptimizerBase
+from core.config import CONFIG
 
-class GamingOptimizer:
+
+class GamingOptimizer(OptimizerBase):
     name = "Safe Gaming Optimization"
-
-    def __init__(self, os_type):
-        self.os_type = os_type
-        self.results = []
+    description = "Enables Windows Game Mode and disables Game DVR to improve gaming performance"
+    category = "safe"
+    benefit = "Improves gaming performance by prioritizing game processes and reducing GPU overhead"
+    risks = "Minimal. Uses official Windows API. Game DVR disabling can be reverted."
+    admin_required = False
+    requirements = {}
 
     def run(self):
-        self.results = []
-        if self.os_type == "windows":
+        if CONFIG.os_type == "windows":
             self._enable_game_mode()
             self._disable_game_dvr()
-        return self.results
+        return [r.to_dict() for r in self.results]
 
     def _enable_game_mode(self):
-        """🟢 Safe: Enable Windows Game Mode (official API)."""
+        """Safe: Enable Windows Game Mode (official API)."""
         try:
             subprocess.run([
                 "reg", "add", "HKCU\\Software\\Microsoft\\GameBar",
@@ -36,12 +40,12 @@ class GamingOptimizer:
                 "reg", "add", "HKCU\\Software\\Microsoft\\GameBar",
                 "/v", "AutoGameModeEnabled", "/t", "REG_DWORD", "/d", "1", "/f"
             ], capture_output=True, timeout=5)
-            self.results.append({"success": True, "message": "Windows Game Mode enabled"})
+            self.add_result(True, "Windows Game Mode enabled")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Game Mode: {e}"})
+            self.add_result(False, f"Game Mode: {e}")
 
     def _disable_game_dvr(self):
-        """🟢 Safe: Disable Game DVR (background recording)."""
+        """Safe: Disable Game DVR (background recording)."""
         try:
             subprocess.run([
                 "reg", "add", "HKCU\\System\\GameConfigStore",
@@ -51,6 +55,6 @@ class GamingOptimizer:
                 "reg", "add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
                 "/v", "AppCaptureEnabled", "/t", "REG_DWORD", "/d", "0", "/f"
             ], capture_output=True, timeout=5)
-            self.results.append({"success": True, "message": "Game DVR disabled (reduces GPU overhead)"})
+            self.add_result(True, "Game DVR disabled (reduces GPU overhead)")
         except Exception as e:
-            self.results.append({"success": False, "message": f"Game DVR: {e}"})
+            self.add_result(False, f"Game DVR: {e}")

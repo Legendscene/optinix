@@ -5,7 +5,6 @@ import webview
 from app import app, socketio, PORT
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOGO_PATH = os.path.join(BASE_DIR, "ui", "assets", "logo.jfif")
 
 
 def start_server():

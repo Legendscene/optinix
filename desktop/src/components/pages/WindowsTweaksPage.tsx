@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
@@ -143,7 +144,7 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -160,7 +161,7 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-accent" />
           <span className="ml-3 text-text-secondary">Loading tweaks...</span>
@@ -171,7 +172,7 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
 
   if (loadError) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="p-4 rounded-xl border border-red bg-red/10">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red" />
@@ -186,24 +187,24 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
   const enabledCount = Object.values(tweaks).filter(v => v).length
 
   return (
-    <motion.div initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-surface-2 text-accent"><Settings className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Windows Tweaks</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Advanced Windows configuration</p>
-        </div>
-        <motion.div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-blue-dim text-blue text-xs font-medium">{enabledCount} tweaks enabled</span>
-          <span className="px-3 py-1 rounded-full bg-accent-dim text-accent text-xs font-medium">{categories.length} categories</span>
-        </motion.div>
-      </motion.div>
+    <motion.div initial="hidden" animate="show" className="page space-y-6">
+            <PageHero
+        title="Windows Tweaks"
+        subtitle="Advanced Windows configuration"
+        icon={<Settings size={19} />}
+        actions={
+          <>
+    <motion.div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-cyan-dim text-cyan text-xs font-medium">{enabledCount} tweaks enabled</span>
+              <span className="px-3 py-1 rounded-full bg-accent-dim text-accent text-xs font-medium">{categories.length} categories</span>
+            </motion.div>
+          </>
+        }
+      />
 
       <motion.div className="flex items-center gap-2 mb-4">
         {categories.map((cat) => (
-          <button key={cat} onClick={() => setActiveCategory(cat)} className={cn('px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', activeCategory === cat ? 'bg-accent text-white' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
+          <button key={cat} onClick={() => setActiveCategory(cat)} className={cn('px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', activeCategory === cat ? 'bg-accent text-surface-0' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
             {cat}
           </button>
         ))}
@@ -223,7 +224,7 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
                     <p className="text-xs text-text-secondary">{tweak.path}</p>
                   </div>
                 </div>
-                <button onClick={() => toggleTweak(tweakId)} disabled={loadingAction === tweakId} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', tweaks[tweakId] ? 'bg-accent text-white hover:bg-accent/90' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
+                <button onClick={() => toggleTweak(tweakId)} disabled={loadingAction === tweakId} className={cn('relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', tweaks[tweakId] ? 'bg-accent text-surface-0 hover:bg-accent/90' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
                   {loadingAction === tweakId ? <Loader2 className="w-4 h-4 animate-spin" /> : tweaks[tweakId] ? 'Enabled' : 'Disabled'}
                 </button>
               </div>
@@ -251,7 +252,7 @@ export default function WindowsTweaksPage({ systemInfo }: { systemInfo: SystemIn
       </motion.div>
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>

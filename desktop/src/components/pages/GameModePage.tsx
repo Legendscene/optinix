@@ -65,7 +65,7 @@ export function GameModePage({ systemInfo }: { systemInfo: SystemInfo | null }) 
   const refresh = () => { loadStatus() }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="page space-y-6">
       <motion.div variants={item} className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">

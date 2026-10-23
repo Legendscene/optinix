@@ -1,0 +1,13 @@
+{
+  "name": "optinix",
+  "displayName": "Optinix Desktop",
+  "private": true,
+  "agents": {
+    "default": {
+      "docs": [
+        "AGENTS.md",
+        "desktop/AGENTS.md"
+      ]
+    }
+  }
+}

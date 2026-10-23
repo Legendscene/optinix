@@ -21,6 +21,7 @@ import {
 import { Button } from '../ui/Button'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import type { SystemInfo } from '../../types'
 
@@ -49,7 +50,7 @@ const mockExtensions: Extension[] = [
   { id: 'context_menu', name: 'Classic Context Menu', browser: 'shell', desc: 'Restore classic right-click menu', version: '1.0.0', author: 'Optinix', status: 'available', enabled: false, icon: <Globe className="w-5 h-5" /> },
 ]
 
-const browserColor = (b: string) => b === 'chrome' ? 'bg-blue-dim text-blue' : b === 'firefox' ? 'bg-orange-dim text-orange' : b === 'edge' ? 'bg-green-dim text-green' : 'bg-purple-dim text-purple'
+const browserColor = (b: string) => b === 'chrome' ? 'bg-cyan-dim text-cyan' : b === 'firefox' ? 'bg-yellow-dim text-yellow' : b === 'edge' ? 'bg-green-dim text-green' : 'bg-violet-dim text-violet'
 
 export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const [extensions, setExtensions] = useState<Extension[]>(mockExtensions)
@@ -124,7 +125,7 @@ export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo 
 
   if (!systemInfo) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton variant="text" width="200px" height="28px" />
@@ -140,20 +141,20 @@ export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo 
   }
 
   return (
-    <motion.div initial="hidden" animate="show" className="p-6 space-y-6">
-      <motion.div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-xl bg-surface-2 text-accent"><Globe className="w-6 h-6" /></div>
-            <h1 className="text-2xl font-bold text-text">Extensions</h1>
-          </div>
-          <p className="text-sm text-text-secondary ml-11">Browser and shell extensions</p>
-        </div>
-        <motion.div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-blue-dim text-blue text-xs font-medium">{installedCount} installed</span>
-          <span className="px-3 py-1 rounded-full bg-green-dim text-green text-xs font-medium">{enabledCount} enabled</span>
-        </motion.div>
-      </motion.div>
+    <motion.div initial="hidden" animate="show" className="page space-y-6">
+            <PageHero
+        title="Extensions"
+        subtitle="Browser and shell extensions"
+        icon={<Globe size={19} />}
+        actions={
+          <>
+    <motion.div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-cyan-dim text-cyan text-xs font-medium">{installedCount} installed</span>
+              <span className="px-3 py-1 rounded-full bg-green-dim text-green text-xs font-medium">{enabledCount} enabled</span>
+            </motion.div>
+          </>
+        }
+      />
 
       <motion.div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="relative flex-1">
@@ -162,7 +163,7 @@ export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo 
         </div>
         <div className="flex gap-2">
           {['all', 'installed', 'available', 'enabled'].map(f => (
-            <button key={f} onClick={() => setFilter(f as Filter)} className={cn('px-3 py-2 rounded-lg text-sm font-medium transition-colors', filter === f ? 'bg-accent text-white' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
+            <button key={f} onClick={() => setFilter(f as Filter)} className={cn('px-3 py-2 rounded-lg text-sm font-medium transition-colors', filter === f ? 'bg-accent text-surface-0' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text')}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -214,7 +215,7 @@ export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo 
       </motion.div>
 
       <motion.div className="mt-6 p-4 rounded-xl bg-surface-1 border border-border">
-        <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><Cloud className="w-4 h-4 text-blue" />Recommended Bundles</h3>
+        <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2"><Cloud className="w-4 h-4 text-cyan" />Recommended Bundles</h3>
         <div className="flex flex-wrap gap-2">
           {[
             { name: 'Privacy Pack', desc: 'uBlock + Privacy Badger + HTTPS Everywhere', count: 3 },
@@ -231,7 +232,7 @@ export default function ExtensionsPage({ systemInfo }: { systemInfo: SystemInfo 
       </motion.div>
 
       {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? '#22c55e' : '#ef4444', backgroundColor: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-xl border" style={{ borderColor: result.success ? 'var(--color-green)' : 'var(--color-red)', backgroundColor: result.success ? 'var(--color-green-dim)' : 'var(--color-red-dim)' }}>
           <div className="flex items-center gap-3">
             <div className={cn('w-2 h-2 rounded-full', result.success ? 'bg-green' : 'bg-red')} />
             <span className="text-sm text-text">{result.message}</span>
