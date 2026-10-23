@@ -6,14 +6,25 @@
  * rectangle. This paints a small 3D room behind the content column — a grid
  * floor receding toward the horizon, two wireframe halls leaning in from
  * opposite corners, suspended specks and two slow light fields — present on
- * all 60+ routes, invisible where a card covers it, and gone entirely under
+ * all 60+ routes, invisible where a card covers it, and dimmed/gone under
  * reduced motion (the CSS animations are parked by the global rules in
- * index.css).
+ * index.css; the pointer parallax is gated in JS).
  *
  * Purely decorative: no canvas, no WebGL context, and every moving part is a
  * transform or a background position on one element, so the layer costs the
  * compositor almost nothing and never blocks a click.
+ *
+ * Depth is also pointer-reactive: three backdrop layers (grid, horizon
+ * light, the room) chase the pointer at different rates and opposite
+ * directions, so the backdrop reads as a space rather than a poster. The
+ * listener is rAF-throttled, lerps for organic lag, stops itself when the
+ * pointer rests, and never runs under reduced motion (the CSS for the
+ * layers is still present, but without --px/--py written they hold their
+ * default pose).
  */
+
+import { useEffect, useRef } from 'react'
+import { prefersReducedMotion } from '../../hooks/useMotionPreference'
 
 /** Fixed field: same room on every route, no random layout between pages. */
 const SPECKS = [
@@ -30,8 +41,62 @@ const SPECKS = [
 ]
 
 export function PageAtmosphere() {
+  /* The CSS vars --px/--py land on this host; every parallax layer reads
+     them through inheritance, so one writer drives all three layers. */
+  const host = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = host.current
+    if (!el) return
+
+    let raf = 0
+    let running = false
+    let px = 0.5, py = 0.5   // eased value (what the layers show)
+    let tx = 0.5, ty = 0.5   // pointer target
+
+    const tick = () => {
+      px += (tx - px) * 0.07
+      py += (ty - py) * 0.07
+      el.style.setProperty('--px', px.toFixed(3))
+      el.style.setProperty('--py', py.toFixed(3))
+      /* Settled close enough to the target: stop the loop entirely and
+         restart on the next pointer move instead of idling forever. */
+      if (Math.abs(tx - px) < 0.001 && Math.abs(ty - py) < 0.001) {
+        running = false
+        return
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    const wake = () => {
+      if (!running) {
+        running = true
+        raf = requestAnimationFrame(tick)
+      }
+    }
+
+    const onMove = (e: PointerEvent) => {
+      if (prefersReducedMotion() || document.hidden) return
+      tx = e.clientX / window.innerWidth
+      ty = e.clientY / window.innerHeight
+      wake()
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      running = false
+      window.removeEventListener('pointermove', onMove)
+    }
+  }, [])
+
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div
+      aria-hidden
+      ref={host}
+      style={{ '--px': 0.5, '--py': 0.5 } as React.CSSProperties}
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+    >
       {/* Static engineering grid, fading out toward the fold. */}
       <div className="grid-overlay absolute inset-x-0 top-0 h-[420px] opacity-70" />
 

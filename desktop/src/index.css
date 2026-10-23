@@ -347,6 +347,8 @@ main h1:not(:has(svg)) {
 .surface-card-interactive:hover {
   background: var(--color-surface-3);
   border-color: var(--color-border-light);
+  /* Small levitation: the transition above already lists transform. */
+  transform: translateY(-2px);
 }
 
 /* Layered card: hairline top catch-light, like a machined edge. */
@@ -474,6 +476,10 @@ main h1:not(:has(svg)) {
 
 .atmosphere-horizon {
   background: radial-gradient(58% 100% at 50% 0%, var(--color-accent-dim), transparent 78%);
+  /* Pointer parallax, layer 2: the horizon light drifts with the
+     pointer, slower than the grid above it. */
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * 8px), 0, 0);
+  transition: transform 420ms var(--ease-out-quart);
 }
 
 @keyframes atmos-drift-a {
@@ -791,6 +797,37 @@ main h1:not(:has(svg)) {
 .stagger-rise > *:nth-child(5) { animation-delay: 160ms; }
 .stagger-rise > *:nth-child(n + 6) { animation-delay: 200ms; }
 
+/* ============================================================
+   Page mount choreography
+   The shell's framer transition covers the page as a whole (App.tsx);
+   this staggers the individual panels under it so every route change
+   reads as a room arranging itself, not a block snapping in.
+   Fill mode is 'backwards': the from-state holds during the delay, then
+   the animation is released once played — so framer's hover transforms
+   on the same elements keep working afterwards. Runs once per mount
+   (route change or data-driven appearance), opacity+transform only.
+   ============================================================ */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+main :is(.surface-card, .card-depth) {
+  animation: panel-in 340ms var(--ease-out-quart) backwards;
+}
+main :is(.surface-card, .card-depth):nth-child(2)      { animation-delay: 45ms; }
+main :is(.surface-card, .card-depth):nth-child(3)      { animation-delay: 90ms; }
+main :is(.surface-card, .card-depth):nth-child(4)      { animation-delay: 135ms; }
+main :is(.surface-card, .card-depth):nth-child(5)      { animation-delay: 180ms; }
+main :is(.surface-card, .card-depth):nth-child(n + 6)  { animation-delay: 225ms; }
+
+/* Tactile press: the click visibly lands. Brightness (not transform),
+   so it can never fight framer's whileTap/whileHover inline transforms
+   or shift a button's layout for one frame. */
+button:not(:disabled):active {
+  filter: brightness(0.9);
+}
+
 /* Determinant progress sweep, used only while a job runs. */
 .animate-sweep {
   animation: optinix-sweep 1.4s var(--ease-out-quart) infinite;
@@ -854,6 +891,12 @@ main h1:not(:has(svg)) {
     linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: linear-gradient(180deg, #000 0%, transparent 60%);
+  /* Pointer parallax, layer 1 (fastest). --px/--py come from
+     PageAtmosphere's pointer listener; under reduced motion they are
+     never written, so the layer holds its default pose. */
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * 16px), calc((var(--py, 0.5) - 0.5) * 10px), 0);
+  transition: transform 420ms var(--ease-out-quart);
+  will-change: transform;
 }
 
 /* ============================================================
@@ -1094,6 +1137,12 @@ main h1:not(:has(svg)) {
   perspective: 900px;
   perspective-origin: 50% -20%;
   pointer-events: none;
+  /* Pointer parallax, layer 3 (slowest, counter-direction): the room
+     recedes away from the pointer, so moving the mouse exchanges one
+     layer against the other two — parallax, not decoration. */
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * -18px), calc((var(--py, 0.5) - 0.5) * -10px), 0);
+  transition: transform 420ms var(--ease-out-quart);
+  will-change: transform;
 }
 
 /* Grid floor receding toward the horizon. One element, one moving
