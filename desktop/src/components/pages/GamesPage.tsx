@@ -393,7 +393,7 @@ export function GamesPage() {
           )}
 
           {/* Filters: search, category, launcher, drive, status, favorites */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
               <input

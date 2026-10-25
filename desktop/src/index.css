@@ -1,34 +1,62 @@
 @import "tailwindcss";
 
 /* ============================================================
+   Typefaces — bundled, not fetched
+   Optinix is a desktop app and must look identical offline. Plus
+   Jakarta Sans (display) is a soft geometric grotesque in the same
+   family as ExitLag's product face; Inter (UI) carries dense labels
+   and tabular numerals. Both are OFL, shipped in /public/fonts.
+   ============================================================ */
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/plus-jakarta-sans-var.woff2") format("woff2-variations");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-var.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    Optinix design system
-   Premium dark desktop product. Graphite foundation, one
-   refined indigo primary, restrained cyan secondary, semantic
-   colours reserved for status. Quality comes from typography,
-   spacing and hierarchy - not from glow.
+   A cinematic hardware instrument, not an admin dashboard:
+   deep graphite room, machined plates, one electric-cyan key light,
+   restrained blue/violet fill and warm status colours. Depth comes
+   from real lighting and layering, never from neon outlines.
    ============================================================ */
 
 @theme {
-  /* -- Surfaces: layered graphite, never pure black -------- */
-  --color-surface-0: #0a0b0d;
-  --color-surface-1: #0e0f13;
-  --color-surface-2: #14161a;
-  --color-surface-3: #1b1e24;
-  --color-surface-4: #232730;
+  /* -- Surfaces: layered graphite, never pure black.
+        The steps are deliberately wide — a card must visibly lift off
+        the page like a plate bolted over a darker recess. ----------- */
+  --color-surface-0: #040507;
+  --color-surface-1: #0a0c10;
+  --color-surface-2: #111419;
+  --color-surface-3: #1a1e26;
+  --color-surface-4: #272d38;
 
-  /* -- Lines: thin, low contrast --------------------------- */
-  --color-border: #212429;
-  --color-border-light: #2c3039;
+  /* -- Lines: visible machined seams. A dark UI whose cards only
+        differentiate by 3% lightness reads flat; the plate edge
+        itself is what separates card from room. ----------------- */
+  --color-border: #30363f;
+  --color-border-light: #4a5260;
 
   /* -- Primary: Optinix teal. Bright on dark surfaces; the light theme
         overrides these with darker values so white text still passes AA. */
-  --color-accent: #00e5cc;
-  --color-accent-hover: #33ecdb;
-  --color-accent-dim: rgba(0, 229, 204, 0.14);
-  --color-accent-ink: #4df0e1;
-  --color-accent-line: rgba(0, 229, 204, 0.32);
+  --color-accent: #2ee6cf;
+  --color-accent-hover: #5ff0dd;
+  --color-accent-dim: rgba(46, 230, 207, 0.13);
+  --color-accent-ink: #7af5e5;
+  --color-accent-line: rgba(46, 230, 207, 0.3);
   /* Text drawn on top of accent-filled controls (buttons, badges). */
-  --color-on-accent: #06120f;
+  --color-on-accent: #04120f;
 
   /* -- Chart series (recharts reads these via var()) -------- */
   --chart-1: var(--color-accent);
@@ -36,15 +64,15 @@
   --chart-3: #c9962f;
   --chart-4: #d9534f;
 
-  /* -- Secondary: subtle cyan ----------------------------- */
-  --color-cyan: #4aa8c4;
-  --color-cyan-dim: rgba(74, 168, 196, 0.14);
+  /* -- Secondary: cool blue (data, secondary charts) -------- */
+  --color-cyan: #5b9dff;
+  --color-cyan-dim: rgba(91, 157, 255, 0.14);
 
   /* -- Atmosphere: restrained violet. Only for hero/ambient
         lighting and the 3D scene — never on body components. --- */
-  --color-violet: #8b7bf7;
-  --color-violet-dim: rgba(139, 123, 247, 0.13);
-  --color-violet-line: rgba(139, 123, 247, 0.28);
+  --color-violet: #9b7bff;
+  --color-violet-dim: rgba(155, 123, 255, 0.12);
+  --color-violet-line: rgba(155, 123, 255, 0.26);
 
   /* -- Semantic: status only ------------------------------ */
   --color-green: #3ea86a;
@@ -57,23 +85,23 @@
   /* -- Text: three levels, all AA (4.5:1) on every surface they sit on.
         The muted level is deliberately not dimmer than #8f96a8: anything
         darker drops under 4.5:1 on surface-3 and on the raised kbd chips. --- */
-  --color-text: #e8eaef;
-  --color-text-secondary: #b3bac7;
-  --color-text-tertiary: #8f96a8;
+  --color-text: #eef1f6;
+  --color-text-secondary: #aeb7c6;
+  --color-text-tertiary: #8b94a5;
 
-  /* -- Radii ---------------------------------------------- */
-  --radius-card: 14px;
-  --radius-control: 10px;
+  /* -- Radii: machined hardware, not rounded admin chrome. -- */
+  --radius-card: 10px;
+  --radius-control: 7px;
 
-  /* -- Soft elevation, no coloured glow ------------------- */
-  --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-e2: 0 2px 8px rgb(0 0 0 / 0.32);
-  --shadow-e3: 0 14px 36px -10px rgb(0 0 0 / 0.6);
-  --shadow-e4: 0 24px 64px -16px rgb(0 0 0 / 0.7);
+  /* -- Elevation: plates cast real shadows over a darker room -- */
+  --shadow-e1: 0 1px 3px rgb(0 0 0 / 0.55);
+  --shadow-e2: 0 4px 14px -2px rgb(0 0 0 / 0.5);
+  --shadow-e3: 0 18px 44px -12px rgb(0 0 0 / 0.72);
+  --shadow-e4: 0 30px 76px -18px rgb(0 0 0 / 0.85);
 
-  --font-sans: "Inter var", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Chakra Petch", "Inter var", "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Mono", ui-monospace, "SF Mono", monospace;
 
   /* -- ExitLag-mode accents: used only by the Optimizer console. The #22eba3
         green is ExitLag's own brand value, scoped here after user request to
@@ -86,12 +114,12 @@
   /* -- Gradient system: one accent ramp (teal -> cyan -> violet) reused by
         hero bands, icon chips and display type, so every gradient in the app
         comes from the same three stops instead of a new pair per page. --- */
-  --grad-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-cyan) 52%, var(--color-violet) 100%);
+  --grad-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-cyan) 55%, var(--color-violet) 100%);
   --grad-accent-rail: linear-gradient(90deg, var(--color-accent) 0%, var(--color-cyan) 58%, var(--color-violet) 100%);
-  --grad-title: linear-gradient(104deg, var(--color-text) 0%, var(--color-accent-ink) 44%, var(--color-violet) 100%);
+  --grad-title: linear-gradient(100deg, #ffffff 0%, #d8fff9 38%, var(--color-accent-ink) 74%, #a9c6ff 100%);
   /* Filled controls: the same ramp, held back so white/ink text still passes
      contrast at every stop. Light theme drops the violet stop entirely. */
-  --grad-control: linear-gradient(96deg, var(--color-accent) 0%, var(--color-cyan) 70%, color-mix(in srgb, var(--color-violet) 55%, var(--color-cyan)) 100%);
+  --grad-control: linear-gradient(96deg, #2ee6cf 0%, #3ad9c2 58%, #79e6d3 100%);
   /* Faint corner tint that gives a flat card depth without a glow. */
   --wash-accent: color-mix(in srgb, var(--color-accent-dim) 45%, transparent);
   --wash-violet: color-mix(in srgb, var(--color-violet-dim) 55%, transparent);
@@ -109,7 +137,7 @@
   /* -- One controlled glow, for the single focal element of a
         page (hero CTA, running-game card). Never on chrome. -- */
   --shadow-glow-accent: 0 0 0 1px var(--color-accent-line),
-    0 12px 40px -12px rgba(0, 229, 204, 0.25);
+    0 18px 50px -16px rgba(46, 230, 207, 0.3);
 }
 
 /* ============================================================
@@ -319,7 +347,12 @@ button {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-e1);
+  /* A plate over a recess: lit along its top edge, dark at its base.
+     This is the core material of the whole app — one rule, everywhere. */
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -14px 22px -18px rgb(0 0 0 / 0.55),
+    var(--shadow-e2);
 }
 
 /* Page titles drawn without their own icon join the display ramp. The icon
@@ -399,7 +432,22 @@ main h1:not(:has(svg)) {
     radial-gradient(115% 150% at 92% -30%, var(--wash-violet), transparent 58%),
     radial-gradient(95% 130% at 4% -20%, var(--wash-accent), transparent 56%),
     linear-gradient(168deg, color-mix(in srgb, var(--color-surface-3) 55%, transparent) 0%, transparent 58%);
-  box-shadow: var(--shadow-e2);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    inset 0 -30px 60px -40px rgb(0 0 0 / 0.9),
+    var(--shadow-e3);
+}
+
+/* Machined left edge: the seam a panel would show, like brushed metal's
+   visible join against the room. */
+.band-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--color-accent-line) 18%, transparent 74%);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* Machined top edge: a hairline that catches the light. */
@@ -542,153 +590,25 @@ main h1:not(:has(svg)) {
   100% { transform: translateX(60%); opacity: 0; }
 }
 
-/* -- CSS 3D orb: three orbiting rings around a gradient core. Pure CSS so a
-      page can carry a 3D focal point without a second WebGL context. ---- */
+/* -- Instrument dial: a machined gauge with an accent arc, used as the
+   page-hero focal ornament. Pure CSS, no second WebGL context. -------- */
 .orb {
   position: relative;
-  perspective: 640px;
-  transform-style: preserve-3d;
+  perspective: 700px;
 }
-.orb-rig {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  animation: orb-spin 30s linear infinite;
-}
-.orb-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid var(--color-accent-line);
-  box-shadow: 0 0 18px -10px var(--color-accent);
-}
-.orb-ring:nth-child(2) {
-  border-color: var(--color-violet-line);
-  box-shadow: 0 0 20px -12px var(--color-violet);
-}
-.orb-ring:nth-child(3) {
-  inset: 16%;
-  border-color: var(--color-border-light);
-}
-.orb-core {
-  position: absolute;
-  inset: 32%;
-  transform: rotate(45deg) translateZ(14px);
-  border-radius: 9px;
-  background-image: conic-gradient(
-    from 120deg at 50% 50%,
-    var(--color-accent),
-    var(--color-cyan) 38%,
-    var(--color-violet) 68%,
-    var(--color-accent)
-  );
-  opacity: 0.92;
-  box-shadow:
-    0 0 30px -6px var(--color-accent),
-    inset 0 0 14px rgb(255 255 255 / 0.22);
-}
-@keyframes orb-spin {
-  from { transform: rotateX(-16deg) rotateY(0deg); }
-  to   { transform: rotateX(-16deg) rotateY(360deg); }
-}
-/* Ring tilts live on the rig's children so the spin stays readable. */
-.orb-ring:nth-child(1) { transform: rotateY(0deg) rotateX(74deg); }
-.orb-ring:nth-child(2) { transform: rotateY(60deg) rotateX(74deg); }
-.orb-ring:nth-child(3) { transform: rotateY(-40deg) rotateX(62deg); }
 
-/* Orb accessories: the halo behind the rig, beads riding the same orbits
-   and the specular flare on the core. All transforms, so the global
-   reduced-motion rules park them with everything else. */
 .orb-halo {
   position: absolute;
-  inset: -16%;
+  inset: -18%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, var(--color-accent-dim), transparent 72%);
-  animation: orb-halo 9s ease-in-out infinite alternate;
-}
-@keyframes orb-halo {
-  from { opacity: 0.5; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1.06); }
+  background: radial-gradient(closest-side, var(--color-accent-dim), transparent 70%);
+  filter: blur(8px);
+  animation: orb-halo-breathe 10s ease-in-out infinite alternate;
 }
 
-.orb-rig-reverse {
-  animation-direction: reverse;
-  animation-duration: 52s;
-}
-
-.orb-sat {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  transform-style: preserve-3d;
-}
-.orb-sat > i {
-  position: absolute;
-  inset: 0;
-  display: block;
-  border-radius: 50%;
-  transform-style: preserve-3d;
-  animation: orb-sat-turn 13s linear infinite;
-}
-.orb-sat > i::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -3px;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 12px 2px var(--color-accent-dim);
-}
-.orb-sat:nth-child(1) { transform: rotateX(74deg); }
-.orb-sat:nth-child(2) { transform: rotateY(58deg) rotateX(72deg); }
-.orb-sat:nth-child(2) > i { animation-duration: 17s; animation-direction: reverse; }
-.orb-sat:nth-child(2) > i::after {
-  background: var(--color-violet);
-  box-shadow: 0 0 12px 2px var(--color-violet-dim);
-}
-.orb-sat:nth-child(3) { transform: rotateY(-42deg) rotateX(62deg); }
-.orb-sat:nth-child(3) > i { animation-duration: 21s; }
-.orb-sat:nth-child(3) > i::after {
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  background: var(--color-cyan);
-  box-shadow: 0 0 10px 1px var(--color-cyan-dim);
-}
-@keyframes orb-sat-turn {
-  from { transform: rotateZ(0deg); }
-  to   { transform: rotateZ(360deg); }
-}
-
-.orb-axis {
-  position: absolute;
-  left: 50%;
-  top: 8%;
-  bottom: 8%;
-  width: 1px;
-  margin-left: -0.5px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    var(--color-accent-line) 24%,
-    var(--color-violet-line) 76%,
-    transparent
-  );
-  opacity: 0.5;
-  transform: rotate(18deg);
-}
-
-.orb-flare {
-  position: absolute;
-  inset: 27%;
-  border-radius: 50%;
-  transform: translateZ(24px);
-  background: radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.55), transparent 46%);
-  opacity: 0.6;
-  pointer-events: none;
+@keyframes orb-halo-breathe {
+  from { opacity: 0.45; transform: scale(0.94); }
+  to   { opacity: 0.9; transform: scale(1.06); }
 }
 
 /* Atmospheric backdrop for hero bands: cyan focal light + one violet
@@ -1619,4 +1539,652 @@ button:not(:disabled):active {
 :root[data-theme="light"] .chart-ghost .ghost-bar {
   fill: var(--color-surface-3);
   opacity: 0.9;
+}
+
+/* ============================================================
+   Cinematic hardware layer
+   The visual identity of Optinix: a dark, physically-lit room made
+   of graphite plates and one electric-cyan key light. Everything
+   below is compositor-only (transform/opacity) and inherits the
+   reduced-motion rules above.
+   ============================================================ */
+
+/* Display type is Plus Jakarta Sans everywhere; body stays Inter. */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.022em;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.2;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* Numeric readouts carry the display face: metric type should look
+   engineered, not like body copy that happens to be a number. */
+.metric-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- The room behind the app --------------------------------- */
+
+.atmo-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.atmo-key {
+  position: absolute;
+  left: 50%;
+  top: -48%;
+  width: 1180px;
+  height: 760px;
+  margin-left: -590px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(46, 230, 207, 0.13), transparent 74%);
+  filter: blur(10px);
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * 22px), calc((var(--py, 0.5) - 0.5) * 10px), 0);
+  transition: transform 600ms var(--ease-out-quart);
+}
+
+.atmo-counter {
+  position: absolute;
+  left: -260px;
+  bottom: -360px;
+  width: 900px;
+  height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(155, 123, 255, 0.1), transparent 72%);
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * -14px), calc((var(--py, 0.5) - 0.5) * -8px), 0);
+  transition: transform 600ms var(--ease-out-quart);
+}
+
+.atmo-cool {
+  position: absolute;
+  right: -220px;
+  top: 12%;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(91, 157, 255, 0.07), transparent 70%);
+}
+
+/* Two soft shafts of light from above the fold. Blurred, low alpha,
+   transform-only drift: they read as a lit room, not a laser show. */
+.atmo-shaft {
+  position: absolute;
+  top: -30%;
+  width: 260px;
+  height: 120%;
+  transform: rotate(16deg);
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, rgba(46, 230, 207, 0.07), transparent 72%);
+  filter: blur(46px);
+  opacity: 0.8;
+  animation: atmo-shaft-breathe 18s ease-in-out infinite alternate;
+}
+.atmo-shaft-a { left: 16%; }
+.atmo-shaft-b {
+  left: 60%;
+  width: 200px;
+  transform: rotate(-13deg);
+  background: linear-gradient(180deg, rgba(91, 157, 255, 0.06), transparent 66%);
+  animation-duration: 24s;
+}
+
+@keyframes atmo-shaft-breathe {
+  from { opacity: 0.35; transform: rotate(16deg) translateX(-10px) scaleY(0.94); }
+  to   { opacity: 0.9; transform: rotate(16deg) translateX(14px) scaleY(1.06); }
+}
+
+.atmo-vignette {
+  background:
+    radial-gradient(120% 100% at 50% 0%, transparent 42%, rgba(3, 4, 6, 0.5) 100%),
+    linear-gradient(180deg, transparent 60%, rgba(3, 4, 6, 0.45) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmo-shaft { animation: none !important; }
+}
+
+/* --- Hero band: a lit stage ---------------------------------- */
+
+.band-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 18px;
+  border: 1px solid #242b36;
+  background-color: #0b0e13;
+  background-image:
+    radial-gradient(130% 170% at 84% -40%, rgba(46, 230, 207, 0.16), transparent 58%),
+    radial-gradient(90% 130% at -8% 120%, rgba(155, 123, 255, 0.09), transparent 62%),
+    linear-gradient(158deg, #18202b 0%, #0d1117 52%, #070a0e 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+    0 30px 70px -46px rgba(0, 0, 0, 0.95);
+}
+
+/* Key light that gives the band a focal side. */
+.hero-key {
+  position: absolute;
+  right: -6%;
+  top: -46%;
+  width: 620px;
+  height: 620px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(46, 230, 207, 0.22), transparent 72%);
+  filter: blur(6px);
+  transform: translate3d(calc((var(--mx, 0.5) - 0.5) * 30px), calc((var(--my, 0.5) - 0.5) * 16px), 0);
+  transition: transform 500ms var(--ease-out-quart);
+  animation: hero-key-breathe 16s ease-in-out infinite alternate;
+}
+
+.hero-key-violet {
+  right: auto;
+  top: auto;
+  left: -14%;
+  bottom: -70%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(closest-side, rgba(155, 123, 255, 0.13), transparent 74%);
+  animation-duration: 22s;
+}
+
+@keyframes hero-key-breathe {
+  from { opacity: 0.55; transform: scale(0.94); }
+  to   { opacity: 0.95; transform: scale(1.08); }
+}
+
+/* A single hard-edged light shaft crossing the stage diagonally. */
+.hero-shaft {
+  position: absolute;
+  top: -55%;
+  right: 8%;
+  width: 190px;
+  height: 220%;
+  transform: rotate(18deg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(46, 230, 207, 0.045) 38%, transparent 76%);
+  filter: blur(26px);
+  opacity: 0.9;
+}
+
+/* Fine horizontal instrument rule at the base of the band. */
+.hero-baseline {
+  position: absolute;
+  inset: auto 24px 0 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(46, 230, 207, 0.28) 22%, rgba(155, 123, 255, 0.2) 62%, transparent);
+  opacity: 0.7;
+}
+
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* The hero's own glow floor: a wide, very soft light beneath the 3D
+   object, so it sits on a surface instead of floating in nothing. */
+.hero-pool {
+  position: absolute;
+  left: 50%;
+  bottom: -12%;
+  width: 420px;
+  height: 150px;
+  margin-left: -210px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(46, 230, 207, 0.2), transparent 70%);
+  filter: blur(18px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* --- Cards: machined plates --------------------------------- */
+
+.surface-card {
+  background-color: #10141a;
+  border-color: #30363f;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.card-depth {
+  border-radius: var(--radius-card);
+}
+
+/* Tile used for a single reading: label on top, big value, optional
+   sparkline. The top hairline and inner shade make it a plate. */
+.readout-tile {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #313843;
+  border-radius: var(--radius-card);
+  background-color: #0e1117;
+  background-image:
+    linear-gradient(168deg, rgba(255, 255, 255, 0.045) 0%, transparent 46%),
+    radial-gradient(120% 90% at 100% 0%, rgba(46, 230, 207, 0.055), transparent 60%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 30px -26px rgba(0, 0, 0, 0.95);
+  transition:
+    border-color 220ms var(--ease-out-quart),
+    transform 220ms var(--ease-out-quart),
+    box-shadow 220ms var(--ease-out-quart);
+}
+
+.readout-tile:hover {
+  border-color: #495362;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.085),
+    0 22px 40px -28px rgba(0, 0, 0, 1);
+}  .readout-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section heading inside a card: small, calm, always paired with the
+   hint line below it. */
+.card-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+/* --- Light theme: the same construction on paper ------------ */
+
+:root[data-theme="light"] .band-hero {
+  border-color: #e2e6ee;
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(130% 170% at 84% -40%, rgba(11, 127, 112, 0.08), transparent 60%),
+    radial-gradient(90% 130% at -8% 120%, rgba(79, 70, 229, 0.05), transparent 62%),
+    linear-gradient(165deg, #ffffff 0%, #f7f8fb 60%, #f1f3f7 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 24px 50px -40px rgba(16, 20, 28, 0.35);
+}
+
+:root[data-theme="light"] .hero-key {
+  background: radial-gradient(closest-side, rgba(11, 127, 112, 0.1), transparent 72%);
+}
+
+:root[data-theme="light"] .hero-key-violet {
+  background: radial-gradient(closest-side, rgba(79, 70, 229, 0.07), transparent 74%);
+}
+
+:root[data-theme="light"] .hero-grain,
+:root[data-theme="light"] .atmo-grain {
+  opacity: 0.02;
+}
+
+:root[data-theme="light"] .surface-card,
+:root[data-theme="light"] .readout-tile {
+  background-color: #ffffff;
+  border-color: #e4e8ef;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 2px rgba(16, 20, 28, 0.05);
+}
+
+:root[data-theme="light"] .readout-tile {
+  background-image:
+    linear-gradient(168deg, rgba(255, 255, 255, 1) 0%, rgba(246, 247, 249, 0.6) 60%),
+    radial-gradient(120% 90% at 100% 0%, rgba(11, 127, 112, 0.04), transparent 60%);
+}
+
+:root[data-theme="light"] .atmo-vignette {
+  background: radial-gradient(120% 100% at 50% 0%, transparent 50%, rgba(16, 20, 28, 0.05) 100%);
+}
+
+/* --- Shell chrome: follows the theme ------------------------- */
+
+.app-sidebar {
+  background: linear-gradient(180deg, #0c1016 0%, #080a0e 62%, #07080b 100%);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.02),
+    1px 0 30px -18px rgba(0, 0, 0, 0.9);
+}
+
+.app-topbar {
+  background: linear-gradient(180deg, rgba(13, 17, 23, 0.96) 0%, rgba(9, 12, 16, 0.96) 100%);
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 14px 30px -26px rgba(0, 0, 0, 0.95);
+}
+
+.hero-action {
+  background: rgba(8, 11, 16, 0.6);
+}
+
+.hero-game {
+  background: rgba(8, 22, 19, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="light"] .app-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fa 100%);
+  box-shadow:
+    inset -1px 0 0 rgba(16, 20, 28, 0.03),
+    1px 0 24px -22px rgba(16, 20, 28, 0.35);
+}
+
+:root[data-theme="light"] .app-topbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 249, 251, 0.97) 100%);
+  box-shadow: 0 12px 26px -26px rgba(16, 20, 28, 0.4);
+}
+
+:root[data-theme="light"] .hero-action {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+:root[data-theme="light"] .hero-game {
+  background: rgba(11, 127, 112, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* --- Hero ornament dial: case, tick ring, accent arc, hub ----- */
+
+.orb-case {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1px solid #3c4450;
+  background: radial-gradient(closest-side, #12161d 64%, #0a0d12 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    inset 0 -18px 30px -18px rgb(0 0 0 / 0.9),
+    inset 0 0 0 5px rgb(0 0 0 / 0.35),
+    0 26px 50px -24px rgb(0 0 0 / 0.9);
+  animation: orb-float 9s ease-in-out infinite alternate;
+}
+
+/* Tick ring only shows near the rim; a light card gradient ring masks it. */
+.orb-ticks {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from -90deg, rgb(255 255 255 / 0.15) 0deg 1deg, transparent 1deg 12deg),
+    repeating-conic-gradient(from -90deg, var(--color-accent) 0deg 1.6deg, transparent 1.6deg 90deg);
+  mask: radial-gradient(closest-side, transparent 74%, #000 75%, #000 91%, transparent 92%);
+  -webkit-mask: radial-gradient(closest-side, transparent 74%, #000 75%, #000 91%, transparent 92%);
+}
+
+/* The accent arc: the gauge's load indicator. One sweep from the top,
+   fading out where the dial reads empty. */
+.orb-arc {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--color-accent) 0deg,
+    color-mix(in srgb, var(--color-accent) 55%, transparent) 130deg,
+    transparent 218deg
+  );
+  mask: radial-gradient(closest-side, transparent 78%, #000 79%, #000 88%, transparent 89%);
+  -webkit-mask: radial-gradient(closest-side, transparent 78%, #000 79%, #000 88%, transparent 89%);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-accent) 40%, transparent));
+  animation: orb-arc-drift 14s ease-in-out infinite alternate;
+}
+
+@keyframes orb-float {
+  from { transform: translate3d(0, 4px, 0); }
+  to   { transform: translate3d(0, -6px, 0); }
+}
+
+@keyframes orb-arc-drift {
+  from { transform: rotate(-24deg); }
+  to   { transform: rotate(18deg); }
+}
+
+.orb-hub {
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 32%, #1c222b 0%, #0b0e13 74%);
+  border: 1px solid #454e5b;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 10px 24px -10px rgb(0 0 0 / 0.7);
+}
+
+.orb-needle {
+  position: absolute;
+  left: calc(50% - 1px);
+  bottom: 50%;
+  width: 2px;
+  height: 34%;
+  border-radius: 1px;
+  transform-origin: 50% 100%;
+  transform: rotate(26deg);
+  background: linear-gradient(180deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 30%, transparent) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.orb-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.orb-shadow {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 2%;
+  height: 10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.65), transparent 72%);
+  filter: blur(8px);
+}
+
+:root[data-theme="light"] .orb-case {
+  border-color: #d7dbe4;
+  background: radial-gradient(closest-side, #ffffff 64%, #eef1f5 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 18px 36px -22px rgb(16 20 28 / 0.35);
+}
+
+:root[data-theme="light"] .orb-ticks {
+  background:
+    repeating-conic-gradient(from -90deg, rgb(16 20 28 / 0.18) 0deg 1deg, transparent 1deg 12deg),
+    repeating-conic-gradient(from -90deg, var(--color-accent) 0deg 1.6deg, transparent 1.6deg 90deg);
+}
+
+:root[data-theme="light"] .orb-hub {
+  background: radial-gradient(circle at 50% 32%, #ffffff 0%, #e7eaf0 74%);
+  border-color: #c8cfda;
+}
+
+:root[data-theme="light"] .orb-shadow {
+  background: radial-gradient(closest-side, rgba(16, 20, 28, 0.28), transparent 72%);
+}
+
+/* --- Non-WebGL tower fallback -------------------------------- */
+
+.tower-fallback {
+  position: relative;
+  width: 54%;
+  height: 76%;
+  transform: rotate(-4deg);
+  animation: tower-float 9s ease-in-out infinite alternate;
+}
+
+@keyframes tower-float {
+  from { transform: rotate(-4deg) translateY(3px); }
+  to   { transform: rotate(-2.5deg) translateY(-5px); }
+}
+
+.tower-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 1px solid #2b333f;
+  background:
+    linear-gradient(120deg, #262d38 0%, #141922 38%, #0d1117 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset -8px 0 18px rgba(0, 0, 0, 0.55),
+    0 30px 50px -26px rgba(0, 0, 0, 0.95);
+}
+
+.tower-glass {
+  position: absolute;
+  inset: 5% 9% 5% 7%;
+  border-radius: 7px;
+  border: 1px solid rgba(122, 245, 229, 0.16);
+  background:
+    linear-gradient(150deg, rgba(174, 255, 246, 0.14) 0%, rgba(14, 40, 38, 0.5) 42%, rgba(4, 12, 11, 0.75) 100%);
+  box-shadow: inset 0 0 26px rgba(46, 230, 207, 0.1);
+}
+
+.tower-strip {
+  position: absolute;
+  left: 3.5%;
+  top: 15%;
+  bottom: 15%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px 2px rgba(46, 230, 207, 0.45);
+  opacity: 0.85;
+}
+
+.tower-gpu {
+  position: absolute;
+  left: 14%;
+  right: 16%;
+  top: 52%;
+  height: 9%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #232b36, #121820);
+  border: 1px solid #2c343f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.tower-gpu::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -3px;
+  height: 1px;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px 1px rgba(46, 230, 207, 0.5);
+}
+
+.tower-fan {
+  position: absolute;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(122, 245, 229, 0.3);
+  background:
+    conic-gradient(from 0deg, rgba(46, 230, 207, 0.22) 0deg 24deg, transparent 24deg 72deg,
+      rgba(46, 230, 207, 0.22) 72deg 96deg, transparent 96deg 144deg,
+      rgba(46, 230, 207, 0.22) 144deg 168deg, transparent 168deg 216deg,
+      rgba(46, 230, 207, 0.22) 216deg 240deg, transparent 240deg 288deg,
+      rgba(46, 230, 207, 0.22) 288deg 312deg, transparent 312deg 360deg),
+    radial-gradient(circle, #0a1214 0 26%, transparent 27%);
+  box-shadow: 0 0 16px -6px rgba(46, 230, 207, 0.5);
+  animation: tower-fan-turn 6s linear infinite;
+}
+
+.tower-fan::after {
+  content: "";
+  position: absolute;
+  inset: 43%;
+  border-radius: 50%;
+  background: #1a222b;
+  border: 1px solid #2b333f;
+}
+
+.tower-fan-a {
+  left: 31%;
+  top: 14%;
+}
+
+.tower-fan-b {
+  left: 31%;
+  top: 63%;
+  border-color: rgba(155, 123, 255, 0.3);
+  animation-duration: 8s;
+  animation-direction: reverse;
+  box-shadow: 0 0 16px -7px rgba(155, 123, 255, 0.55);
+}
+
+@keyframes tower-fan-turn {
+  to { transform: rotate(360deg); }
+}
+
+.tower-base {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 4%;
+  height: 14%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(46, 230, 207, 0.26), transparent 72%);
+  filter: blur(10px);
+}
+
+:root[data-theme="light"] .tower-frame {
+  background: linear-gradient(120deg, #eef1f6 0%, #dde2ea 40%, #cdd3dd 100%);
+  border-color: #c3cad6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 26px 40px -30px rgba(16, 20, 28, 0.5);
+}
+
+:root[data-theme="light"] .tower-glass {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.9) 0%, rgba(224, 245, 241, 0.7) 50%, rgba(190, 220, 215, 0.55) 100%);
+  border-color: rgba(11, 127, 112, 0.25);
+}
+
+:root[data-theme="light"] .tower-fan {
+  background:
+    conic-gradient(from 0deg, rgba(11, 127, 112, 0.18) 0deg 24deg, transparent 24deg 72deg,
+      rgba(11, 127, 112, 0.18) 72deg 96deg, transparent 96deg 144deg,
+      rgba(11, 127, 112, 0.18) 144deg 168deg, transparent 168deg 216deg,
+      rgba(11, 127, 112, 0.18) 216deg 240deg, transparent 240deg 288deg,
+      rgba(11, 127, 112, 0.18) 288deg 312deg, transparent 312deg 360deg),
+    radial-gradient(circle, #f4f7f9 0 26%, transparent 27%);
 }

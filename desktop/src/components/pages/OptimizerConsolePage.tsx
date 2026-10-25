@@ -135,31 +135,42 @@ export function OptimizerConsolePage({ onNavigate, library }: OptimizerConsolePa
   const diskDelta = run ? run.deltas.disk_free_gb : null
 
   return (
-    <div className="animate-rise">
+    <div className="page animate-rise">
       {/* ---------------- Hero band ---------------- */}
-      <div className="eg-hero -mx-6 px-6 pt-9 pb-8 mb-6">
-        <div className="page flex justify-between items-end flex-wrap gap-8">
+      <section className="band-hero relative overflow-hidden mb-5">
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <span className="hero-key" />
+          <span className="hero-key hero-key-violet" />
+          <span className="hero-shaft" />
+          <span className="hero-baseline" />
+          <span className="hero-grain absolute inset-0" />
+        </div>
+        <div className="relative z-10 flex justify-between items-end flex-wrap gap-8 p-6 lg:p-7">
           <div className="min-w-0">
-            <h1 className="font-display text-[42px] leading-none font-bold uppercase tracking-[0.01em] text-text">
+            <div className="mb-2.5 flex items-center gap-2.5">
+              <span className="h-1 w-4 rounded-full bg-accent" aria-hidden />
+              <span className="eyebrow text-accent-ink/85">One pass</span>
+            </div>
+            <h1 className="font-display text-[30px] leading-[1.1] font-bold tracking-[-0.035em]">
               Optimize your system
             </h1>
-            <p className="text-[14px] text-text-secondary mt-3 max-w-[58ch]">
+            <p className="page-subtitle mt-2 max-w-[58ch]">
               Free memory, trim what runs in the background and stabilise the connection in one pass.
               Every step is a real Windows change — nothing here is simulated.
             </p>
           </div>
 
-          {/* Live read-outs, the ExitLag counter band, with real values only */}
-          <dl className="hidden lg:flex gap-9">
+          {/* Live read-outs: real values only, same plate language as the shell. */}
+          <dl className="hidden lg:flex gap-7">
             <Stat label="ping" top={ping?.avg_ms != null ? `${Math.round(ping.avg_ms)}` : '—'} tail={ping?.avg_ms != null ? 'ms · 1.1.1.1' : (ping?.error ? 'unavailable' : 'measuring…')} />
             <Stat label="ram available" top={ramAvail != null ? ramAvail.toFixed(1) : '—'} tail={ramAvail != null ? 'GB' : ''} />
             <Stat label="junk found" top={reclaim && reclaim.total_bytes > 0 ? (reclaim.total_bytes / 1024 ** 3).toFixed(1) : '—'} tail={reclaim && reclaim.total_bytes > 1024 ** 3 ? 'GB' : ''} />
             <Stat label="processes" top={ov?.vitals ? `${ov.vitals.process_count}` : '—'} tail="" />
           </dl>
         </div>
-      </div>
+      </section>
 
-      <div className="page">
+      <div>
         {/* ---------------- Games (installed only, with covers) ---------------- */}
         <section className="mb-7">
           <h3 className="font-display text-[13px] font-semibold uppercase tracking-[0.07em] text-text-secondary mb-3">
@@ -379,9 +390,9 @@ export function OptimizerConsolePage({ onNavigate, library }: OptimizerConsolePa
 function Stat({ label, top, tail }: { label: string; top: string; tail: string | null }) {
   return (
     <div className="text-right">
-      <dt className="font-display uppercase text-[11px] tracking-[0.08em] text-text-tertiary">{label}</dt>
-      <dd className="font-display text-[30px] font-bold tnum text-text leading-tight">{top}</dd>
-      {tail && <dd className="font-display uppercase text-[10.5px] tracking-[0.06em] text-eg-green">{tail}</dd>}
+      <dt className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-text-tertiary">{label}</dt>
+      <dd className="metric-value mt-1 text-[26px] leading-none text-text">{top}</dd>
+      {tail && <dd className="mt-1 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-accent-ink/85">{tail}</dd>}
     </div>
   )
 }

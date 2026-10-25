@@ -70,32 +70,39 @@ export function Sidebar({
     <>
       <aside
         className={cn(
-          'relative flex flex-col h-full shrink-0 chrome border-r border-border',
+          'app-sidebar relative flex flex-col h-full shrink-0 border-r border-border',
           'transition-[width] duration-200 ease-out',
-          collapsed ? 'w-[60px]' : 'w-[236px]',
+          collapsed ? 'w-[64px]' : 'w-[244px]',
         )}
       >
         {/* Ambient top light: one restrained glow behind the brand, so the
             rail reads as an elevated surface instead of a flat strip. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-40"
+          className="pointer-events-none absolute inset-x-0 top-0 h-44"
           style={{
             background:
-              'radial-gradient(120% 100% at 50% -30%, var(--color-accent-dim), transparent 70%)',
+              'radial-gradient(120% 100% at 50% -40%, rgba(46,230,207,0.11), transparent 72%)',
           }}
         />
 
         {/* Brand */}
-        <div className={cn('relative flex items-center h-14 shrink-0 border-b border-border', collapsed ? 'justify-center px-2' : 'px-4 gap-2.5')}>
-          <div className="w-7 h-7 rounded-[9px] bg-accent flex items-center justify-center shrink-0 shadow-[0_6px_18px_-8px_rgba(0,229,204,0.55)]">
-            <Hexagon size={15} className="text-surface-0" strokeWidth={2.4} />
+        <div className={cn('relative flex items-center h-[60px] shrink-0 border-b border-border', collapsed ? 'justify-center px-2' : 'px-4 gap-3')}>
+          <div
+            className="relative w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+            style={{
+              background: 'linear-gradient(150deg, #3ff0d9 0%, #16b9a5 55%, #0c7f74 100%)',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -2px 6px rgba(0,40,34,0.55), 0 10px 22px -12px rgba(46,230,207,0.7)',
+            }}
+          >
+            <Hexagon size={16} className="text-[#04120f]" strokeWidth={2.6} />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-[13px] font-semibold leading-tight tracking-[-0.01em]">Optinix</div>
-              <div className="text-[10px] uppercase tracking-[0.09em] text-text-tertiary leading-tight">
-                Optimizer
+              <div className="font-display text-[15px] font-bold leading-none tracking-[-0.03em]">Optinix</div>
+              <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-text-tertiary leading-none">
+                Performance
               </div>
             </div>
           )}
@@ -165,10 +172,12 @@ export function Sidebar({
                               <motion.span
                                 layoutId="nav-active"
                                 aria-hidden
-                                className="pointer-events-none absolute inset-0 rounded-[9px] bg-accent-dim"
+                                className="pointer-events-none absolute inset-0 rounded-[10px]"
                                 style={{
+                                  background:
+                                    'linear-gradient(90deg, rgba(46,230,207,0.16), rgba(46,230,207,0.05) 62%, transparent)',
                                   boxShadow:
-                                    'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px var(--color-accent-line)',
+                                    'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 0 0 1px rgba(46,230,207,0.16)',
                                 }}
                                 transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
                               />
@@ -177,8 +186,9 @@ export function Sidebar({
                             <span
                               className={cn(
                                 'absolute left-0 top-1/2 -translate-y-1/2 w-[2px] rounded-r-full bg-accent transition-all duration-200',
-                                isActive ? 'h-4 opacity-100' : 'h-0 opacity-0',
+                                isActive ? 'h-5 opacity-100' : 'h-0 opacity-0',
                               )}
+                              style={isActive ? { boxShadow: '0 0 10px 1px rgba(46,230,207,0.6)' } : undefined}
                             />
                             <Icon
                               size={15}

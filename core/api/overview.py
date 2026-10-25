@@ -11,6 +11,7 @@ import os
 import platform
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import psutil
 from flask import Blueprint, jsonify, request
@@ -29,16 +30,22 @@ POWER_TTL = 60.0
 
 _lock = threading.Lock()
 _cache: dict = {}
+# Keys currently being recomputed in the background, so a burst of pollers
+# cannot start one refresh per request.
+_refreshing: set[str] = set()
+_MISSING = object()
+
+# The four producers below are independent; on a cold cache they run in
+# parallel instead of adding their latencies together.
+_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="overview")
 
 
-def _cached(key, ttl, producer, force=False):
-    """Return a cached value, computing it in a worker thread on miss."""
-    now = time.time()
-    with _lock:
-        hit = _cache.get(key)
-        if hit and not force and (now - hit["at"]) < ttl:
-            return hit["value"], True
+def _produce(key: str, producer):
+    """Run one producer with a timeout, storing the result in the cache.
 
+    Returns the value, or the _MISSING sentinel when the producer did not
+    answer in time (the caller then falls back to the last known value).
+    """
     result: dict = {}
 
     def _work():
@@ -52,12 +59,70 @@ def _cached(key, ttl, producer, force=False):
     thr.start()
     thr.join(timeout=25)
     if "value" not in result:
+        return _MISSING
+    with _lock:
+        _cache[key] = {"at": time.time(), "value": result["value"]}
+    return result["value"]
+
+
+def warm_overview_cache() -> None:
+    """Compute the expensive probes once, off the request path.
+
+    Called from app startup so the first dashboard paint does not pay for
+    the health scan, the reclaimable-space walk, the GPU probe and game
+    detection all at once. Safe to call repeatedly: `_cached` honours its
+    own TTL and each key is computed at most once per window.
+    """
+    jobs = (
+        ("game", GAME_TTL, _detected_game),
+        ("power", POWER_TTL, _power_plan),
+        ("health", HEALTH_TTL, _health),
+        ("reclaim", RECLAIM_TTL, _reclaimable),
+        ("gpu", 6.0, _probe_gpu),
+    )
+    futures = [_executor.submit(_cached, key, ttl, producer) for key, ttl, producer in jobs]
+    for future in futures:
+        try:
+            future.result(timeout=30)
+        except Exception as e:  # noqa: BLE001 - warm-up is best effort
+            logger.debug(f"warm_overview_cache: {e}")
+
+
+def _refresh(key: str, producer) -> None:
+    """Background refresh used by the stale-while-revalidate path."""
+    try:
+        _produce(key, producer)
+    finally:
+        with _lock:
+            _refreshing.discard(key)
+
+
+def _cached(key, ttl, producer, force=False):
+    """Return a cached value, computing it in a worker thread on miss.
+
+    Stale entries are served immediately and refreshed behind the request.
+    The dashboard polls every 4 s, so blocking a poll for a 13 s health
+    recompute would freeze the whole first paint; this way the number on
+    screen is at most one refresh old and the response is instant.
+    """
+    now = time.time()
+    with _lock:
+        hit = _cache.get(key)
+        if hit and not force and (now - hit["at"]) < ttl:
+            return hit["value"], True
+        if hit and not force:
+            stale = hit["value"]
+            if key not in _refreshing:
+                _refreshing.add(key)
+                threading.Thread(target=_refresh, args=(key, producer), daemon=True).start()
+            return stale, True
+
+    value = _produce(key, producer)
+    if value is _MISSING:
         with _lock:
             hit = _cache.get(key)
         return (hit["value"] if hit else None), False
-    with _lock:
-        _cache[key] = {"at": time.time(), "value": result["value"]}
-    return result["value"], False
+    return value, False
 
 
 def is_admin() -> bool:
@@ -372,10 +437,26 @@ def _last_optimization():
 @overview_bp.route("/api/overview", methods=["GET"])
 def overview():
     admin = is_admin()
-    game, _ = _cached("game", GAME_TTL, _detected_game)
-    power, _ = _cached("power", POWER_TTL, _power_plan)
-    health, _ = _cached("health", HEALTH_TTL, _health)
-    reclaim, _ = _cached("reclaim", RECLAIM_TTL, _reclaimable)
+    # Cold cache: the four probes are independent, so they overlap instead
+    # of stacking their latencies. Warm cache: each submit returns a cached
+    # value immediately.
+    jobs = (
+        ("game", GAME_TTL, _detected_game),
+        ("power", POWER_TTL, _power_plan),
+        ("health", HEALTH_TTL, _health),
+        ("reclaim", RECLAIM_TTL, _reclaimable),
+    )
+    values = {
+        key: future.result()[0]
+        for key, future in {
+            key: _executor.submit(_cached, key, ttl, producer)
+            for key, ttl, producer in jobs
+        }.items()
+    }
+    game = values["game"]
+    power = values["power"]
+    health = values["health"]
+    reclaim = values["reclaim"]
 
     health = health or {"overall": 0, "scores": {}}
     vitals = _vitals(admin, power or {"name": "Unknown", "is_high_performance": False}, game)

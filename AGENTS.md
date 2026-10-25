@@ -94,11 +94,23 @@ Commit style: `feat: ...` / `fix: ...` / `chore: ...`, one topic per commit.
    add the typed method in `desktop/src/lib/api.ts` and use it. Backend returns
    JSON with `code` on error (see `core/errors.py` handler).
 4. **Design language lives in primitives, not pages.** `Card` owns the pointer
-   sheen; `MetricCard`/`TiltCard`/`PageHeader` own the tile vocabulary;
+   sheen; `MetricCard`/`TiltCard`/`PageHero` own the tile vocabulary;
    `desktop/src/index.css` owns tokens (`--surface-*`, `--radius-*`, accent
-   ramp), dark/light themes, and reduced-motion CSS. A new page should read
-   like the others; copy the primitive, don't fork the styles. There must be
-   **exactly one copy** of the pointer/tilt plumbing.
+   ramp), dark/light themes, the cinematic light layer (`band-hero`,
+   `hero-key`, `app-sidebar`, `app-topbar`) and reduced-motion CSS. A new page
+   should read like the others; copy the primitive, don't fork the styles.
+   There must be **exactly one copy** of the pointer/tilt plumbing.
+
+   Typefaces are bundled, not fetched: Inter (UI) and Plus Jakarta Sans
+   (display) live in `desktop/public/fonts/` and are declared at the top of
+   `index.css`. Do not re-add a Google Fonts `<link>` — the packaged app must
+   render identically offline. `--font-display` is the display face; body text
+   stays Inter. `.metric-value` / `readout-value` are the numeric styles.
+
+   The one WebGL scene is `desktop/src/components/three/HeroScene.tsx` (a
+   procedural PC tower). It is lazy-loaded, pauses on hidden/reduced-motion,
+   and falls back to the CSS tower in `FallbackEmblem`. Keep it the only
+   canvas: page ornaments use `Orb3D` (CSS) on purpose.
 5. **Motion & a11y.** All decorative animation must be compositor-cheap
    (transform/opacity) and parked under reduced motion, both in CSS
    (index.css) and JS (`useMotionPreference` / `prefersReducedMotion` hook).
@@ -133,6 +145,10 @@ asks for them.
   `systemStore`/`api.ts` now. Don't re-create it.
 - `npx tsc` in the repo root isn't meaningful; always `-p tsconfig.app.json`
   from `desktop/`.
+- `/api/overview` warms its expensive probes at startup and serves stale
+  values while refreshing (`core/api/overview.py`). If you add a producer,
+  register it in `warm_overview_cache()` too, otherwise the first Home paint
+  pays its full latency again.
 - Backends/tests are Windows-first: registry, powercfg, services. macOS/Linux
   paths exist but are best-effort in `core/optimizers/*`.
 - npm build may warn about chunks >500 kB (three.js); acceptable, don't chase

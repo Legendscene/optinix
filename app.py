@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import threading
 import json
@@ -111,6 +112,29 @@ def statics(p):
     return send_from_directory(CONFIG.ui_dir, "index.html")
 
 register_blueprints(app)
+
+
+def _warm_overview_caches():
+    """Warm the dashboard's expensive probes off the request path.
+
+    The first /api/overview call otherwise pays for a health scan, a
+    reclaimable-space walk and the GPU/game probes before it can answer, which
+    leaves Home on its skeleton. Starting the work here (in a daemon thread,
+    after the server is listening) makes the first real request cheap.
+    Skipped under pytest so the test suite never spawns system probes.
+    """
+    if "pytest" in sys.modules:
+        return
+    try:
+        from core.api.overview import warm_overview_cache
+        logger.info("overview cache warm-up started")
+        warm_overview_cache()
+        logger.info("overview cache warm-up finished")
+    except Exception as e:  # noqa: BLE001 - never block startup on warm-up
+        logger.debug(f"overview cache warm-up skipped: {e}")
+
+
+threading.Thread(target=_warm_overview_caches, daemon=True, name="overview-warm").start()
 
 @socketio.on('connect')
 def handle_connect():

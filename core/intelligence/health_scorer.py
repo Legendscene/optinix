@@ -3,6 +3,7 @@ import os
 import subprocess
 import re
 import json
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Dict, Optional
 from ..config import CONFIG
@@ -80,12 +81,20 @@ class HealthScorer:
             ("battery", self._score_battery),
         ]
 
-        for name, scorer in scorers:
-            try:
-                results[name] = scorer()
-            except Exception as e:
-                self.logger.error(f"Failed to compute {name} score: {e}")
-                results[name] = {"score": 0, "label": "Error", "details": {"error": str(e)}}
+        # The six scorers are independent and dominated by subprocess
+        # round-trips (PowerShell/WMI), so running them sequentially made the
+        # first overview request take ~13 s and left the dashboard on its
+        # skeleton. They run concurrently now; the order of `results` is kept
+        # deterministic by writing into the caller's dict from the main
+        # thread as completions land.
+        with ThreadPoolExecutor(max_workers=len(scorers), thread_name_prefix="health") as pool:
+            futures = {name: pool.submit(scorer) for name, scorer in scorers}
+            for name, _scorer in scorers:
+                try:
+                    results[name] = futures[name].result()
+                except Exception as e:
+                    self.logger.error(f"Failed to compute {name} score: {e}")
+                    results[name] = {"score": 0, "label": "Error", "details": {"error": str(e)}}
 
         scores = [v["score"] for v in results.values() if isinstance(v.get("score"), (int, float))]
         results["overall"] = round(sum(scores) / len(scores)) if scores else 0

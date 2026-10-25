@@ -30,7 +30,7 @@ export function TopBar({
   const ZoneIcon = zoneMeta.icon
 
   return (
-    <header className="relative flex items-center gap-4 h-14 px-5 border-b border-border chrome shrink-0">
+    <header className="app-topbar relative flex items-center gap-4 h-[60px] px-5 border-b border-border shrink-0">
       {/* Hairline catch-light along the top edge — separates the header
           from the content below like a machined panel lip. */}
       <span
@@ -64,10 +64,11 @@ export function TopBar({
           onClick={onOpenPalette}
           aria-label="Search tools (Ctrl+K)"
           className={cn(
-            'group flex items-center gap-2.5 h-8 w-full max-w-[340px] px-3 rounded-[9px]',
+            'group flex items-center gap-2.5 h-9 w-full max-w-[360px] px-3 rounded-[10px]',
             'bg-surface-2 border border-border text-text-tertiary',
-            'hover:border-border-light hover:text-text-secondary',
+            'hover:border-border-light hover:text-text-secondary hover:bg-surface-3',
             'transition-colors duration-150',
+            'shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]',
           )}
         >
           <Search size={13} className="shrink-0" />
@@ -134,13 +135,13 @@ function Vital({ label, value, unit, raw }: {
 
   return (
     <div
-      className="flex items-baseline gap-1 px-2 py-1 rounded-md hover:bg-surface-2 transition-colors duration-150 cursor-default"
+      className="flex items-baseline gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-surface-3 transition-colors duration-150 cursor-default"
       title={value == null ? `${label}: unavailable` : `${label}: ${value}${unit ?? '%'}`}
     >
-      <span className="text-[10.5px] font-semibold tracking-[0.04em] text-text-tertiary uppercase">
+      <span className="text-[9.5px] font-semibold tracking-[0.12em] text-text-tertiary uppercase">
         {label}
       </span>
-      <span className={cn('text-[11.5px] font-medium tnum', tone)}>
+      <span className={cn('font-display text-[12.5px] font-bold tnum tracking-[-0.02em]', tone)}>
         {value == null ? '—' : Math.round(value)}
         {value != null && unit}
       </span>

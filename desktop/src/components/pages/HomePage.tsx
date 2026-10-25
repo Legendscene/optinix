@@ -222,100 +222,105 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
     <div className="page space-y-4 stagger-rise pb-4">
       {notice && <NoticeBar notice={notice} onDismiss={() => setNotice(null)} />}
 
-      {/* Status band: the one bold element - health arc, headline, 3D
-          emblem, action. The atmosphere layer gives the band its
-          cinematic light; the emblem is decorative and never blocks
-          controls (canvas has pointer-events: none). */}
-      <section className="surface-card surface-card-layered atmosphere aurora relative isolate overflow-hidden">
-        {/* The band's own stage: floor, two beacons and an orbit, so the
-            emblem sits in a lit room instead of on a flat panel. */}
-        <div aria-hidden className="hero-stage">
-          <span className="hero-beacon" />
-          <span className="hero-beacon hero-beacon-violet" />
-          <span className="hero-stage-floor" />
-          <span className="hero-orbit" />
-          <span className="hero-orbit hero-orbit-b" />
-          <span className="hero-scanline" />
+      {/* Status band: the opening scene of the product. A lit stage, the
+          live health dial, the machine's own headline and the primary
+          action — with the 3D tower as the focal object rather than a
+          decorative badge. The canvas is pointer-transparent, so it can
+          never sit between the user and a control. */}
+      <section className="band-hero relative isolate overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <span className="hero-key" />
+          <span className="hero-key hero-key-violet" />
+          <span className="hero-shaft" />
+          <span className="hero-baseline" />
+          <span className="hero-grain absolute inset-0" />
         </div>
 
-        {/* Three columns on xl+: headline, emblem, action. Below xl the
-            emblem drops out and the band returns to two columns. */}
-        <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_290px] xl:grid-cols-[1fr_260px_290px]">
-          <div className="p-5 min-w-0 flex items-start gap-5">
-            <RadialMeter
-              value={data.health.overall}
-              label="Health"
-              size={124}
-              tone={data.health.overall >= 85 ? 'good' : data.health.overall >= 60 ? 'warn' : 'bad'}
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="page-title">{status.headline}</h1>
-                <span className={cn(
-                  'inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full',
-                  status.tone === 'ok' && 'text-green bg-green-dim',
-                  status.tone === 'warn' && 'text-yellow bg-yellow-dim',
-                  status.tone === 'bad' && 'text-red bg-red-dim',
-                )}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                  {status.label}
-                </span>
-              </div>
-              <p className="page-subtitle mt-1.5 max-w-[58ch]">{status.detail}</p>
+        {/* Three columns on xl+: copy, 3D stage, primary action. Below xl
+            the stage drops out and the band keeps two columns. */}
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] min-[1420px]:grid-cols-[minmax(0,1fr)_400px_292px]">
+          <div className="min-w-0 p-6 xl:py-7 flex flex-col justify-center">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="eyebrow text-accent-ink/85">System status</span>
+              <span className="h-3 w-px bg-border" />
+              <span className={cn(
+                'inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full',
+                status.tone === 'ok' && 'text-green bg-green-dim',
+                status.tone === 'warn' && 'text-yellow bg-yellow-dim',
+                status.tone === 'bad' && 'text-red bg-red-dim',
+              )}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                {status.label}
+              </span>
+            </div>
 
-              {detectedGame ? (
-                <div className="mt-3.5 flex flex-wrap items-center gap-2.5 rounded-[10px] border border-accent-line bg-accent-dim/50 px-3 py-2">
-                  <Gamepad2 size={14} className="text-accent-ink shrink-0" />
-                  <span className="text-[12.5px] font-medium">{detectedGame.name}</span>
-                  <span className="text-[11.5px] text-text-tertiary hidden sm:inline">
-                    {detectedGame.description}
-                  </span>
-                  <button
-                    onClick={() => applyGameProfile(detectedGame.id, detectedGame.name)}
-                    disabled={!!busy}
-                    className="ml-auto flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-accent text-on-accent text-[11.5px] font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors duration-150"
-                  >
-                    {busy === `game:${detectedGame.id}`
-                      ? <Loader2 size={11} className="animate-spin" />
-                      : <Play size={11} fill="currentColor" />}
-                    Apply profile
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-3.5 flex items-center gap-2 text-[12px] text-text-tertiary">
-                  <Gamepad2 size={13} className="shrink-0" />
-                  No supported game detected. Start one and Optinix will offer its profile.
-                </div>
-              )}
+            <h1 className="mt-3 font-display text-[27px] font-bold leading-[1.1] tracking-[-0.038em] max-w-[30ch]">
+              {status.headline}
+            </h1>
+            <p className="page-subtitle mt-2 max-w-[52ch]">{status.detail}</p>
+
+            <div className="mt-5 flex items-end gap-4">
+              <RadialMeter
+                value={data.health.overall}
+                label="Health"
+                size={104}
+                tone={data.health.overall >= 85 ? 'good' : data.health.overall >= 60 ? 'warn' : 'bad'}
+              />
+
+              <div className="min-w-0 flex-1 pb-1">
+                {detectedGame ? (
+                  <div className="hero-game rounded-[12px] border border-accent-line/70 px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="icon-chip text-accent-ink h-6 w-6 shrink-0">
+                        <Gamepad2 size={12} />
+                      </span>
+                      <span className="min-w-0 flex-1 text-[12px] font-medium leading-tight truncate">
+                        {detectedGame.name}
+                      </span>
+                      <button
+                        onClick={() => applyGameProfile(detectedGame.id, detectedGame.name)}
+                        disabled={!!busy}
+                        className="flex items-center gap-1.5 h-6 px-2 rounded-md bg-accent-dim text-accent-ink text-[10.5px] font-medium hover:bg-accent hover:text-on-accent disabled:opacity-50 transition-colors duration-150 shrink-0"
+                      >
+                        {busy === `game:${detectedGame.id}`
+                          ? <Loader2 size={10} className="animate-spin" />
+                          : <Play size={10} fill="currentColor" />}
+                        Apply
+                      </button>
+                    </div>
+                    <p className="mt-1 ps-8 text-[10.5px] text-text-tertiary truncate">
+                      {detectedGame.description}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-[12px] text-text-tertiary">
+                    <Gamepad2 size={13} className="shrink-0" />
+                    No supported game detected. Start one and Optinix will offer its profile.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* The one 3D experience: floating Optinix emblem. Hidden below
-              xl so narrow windows keep a two-column band. */}
-          <div className="hidden xl:flex w-full shrink-0 items-center justify-center relative">
-            {/* Soft halo behind the emblem, independent of the band light. */}
-            <span
-              aria-hidden
-              className="absolute w-56 h-56 rounded-full pointer-events-none"
-              style={{
-                background:
-                  'radial-gradient(circle, var(--color-accent-dim), transparent 70%)',
-              }}
-            />
-            {/* Load drives the emblem: busy machine, hotter core. */}
+          {/* The signature 3D object: a lit tower. Hidden below xl so narrow
+              windows keep a two-column band. */}
+          <div className="relative hidden min-[1420px]:flex items-center justify-center min-h-[340px]">
+            <span aria-hidden className="hero-pool" />
+            {/* Load drives the scene: a busy machine burns brighter and its
+                intake fan spins faster. */}
             <HeroExperience
-              className="relative w-[264px] h-[204px]"
-              level={Math.min(1, Math.max(0.08, v.cpu_percent / 100))}
+              className="relative w-[400px] h-[336px]"
+              level={Math.min(1, Math.max(0.08, Math.max(v.cpu_percent, v.gpu.usage ?? 0) / 100))}
             />
           </div>
 
-          {/* Primary action */}
-          <div className="p-5 lg:border-l border-border shrink-0 bg-surface-1/50">
-            <p className="eyebrow mb-1.5">Primary action</p>
-            <h2 className="text-[14px] font-medium mb-1">
+          {/* Primary action: the one filled control on the page. */}
+          <div className="hero-action relative shrink-0 border-t lg:border-t-0 lg:border-l border-border p-5 xl:p-6">
+            <p className="eyebrow mb-2">Primary action</p>
+            <h2 className="font-display text-[15px] font-semibold mb-1">
               {primaryPreset ? primaryPreset.name : 'Boost this PC'}
             </h2>
-            <p className="text-[11.5px] text-text-tertiary leading-[1.5] mb-3">
+            <p className="text-[11.5px] text-text-tertiary leading-[1.55] mb-4">
               {primaryPreset
                 ? primaryPreset.summary
                 : 'Clears temp and cache files, tunes the network stack and trims working sets. Safe to repeat.'}
@@ -324,34 +329,44 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
               onClick={() => primaryPreset && runPreset(primaryPreset.id)}
               disabled={!primaryPreset || !!busy}
               className={cn(
-                'w-full h-10 rounded-[10px] flex items-center justify-center gap-2',
-                'text-[13px] font-medium transition-all duration-200 disabled:cursor-not-allowed',
+                'w-full h-11 rounded-[11px] flex items-center justify-center gap-2',
+                'font-display text-[13.5px] font-semibold tracking-[-0.01em]',
+                'transition-all duration-200 disabled:cursor-not-allowed',
                 busy
                   ? 'bg-surface-3 text-text-tertiary'
-                  : 'bg-accent text-on-accent hover:bg-accent-hover active:scale-[0.985]',
+                  : 'bg-[image:var(--grad-control)] text-on-accent shadow-glow-accent hover:brightness-110 active:scale-[0.985]',
               )}
             >
               {busy
                 ? <><Loader2 size={14} className="animate-spin" /> Optimizing…</>
                 : <><Zap size={14} fill="currentColor" /> Optimize now</>}
             </button>
-            <div className="mt-2.5 flex items-center justify-between text-[11px] text-text-tertiary">
-              <span>
-                {data.last_optimization
-                  ? `Last run ${formatRelative(data.last_optimization.timestamp)}`
-                  : 'No run yet'}
-              </span>
-              <button
-                onClick={() => onNavigate('oneclick')}
-                className="flex items-center gap-1 h-6 px-1 -ml-1 rounded-md hover:text-text-secondary hover:bg-surface-2 transition-colors"
-              >
-                Full pass <ChevronRight size={11} />
-              </button>
-            </div>
+
+            <dl className="mt-4 space-y-2 text-[11px] border-t border-white/[0.05] pt-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-text-tertiary">Last run</dt>
+                <dd className="text-text-secondary font-medium">
+                  {data.last_optimization
+                    ? formatRelative(data.last_optimization.timestamp)
+                    : 'No run yet'}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-text-tertiary">Mode</dt>
+                <dd className="text-text-secondary font-medium">Safe &amp; reversible</dd>
+              </div>
+            </dl>
+
+            <button
+              onClick={() => onNavigate('oneclick')}
+              className="mt-3 flex items-center gap-1 h-7 px-1 -ml-1 rounded-md text-[11px] text-text-tertiary hover:text-text-secondary transition-colors"
+            >
+              Full pass <ChevronRight size={11} />
+            </button>
           </div>
         </div>
         {busy && (
-          <div className="h-0.5 bg-surface-3 overflow-hidden">
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-surface-3 overflow-hidden">
             <div className="h-full w-1/3 bg-accent animate-sweep" />
           </div>
         )}
@@ -378,19 +393,19 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
         <button
           onClick={measurePing}
           disabled={pinging}
-          className="surface-card surface-card-interactive p-3 text-left focus-visible:outline-2 focus-visible:outline-accent"
+          className="readout-tile p-3.5 text-left focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div className="flex items-center justify-between mb-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.04em] text-text-tertiary uppercase">
+            <span className="flex items-center gap-1.5 text-[9.5px] font-semibold tracking-[0.1em] text-text-tertiary uppercase">
               <Activity size={11} /> Ping
             </span>
             {pinging && <Loader2 size={11} className="animate-spin text-accent-ink" />}
           </div>
-          <div className="text-[19px] font-semibold tnum leading-none">
+          <div className="readout-value">
             {ping == null ? '—' : ping}
-            {ping != null && <span className="text-[11px] font-normal text-text-tertiary ml-0.5">ms</span>}
+            {ping != null && <span className="text-[11px] font-medium text-text-tertiary ml-1 tracking-normal">ms</span>}
           </div>
-          <div className="text-[10.5px] text-text-tertiary mt-1.5 leading-tight">
+          <div className="text-[10.5px] text-text-tertiary mt-2 leading-tight">
             {ping == null ? 'Measure against 1.1.1.1' : 'Cloudflare, 4 samples'}
           </div>
         </button>
@@ -402,7 +417,7 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
         <div className="lg:col-span-2 surface-card p-4 min-w-0">
           <div className="flex items-start justify-between gap-3 mb-1">
             <div>
-              <h2 className="text-[13px] font-semibold">Live load</h2>
+              <h2 className="card-title">Live load</h2>
               <p className="text-[11.5px] text-text-tertiary mt-0.5">
                 {history.cpu.length >= 2
                   ? `${history.cpu.length} samples · refreshed every ${POLL_MS / 1000}s`
@@ -436,7 +451,7 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
 
         <div className="surface-card p-4 flex flex-col items-center min-w-0">
           <div className="self-start">
-            <h2 className="text-[13px] font-semibold">Health shape</h2>
+            <h2 className="card-title">Health shape</h2>
             <p className="text-[11.5px] text-text-tertiary mt-0.5">
               {healthShape.length ? `${data.health.overall}/100 overall` : 'No dimension scores reported'}
             </p>
@@ -456,7 +471,7 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
         {/* Recommendations */}
         <div className="lg:col-span-3 surface-card p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-semibold">Needs attention</h2>
+            <h2 className="card-title">Needs attention</h2>
             <button
               onClick={() => onNavigate('health-scores')}
               className="flex items-center gap-1 text-[11.5px] text-text-tertiary hover:text-text transition-colors"
@@ -548,7 +563,7 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
         <div className="lg:col-span-2 space-y-4">
           <div className="surface-card p-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[13px] font-semibold">Your games</h2>
+              <h2 className="card-title">Your games</h2>
               <button
                 onClick={() => onNavigate('games')}
                 className="flex items-center gap-1 text-[11.5px] text-text-tertiary hover:text-text transition-colors"
@@ -600,7 +615,7 @@ export function HomePage({ onNavigate, library, onOptimizingChange }: HomePagePr
 
           <div className="surface-card p-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[13px] font-semibold">Recent activity</h2>
+              <h2 className="card-title">Recent activity</h2>
               <button
                 onClick={() => onNavigate('history')}
                 className="flex items-center gap-1 text-[11.5px] text-text-tertiary hover:text-text transition-colors"
@@ -652,23 +667,23 @@ function VitalCard({
   return (
     <TiltCard className="min-w-0 h-full" innerClassName="h-full">
       <div
-        className="surface-card surface-card-interactive p-3 min-w-0 h-full"
+        className="readout-tile p-3.5 min-w-0 h-full"
         title={hint ?? `${label}: ${value} — ${sub}`}
       >
         <div className="flex items-center justify-between mb-1.5">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.04em] text-text-tertiary uppercase">
-            <Icon size={11} className={warn ? 'text-red' : undefined} />
+          <span className="flex items-center gap-1.5 text-[9.5px] font-semibold tracking-[0.1em] text-text-tertiary uppercase">
+            <Icon size={11} className={warn ? 'text-red' : 'text-accent-ink/80'} />
             {label}
           </span>
           {warn && <span className="text-[10px] font-medium text-red bg-red-dim px-1.5 py-px rounded">hot</span>}
         </div>
-        <div className={cn('text-[19px] font-semibold tnum leading-none', warn && 'text-red')}>
+        <div className={cn('readout-value', warn && 'text-red')}>
           {value}
         </div>
-        <div className="text-[10.5px] text-text-tertiary mt-1 truncate" title={sub}>{sub}</div>
-        <div className="mt-1.5 h-7">
+        <div className="text-[10.5px] text-text-tertiary mt-2 truncate" title={sub}>{sub}</div>
+        <div className="mt-2 h-7">
           {clean.length >= 2 ? (
-            <Sparkline values={clean} width={200} height={28} className="w-full" ariaLabel={`${label} trend`} />
+            <Sparkline values={clean} width={200} height={28} className="w-full opacity-90" ariaLabel={`${label} trend`} />
           ) : (
             <div className="h-full flex items-center text-[10px] text-text-tertiary">
               {hint ? <span className="leading-tight">{hint}</span> : 'collecting samples…'}
@@ -743,7 +758,7 @@ function deriveStatus(data: Overview | null): { headline: string; label: string;
 function HomeSkeleton() {
   return (
     <div className="page space-y-4">
-      <div className="surface-card h-[160px] animate-pulse-subtle" />
+      <div className="surface-card h-[260px] animate-pulse-subtle" />
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="surface-card h-[108px] animate-pulse-subtle" />
