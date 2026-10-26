@@ -76,6 +76,12 @@ function GameArt({ game, size = 'lg' }: { game: DiscoveredGame; size?: 'sm' | 'l
   )
 }
 
+/** Grid order: what is playable now comes before what merely exists on disk,
+    and a record whose files are gone comes last. */
+const STATUS_RANK: Record<string, number> = {
+  running: 0, installed: 1, restricted: 2, missing: 3,
+}
+
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   installed: { label: 'Installed', cls: 'text-green bg-green-dim' },
   running: { label: 'Running', cls: 'text-accent-ink bg-accent-dim' },
@@ -167,6 +173,16 @@ export function GamesPage() {
   const games = lib.library?.games ?? []
   const selected = games.find((g) => g.id === selectedId) ?? null
 
+  /* Counted from the library the backend returned — the band's four readings
+     are the same numbers the grid is filtered by. A plain loop: the list is
+     small, and `games` is a fresh array each render anyway. */
+  let installedCount = 0, runningCount = 0, missingCount = 0
+  for (const g of games) {
+    if (g.status === 'running') runningCount += 1
+    else if (g.status === 'installed') installedCount += 1
+    else if (g.status === 'missing') missingCount += 1
+  }
+
   const allSources = useMemo(
     () => Array.from(new Set(games.map((g) => g.source))).sort(),
     [games],
@@ -201,8 +217,11 @@ export function GamesPage() {
       if (q && !g.name.toLowerCase().includes(q)) return false
       return true
     }).sort((a, b) => {
-      if (a.status === 'running' && b.status !== 'running') return -1
-      if (b.status === 'running' && a.status !== 'running') return 1
+      /* Verified first: a stale registry record with a missing exe used to
+         outrank an installed game just by being earlier in the alphabet. */
+      const rank = STATUS_RANK[a.status] ?? STATUS_RANK.missing
+      const rankB = STATUS_RANK[b.status] ?? STATUS_RANK.missing
+      if (rank !== rankB) return rank - rankB
       if (lib.favorites.has(a.id) && !lib.favorites.has(b.id)) return -1
       if (lib.favorites.has(b.id) && !lib.favorites.has(a.id)) return 1
       return a.name.localeCompare(b.name)
@@ -231,6 +250,14 @@ export function GamesPage() {
         title="Gaming Center"
         subtitle="Verified games installed on this PC. Only installations whose files Optinix could validate appear here."
         icon={<Gamepad2 size={19} />}
+        stats={lib.state === 'ready'
+          ? [
+              { label: 'Verified', value: String(installedCount), tone: installedCount ? 'good' : 'default' },
+              { label: 'In library', value: String(games.length) },
+              { label: 'Running', value: String(runningCount), tone: runningCount ? 'accent' : 'default' },
+              { label: 'Missing', value: String(missingCount), tone: missingCount ? 'warn' : 'default' },
+            ]
+          : undefined}
         badges={
           lib.library?.scanned_at
             ? <span className="text-[11px] text-text-tertiary tnum">Last scan: {fmtTime(lib.library.scanned_at)}</span>
@@ -324,10 +351,23 @@ export function GamesPage() {
       )}
 
       {lib.state === 'loading' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="surface-card h-[300px] animate-pulse-subtle" />
-          ))}
+        /* Loading must never read as a broken empty grid: a labelled status
+           line plus gallery ghosts with a cover and caption bars, so the
+           shapes declare "cards are forming here". */
+        <div className="space-y-2.5" role="status" aria-live="polite">
+          <div className="surface-card p-4 flex items-center gap-2 text-[12.5px] text-text-secondary">
+            <Loader2 size={13} className="animate-spin text-accent-ink" />
+            Reading the game library…
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="surface-card h-[300px] p-3 animate-pulse-subtle" aria-hidden>
+                <div className="h-[62%] rounded-[10px] bg-surface-3/70" />
+                <div className="mt-3 h-3 w-3/4 rounded bg-surface-3/60" />
+                <div className="mt-2 h-2.5 w-1/2 rounded bg-surface-3/40" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -798,6 +838,17 @@ function GameCard({ game, busy, applied, favorite, selected, manual, emulatorNam
   )
 }
 
+/** Coverless plates are tinted from the title itself, so six games without
+    artwork still read as six different cards rather than one repeated tile.
+    The hue is deterministic (same game, same colour) and carries no meaning. */
+const COVER_HUES = ['#2ee6cf', '#5b9dff', '#9b7bff', '#d9a13a', '#e07a4f', '#3ea86a']
+
+function coverHue(name: string): string {
+  let h = 0
+  for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) % 9973
+  return COVER_HUES[h % COVER_HUES.length]
+}
+
 /** Card artwork: the backend resolves and caches verified Steam cover art
     (core.game_artwork) and serves it from /api/game-library/artwork. The
     designed tile is always the base layer — it shows while the image loads
@@ -810,11 +861,37 @@ function GameCover({ game }: { game: DiscoveredGame }) {
 
   return (
     <>
-      {/* Designed fallback — always beneath the artwork. */}
-      <span className="absolute inset-0 bg-gradient-to-br from-surface-4 via-surface-3 to-surface-2 flex items-center justify-center">
-        <span className="grid-overlay absolute inset-0" />
-        <span className="relative text-[44px] font-bold text-accent-ink/70 select-none leading-none">
-          {game.name.slice(0, 1)}
+      {/* Designed fallback — always beneath the artwork. Optinix cannot
+          invent cover art, so a coverless game gets a machined plate: a lit
+          surface, a light sweep, and the title's initial as an oversized
+          cropped watermark. Never a centred placeholder letter. */}
+      <span
+        className="absolute inset-0 overflow-hidden bg-[linear-gradient(160deg,var(--color-surface-4),var(--color-surface-2)_58%,var(--color-surface-1))]"
+        style={{
+          backgroundImage: `radial-gradient(120% 120% at 12% -10%, color-mix(in srgb, ${coverHue(game.name)} 26%, transparent), transparent 62%), linear-gradient(160deg, var(--color-surface-4), var(--color-surface-2) 58%, var(--color-surface-1))`,
+        }}
+      >
+        <span className="grid-overlay absolute inset-0 opacity-60" />
+        <span
+          aria-hidden
+          className="absolute -left-1/3 -top-1/2 h-[200%] w-1/2 rotate-[24deg] bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.055),transparent)]"
+        />
+        {/* One machined badge, centred: the plate reads as a deliberate
+            "no artwork" tile while the cover is still being fetched, and as
+            the permanent tile when the backend has no verified art. */}
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span
+            aria-hidden
+            className="flex h-12 w-12 items-center justify-center rounded-full border bg-surface-1/35"
+            style={{ borderColor: `color-mix(in srgb, ${coverHue(game.name)} 55%, transparent)` }}
+          >
+            <span
+              className="font-display text-[19px] font-bold leading-none tracking-[-0.02em]"
+              style={{ color: `color-mix(in srgb, ${coverHue(game.name)} 78%, white)` }}
+            >
+              {game.name.slice(0, 1).toUpperCase()}
+            </span>
+          </span>
         </span>
       </span>
       {!loaded && !failed && (

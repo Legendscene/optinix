@@ -337,6 +337,11 @@ function Lights() {
       <pointLight position={[-2.8, 1.6, -2]} intensity={70} color={CYAN} distance={14} decay={2} />
       <pointLight position={[2.4, -1.6, 1.8]} intensity={26} color={VIOLET} distance={12} decay={2} />
       <pointLight position={[-3, 0.4, 2.6]} intensity={18} color="#6f93ff" distance={14} decay={2} />
+      {/* Rim from behind the case: separates the aluminium edges from the
+          dark band behind it, which is what keeps the tower from reading as
+          a flat black box. */}
+      <directionalLight position={[-2.6, 1.4, -2.8]} intensity={1.6} color={CYAN} />
+      <directionalLight position={[2.2, -0.6, -2.4]} intensity={0.9} color={VIOLET} />
       <directionalLight position={[0, 1, 4]} intensity={0.35} color="#ffffff" />
     </>
   )
@@ -411,7 +416,10 @@ export default function HeroScene({ active, level = 0.45, onContextLost }: HeroS
         powerPreference: 'low-power',
         preserveDrawingBuffer: false,
       }}
-      camera={{ position: [0.3, 0.25, 6.3], fov: 34 }}
+      /* Three-quarter view, close enough that the tower fills the stage: at
+         this distance the case occupies ~85% of the frame instead of floating
+         small in the middle of it. */
+      camera={{ position: [1.05, 0.4, 4.95], fov: 33 }}
       onCreated={({ gl }) => {
         gl.domElement.addEventListener('webglcontextlost', (e: Event) => {
           e.preventDefault()

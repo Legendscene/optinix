@@ -59,7 +59,11 @@ _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Optinix/1.0 (+local artwork fet
 
 _POSITIVE_TTL_S = 30 * 24 * 3600   # covers rarely change; refresh monthly
 _NEGATIVE_TTL_S = 24 * 3600        # retry an unresolved game once a day
-_HTTP_TIMEOUT_S = 6.0
+# Upstream cover lookups can try several sources per game (store header,
+# name lookup, icon). Six seconds per attempt let one slow host hold a card
+# — and the browser's connection pool — for 30s or more. Three seconds keeps
+# the chain bounded; a miss is cached as a negative answer, so it is paid once.
+_HTTP_TIMEOUT_S = 3.0
 _MAX_IMAGE_BYTES = 6 * 1024 * 1024
 _MIN_IMAGE_BYTES = 1_024
 # Local icon files are trusted (they live on this machine, next to the

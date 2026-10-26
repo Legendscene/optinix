@@ -11,6 +11,7 @@ vi.mock('../../lib/api', () => ({
     overview: vi.fn(),
     presets: vi.fn(),
     gameProfiles: vi.fn(),
+    installedGames: vi.fn(),
     timelineEvents: vi.fn(),
     applyGameProfile: vi.fn(),
     speedTestPing: vi.fn(),
@@ -62,6 +63,7 @@ describe('HomePage', () => {
     vi.clearAllMocks()
     vi.mocked(api.presets).mockReturnValue(ok({ presets: [{ id: 'balanced', name: 'Balanced', summary: 'Safe pass', detail: [], categories: [], post: [] }] }))
     vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [] }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({ matched: [], others: [] }))
     vi.mocked(api.timelineEvents).mockReturnValue(ok({ events: [] }))
   })
 
@@ -133,6 +135,112 @@ describe('HomePage', () => {
       expect(screen.getByText('Everything looks good')).toBeInTheDocument(),
     )
     expect(screen.getByText('Nothing needs attention')).toBeInTheDocument()
+  })
+
+  it('lists only verified installed games, never the whole profile catalog', async () => {
+    const profiles = [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS for fast-paced combat', builtin: true },
+      { id: 'cs2', name: 'Counter-Strike 2', description: 'Low latency competitive profile', builtin: true },
+    ]
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({
+      matched: [{ profile_id: 'cs2', source: 'steam', appid: 730, status: 'verified_installed' as const }],
+      others: [],
+      unverified: [{ profile_id: 'warzone', source: 'registry', status: 'missing' as const }],
+    }))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview()))
+    render(<HomePage onNavigate={() => {}} />)
+
+    /* The verified game is listed; the uninstalled profile is not — even
+       though the profile catalog contains it. */
+    expect(await screen.findByText('Counter-Strike 2')).toBeInTheDocument()
+    expect(screen.queryByText('Call of Duty: Warzone')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Apply Call of Duty: Warzone profile/ })).not.toBeInTheDocument()
+    /* The catalog is described honestly instead of being rendered as games. */
+    expect(screen.getByText(/2 supported profiles ship with Optinix/)).toBeInTheDocument()
+  })
+
+  it('shows an honest empty state when no installation is verified', async () => {
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS', builtin: true },
+    ] }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({ matched: [], others: [] }))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview()))
+    render(<HomePage onNavigate={() => {}} />)
+
+    expect(await screen.findByText('No games verified on this PC.')).toBeInTheDocument()
+    expect(screen.queryByText('Call of Duty: Warzone')).not.toBeInTheDocument()
+  })
+
+  it('shows a verified install with no profile, but offers no Apply action', async () => {
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS', builtin: true },
+    ] }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({
+      matched: [],
+      others: [{ name: 'Wuthering Waves', source: 'steam', status: 'verified_installed' as const, appid: 3513350 }],
+    }))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview()))
+    render(<HomePage onNavigate={() => {}} />)
+
+    expect(await screen.findByText('Wuthering Waves')).toBeInTheDocument()
+    expect(screen.getByText('Installed — no optimization profile yet')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Apply/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/No games verified on this PC/)).not.toBeInTheDocument()
+  })
+
+  it('shows only the backend-verified running game, with process evidence', async () => {
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS for fast-paced combat', builtin: true },
+    ] }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({ matched: [], others: [] }))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview({
+      detected_game: {
+        id: 'warzone',
+        name: 'Call of Duty: Warzone',
+        description: 'High FPS for fast-paced combat',
+        state: 'running',
+        verified: true,
+        evidence: { pid: 42, exe: 'C:\\Games\\cod.exe' },
+      },
+    })))
+    render(<HomePage onNavigate={() => {}} />)
+
+    expect((await screen.findAllByText('Call of Duty: Warzone')).length).toBeGreaterThan(0)
+    expect(screen.getByText('Running')).toBeInTheDocument()
+    expect(screen.getByTitle(/C:\\Games\\cod.exe/)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /Apply/i }).length).toBeGreaterThan(0)
+  })
+
+  it('does not trust an unverified detected game from a stale payload', async () => {
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS', builtin: true },
+    ] }))
+    vi.mocked(api.installedGames).mockReturnValue(ok({ matched: [], others: [] }))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview({
+      detected_game: {
+        id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS', verified: false,
+      },
+    })))
+    render(<HomePage onNavigate={() => {}} />)
+
+    await waitFor(() => expect(screen.getByText('34%')).toBeInTheDocument())
+    expect(screen.queryByText('Call of Duty: Warzone')).not.toBeInTheDocument()
+  })
+
+  it('does not fall back to the profile catalog when the install scan fails', async () => {
+    /* Production mode must fail honest, not populate the dashboard with
+       profiles that were never verified on this machine. */
+    vi.mocked(api.gameProfiles).mockReturnValue(ok({ profiles: [
+      { id: 'warzone', name: 'Call of Duty: Warzone', description: 'High FPS', builtin: true },
+    ] }))
+    vi.mocked(api.installedGames).mockRejectedValue(new Error('scan failed'))
+    vi.mocked(api.overview).mockReturnValue(ok(mockOverview()))
+    render(<HomePage onNavigate={() => {}} />)
+
+    expect(await screen.findByText("Could not read this PC's installed games.")).toBeInTheDocument()
+    expect(screen.queryByText('Call of Duty: Warzone')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Apply/i })).not.toBeInTheDocument()
   })
 
   it('navigates when an action row is clicked', async () => {

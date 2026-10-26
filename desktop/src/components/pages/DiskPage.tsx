@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HardDrive, Trash2, Zap, Search, CheckCircle, AlertTriangle, XCircle, FolderKanban, RotateCw, FileText, Delete } from 'lucide-react'
+import { HardDrive, Trash2, Zap, Search, CheckCircle, XCircle, FolderKanban, RotateCw, FileText, Delete } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { ActionCard } from '../ui/ActionCard'
 import { PageHero } from '../ui/PageHero'
@@ -20,27 +20,6 @@ const container = {
 const item = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24 } },
-}
-
-interface SmartAttribute {
-  label: string
-  status: 'good' | 'warning' | 'bad'
-  value: string
-}
-
-const mockSmart: SmartAttribute[] = [
-  { label: 'Reallocated Sectors', status: 'good', value: '0' },
-  { label: 'Spin Retry Count', status: 'good', value: '0' },
-  { label: 'Current Pending Sector', status: 'good', value: '0' },
-  { label: 'Uncorrectable Sectors', status: 'good', value: '0' },
-  { label: 'Power-On Hours', status: 'good', value: '1,247' },
-  { label: 'Temperature', status: 'good', value: '38°C' },
-]
-
-const healthIcon = {
-  good: <CheckCircle size={14} className="text-green" />,
-  warning: <AlertTriangle size={14} className="text-yellow" />,
-  bad: <XCircle size={14} className="text-red" />,
 }
 
 interface ScanCategory {
@@ -69,7 +48,6 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
   const free = primary?.free ?? 0
   const percent = primary?.percent ?? 0
 
-  const smartData = useMemo(() => mockSmart, [])
 
   function formatGb(bytes: number): string {
     const gb = bytes / 1e9
@@ -253,26 +231,15 @@ export function DiskPage({ systemInfo }: { systemInfo: SystemInfo | null }) {
 
       <motion.div variants={item}>
         <Card padding="lg">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-text">Disk Health (SMART)</h2>
-            <Badge variant="success">Healthy</Badge>
+            <Badge variant="default">Not measured</Badge>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {smartData.map((attr) => (
-              <div key={attr.label} className="flex items-center justify-between p-2.5 rounded-lg bg-surface-2">
-                <div className="flex items-center gap-2">
-                  {healthIcon[attr.status]}
-                  <span className="text-xs text-text-secondary">{attr.label}</span>
-                </div>
-                <span className={cn(
-                  'text-xs font-mono font-medium',
-                  attr.status === 'good' ? 'text-text' : attr.status === 'warning' ? 'text-yellow' : 'text-red'
-                )}>
-                  {attr.value}
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="text-xs text-text-secondary leading-relaxed max-w-[72ch]">
+            This build does not read SMART attributes from the drive. Capacity and free space above
+            are live system readings; health, temperature and power-on hours are not measured, so
+            none are shown.
+          </p>
         </Card>
       </motion.div>
 

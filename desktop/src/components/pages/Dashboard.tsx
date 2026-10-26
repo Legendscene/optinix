@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -98,14 +98,6 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
     return 'var(--color-green)'
   }, [])
 
-  /* Session model: unchanged shape, kept explicitly labelled as a model. */
-  const trendData = useMemo(() =>
-    Array.from({ length: 28 }, (_, i) => ({
-      time: i,
-      latency: Math.max(2, Math.floor(19 - i * 0.35 + Math.random() * 5)),
-      fps: Math.floor(170 + i * 2.4 + Math.random() * 18),
-      load: Math.floor(Math.random() * 36 + 34),
-    })), [])
 
   const runAction = async (title: string, fn: () => Promise<unknown>) => {
     setActiveAction(title)
@@ -173,7 +165,6 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
   const score = aiHealth?.score ?? fallbackHealth.score
   const scoreLabel = aiHealth?.label ?? fallbackHealth.label
   const disk = systemInfo.disk[0]
-  const profileReadiness = Math.round((100 - systemInfo.cpu.percent) * 0.28 + (100 - systemInfo.memory.percent) * 0.24 + (100 - (disk?.percent ?? 50)) * 0.18 + Math.min(score, 100) * 0.3)
   const activeWarnings = bottlenecks.filter((b) => ['critical', 'high'].includes(b.severity)).length
 
   const resourceCards = [
@@ -183,10 +174,14 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
     { label: 'Network', value: formatSpeed(systemInfo.network.speed_down), sub: `${formatSpeed(systemInfo.network.speed_up)} up`, icon: <Wifi size={16} />, color: 'var(--color-violet)', chart: netSeries, progress: Math.min(100, Math.round(systemInfo.network.speed_down / 1024)) },
   ]
 
+  /* These are navigation entries into the tuning areas, not measurements.
+     They used to carry a readiness percentage (one literal 88, one opaque
+     client-side blend), which presented invented progress as if it came from
+     the machine. No number is claimed until the backend measures it. */
   const lanes = [
-    { title: 'Base Sweep', label: 'Automated', desc: 'Cleanup, startup, services, registry, memory, drivers, and health checks.', page: 'oneclick', progress: 88 },
-    { title: 'Game Layer', label: 'Latency', desc: 'Game Mode, raw input, timer resolution, GPU priority, and power policy.', page: 'gaming', progress: profileReadiness },
-    { title: 'Deep Tune', label: 'Advanced', desc: 'BIOS recommendations, rollback, compatibility checks, and extreme tuning.', page: 'bios', progress: score },
+    { title: 'Base Sweep', label: 'Automated', desc: 'Cleanup, startup, services, registry, memory, drivers, and health checks.', page: 'oneclick' },
+    { title: 'Game Layer', label: 'Latency', desc: 'Game Mode, raw input, timer resolution, GPU priority, and power policy.', page: 'gaming' },
+    { title: 'Deep Tune', label: 'Advanced', desc: 'BIOS recommendations, rollback, compatibility checks, and extreme tuning.', page: 'bios' },
   ]
 
   const healthRows = aiHealth
@@ -204,13 +199,13 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
           <>
             <Badge variant="success">Live rig profile</Badge>
             <Badge variant={activeWarnings ? 'danger' : 'accent'}>
-              {activeWarnings ? `${activeWarnings} priority ${activeWarnings === 1 ? 'fix' : 'fixes'}` : 'Tournament ready'}
+              {activeWarnings ? `${activeWarnings} priority ${activeWarnings === 1 ? 'fix' : 'fixes'}` : 'No priority fixes'}
             </Badge>
             <span className="text-[11px] text-text-tertiary">{systemInfo.os.os_name} {systemInfo.os.release}</span>
           </>
         }
         stats={[
-          { label: 'Gaming readiness', value: `${profileReadiness}%`, tone: 'accent' },
+          { label: 'System uptime', value: systemInfo.system.uptime },
           { label: 'Health score', value: `${score}/100`, tone: score >= 80 ? 'good' : score >= 60 ? 'warn' : 'bad', hint: scoreLabel },
           { label: 'Free memory', value: `${systemInfo.memory.available_gb.toFixed(1)} GB` },
           { label: 'Primary disk', value: disk ? `${100 - Math.round(disk.percent)}% free` : '—' },
@@ -325,9 +320,11 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
                     </div>
                     <p className="mt-1 text-[11.5px] leading-5 text-text-secondary">{lane.desc}</p>
                   </div>
-                  <div className="text-xl font-semibold text-text tnum">{lane.progress}%</div>
+                  <ChevronRight
+                    size={15}
+                    className="mt-1 shrink-0 text-text-tertiary transition-transform group-hover:translate-x-0.5"
+                  />
                 </div>
-                <ProgressBar value={lane.progress} className="mt-3" size="sm" />
               </button>
             ))}
           </div>
@@ -336,46 +333,61 @@ export function Dashboard({ systemInfo, onNavigate }: DashboardProps) {
         <Card padding="lg">
           <div className="flex items-center gap-2 mb-3">
             <Activity size={17} className="text-cyan" />
-            <h2 className="text-[13.5px] font-semibold text-text">FPS / latency projection</h2>
-            <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">session model</span>
+            <h2 className="text-[13.5px] font-semibold text-text">This session</h2>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">
+              {cpuSeries.length >= 2 ? `${cpuSeries.length} live samples` : 'collecting'}
+            </span>
           </div>
 
-          <StreamArea
-            series={[{ key: 'fps', label: 'FPS', color: 'var(--chart-1)', values: trendData.map((d) => d.fps) }]}
-            height={150}
-            unit=" fps"
-            ariaLabel="Projected frame rate across the session model"
-          />
+          {cpuSeries.length < 2 ? (
+            <p className="text-[12px] text-text-tertiary py-6 max-w-[52ch]">
+              Collecting samples from the live system. A trend appears after the second poll —
+              Optinix does not project a curve it has not measured.
+            </p>
+          ) : (
+            <>
+              <StreamArea
+                series={[{ key: 'cpu', label: 'CPU', color: 'var(--chart-1)', values: cpuSeries }]}
+                height={150}
+                unit="%"
+                ariaLabel="CPU load observed this session"
+              />
 
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Latency</span>
-                <span className="text-[11.5px] font-medium text-text tnum">{trendData[trendData.length - 1].latency} ms</span>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Network down</span>
+                    <span className="text-[11.5px] font-medium text-text tnum">
+                      {systemInfo ? formatSpeed(systemInfo.network.speed_down) : '—'}
+                    </span>
+                  </div>
+                  <Sparkline values={netSeries} width={150} height={26} stroke="var(--chart-4)" ariaLabel="Observed download rate" />
+                </div>
+                <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Memory</span>
+                    <span className="text-[11.5px] font-medium text-text tnum">
+                      {systemInfo ? `${systemInfo.memory.percent}%` : '—'}
+                    </span>
+                  </div>
+                  <Sparkline values={ramSeries} width={150} height={26} stroke="var(--chart-2)" ariaLabel="Observed memory load" />
+                </div>
               </div>
-              <Sparkline values={trendData.map((d) => d.latency)} width={150} height={26} stroke="var(--chart-4)" ariaLabel="Projected latency" />
-            </div>
-            <div className="rounded-[var(--radius-control)] border border-border bg-surface-2/40 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10.5px] uppercase tracking-[0.05em] text-text-tertiary">Render load</span>
-                <span className="text-[11.5px] font-medium text-text tnum">{trendData[trendData.length - 1].load}%</span>
-              </div>
-              <Sparkline values={trendData.map((d) => d.load)} width={150} height={26} stroke="var(--chart-2)" ariaLabel="Projected render load" />
-            </div>
-          </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-3 border-t border-border pt-3">
-            {[
-              { label: 'FPS target', value: 'Stable' },
-              { label: 'Frame time', value: '< 8 ms' },
-              { label: 'Queueing', value: 'Reduced' },
-            ].map((m) => (
-              <div key={m.label}>
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{m.label}</div>
-                <div className="text-[12.5px] font-semibold text-text">{m.value}</div>
+              <div className="mt-3 grid grid-cols-3 gap-3 border-t border-border pt-3">
+                {[
+                  { label: 'CPU temp', value: systemInfo?.cpu.temperature != null ? `${systemInfo.cpu.temperature}°C` : '—' },
+                  { label: 'GPU load', value: systemInfo?.gpu?.usage != null ? `${systemInfo.gpu.usage}%` : '—' },
+                  { label: 'Uptime', value: systemInfo?.system.uptime ?? '—' },
+                ].map((m) => (
+                  <div key={m.label}>
+                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{m.label}</div>
+                    <div className="text-[12.5px] font-semibold text-text tnum">{m.value}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </Card>
       </section>
 

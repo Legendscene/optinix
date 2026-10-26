@@ -149,15 +149,26 @@ def _health():
 
 
 def _detected_game():
+    """The game running right now, only when its executable was verified.
+
+    This is process evidence, never a profile or a launcher record. If no
+    known game executable is running, the answer is None — the dashboard
+    must not manufacture a game to fill the slot.
+    """
     from ..game_profiles import GameProfiles
-    game_id = GameProfiles().detect_running_game()
-    if not game_id:
+    engine = GameProfiles()
+    running = engine.detect_running_games()
+    if not running:
         return None
-    profile = GameProfiles().get_profile(game_id) or {}
+    hit = running[0]
+    profile = engine.get_profile(hit["id"]) or {}
     return {
-        "id": game_id,
-        "name": profile.get("name", game_id),
+        "id": hit["id"],
+        "name": profile.get("name", hit.get("name", hit["id"])),
         "description": profile.get("description", ""),
+        "state": "running",
+        "verified": True,
+        "evidence": {"pid": hit.get("pid"), "exe": hit.get("exe")},
     }
 
 

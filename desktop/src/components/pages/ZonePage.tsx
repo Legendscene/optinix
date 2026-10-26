@@ -45,7 +45,7 @@ export function ZonePage({ zone, onNavigate, library }: ZonePageProps) {
       {pinned.length > 0 && (
         <section className="mb-8">
           <SectionLabel>Pinned</SectionLabel>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          <div className="flex flex-wrap gap-2.5">
             {pinned.map((tool) => (
               <ToolCard
                 key={tool.id}
@@ -65,7 +65,9 @@ export function ZonePage({ zone, onNavigate, library }: ZonePageProps) {
         return (
           <section key={group} className="mb-8">
             <SectionLabel>{group}</SectionLabel>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {/* Flex, not a fixed 3-column grid: a group of two tools used to
+                leave a third of the row empty. Cards now grow to fill it. */}
+            <div className="flex flex-wrap gap-2.5">
               {items.map((tool) => (
                 <ToolCard
                   key={tool.id}
@@ -108,6 +110,9 @@ function ToolCard({ tool, onOpen, onTogglePin, pinned }: ToolCardProps) {
       }}
       className={cn(
         'surface-card surface-card-interactive card-depth sheen group relative p-3.5 cursor-pointer',
+        /* Grow to fill a partial row, but never into a full-width strip:
+           one tool alone in its group stays a card, not a banner. */
+        'grow basis-[272px] max-w-[560px] min-w-0',
         'focus-visible:outline-2 focus-visible:outline-accent',
         'hover:-translate-y-0.5 hover:border-accent-line',
       )}

@@ -225,6 +225,21 @@ class TestStartMenuAdapter:
             games, _ = StartMenuShortcutAdapter().scan(_cancel())
         assert games == []
 
+    def test_generic_file_shortcut_rejected(self, tmp_path):
+        """A shortcut named for a file/folder concept is a shell artifact, not
+        a title: the real machine has a stray 'Filee' shortcut pointing at a
+        missing C:\\Program Files\\File\\File.exe, which used to become a game
+        card called 'File'. Collapsing repeated letters catches 'Filee' as
+        well as 'File'."""
+        for name in ("File", "Filee", "App", "Gamee"):
+            lnk = _write_lnk(tmp_path, f"Programs/{name}.lnk")
+            with patch.object(StartMenuShortcutAdapter, "_shortcut_files", return_value=[lnk]), \
+                 patch.object(StartMenuShortcutAdapter, "_resolve",
+                              return_value=(r"C:\Program Files\File\File.exe|", "")), \
+                 _FS_FALSE:
+                games, _ = StartMenuShortcutAdapter().scan(_cancel())
+            assert games == [], f"{name} must not become a game record"
+
     def test_system_directory_target_rejected(self, tmp_path):
         lnk = _write_lnk(tmp_path, "Programs/Awesome Quest.lnk")
         with patch.object(StartMenuShortcutAdapter, "_shortcut_files", return_value=[lnk]), \

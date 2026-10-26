@@ -81,13 +81,14 @@ export function TopBar({
         </button>
       </div>
 
-      {/* Live vitals */}
+      {/* Live vitals. Each one carries the same hue as its card on Home, so
+          the shell and the dashboard read as one instrument set. */}
       <div className="flex items-center gap-1 shrink-0">
-        <Vital label="CPU" value={vitals.cpu} />
-        <Vital label="RAM" value={vitals.ram} />
-        <Vital label="DISK" value={vitals.disk} />
-        {vitals.fps != null && <Vital label="FPS" value={vitals.fps} raw />}
-        {vitals.temp != null && <Vital label="TEMP" value={vitals.temp} unit="°" />}
+        <Vital label="CPU" value={vitals.cpu} hue="var(--color-accent)" />
+        <Vital label="RAM" value={vitals.ram} hue="var(--color-violet)" />
+        <Vital label="DISK" value={vitals.disk} hue="#d9a13a" />
+        {vitals.fps != null && <Vital label="FPS" value={vitals.fps} raw hue="var(--color-cyan)" />}
+        {vitals.temp != null && <Vital label="TEMP" value={vitals.temp} unit="°" hue="#e07a4f" />}
       </div>
 
       <span className="w-px h-5 bg-border shrink-0" />
@@ -121,11 +122,13 @@ export function TopBar({
   )
 }
 
-function Vital({ label, value, unit, raw }: {
+function Vital({ label, value, unit, raw, hue }: {
   label: string
   value?: number
   unit?: string
   raw?: boolean
+  /** Data hue for this metric, shared with its card on Home. */
+  hue?: string
 }) {
   const tone =
     value == null ? 'text-text-tertiary'
@@ -138,6 +141,15 @@ function Vital({ label, value, unit, raw }: {
       className="flex items-baseline gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-surface-3 transition-colors duration-150 cursor-default"
       title={value == null ? `${label}: unavailable` : `${label}: ${value}${unit ?? '%'}`}
     >
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 rounded-full shrink-0"
+        style={{
+          background: hue ?? 'var(--color-accent)',
+          opacity: value == null ? 0.3 : 0.9,
+          boxShadow: value == null ? 'none' : `0 0 6px -1px ${hue ?? 'var(--color-accent)'}`,
+        }}
+      />
       <span className="text-[9.5px] font-semibold tracking-[0.12em] text-text-tertiary uppercase">
         {label}
       </span>

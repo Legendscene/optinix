@@ -981,6 +981,27 @@ class StartMenuShortcutAdapter:
         re.I,
     )
 
+    # A shortcut named for a file/folder concept ("File", "Filee", "App",
+    # "Game") is a shell artifact, not a title. The pattern must match the
+    # WHOLE name: the caller also tests the shortcut's folder prefix, and a
+    # prefix rule would reject every entry under a folder called "Games" or
+    # "Programs". Repeated letters are collapsed as a fallback so "Filee" is
+    # caught with "File".
+    _GENERIC_TITLE = re.compile(
+        r"^(?:file|files|app|apps|game|games|program|programs|tool|tools|"
+        r"folder|folders|main|run|start|startup|setup|install|installer|"
+        r"test|demo|sort)(?:[ _-]?\d{0,3})?$",
+        re.I,
+    )
+
+    @classmethod
+    def _is_generic_title(cls, title: str) -> bool:
+        name = title.strip()
+        return bool(
+            cls._GENERIC_TITLE.match(name)
+            or cls._GENERIC_TITLE.match(re.sub(r"(.)\1+", r"\1", name))
+        )
+
     @classmethod
     def _is_game_shortcut(cls, title: str) -> bool:
         if not title:
@@ -988,6 +1009,8 @@ class StartMenuShortcutAdapter:
         if cls._LAUNCHER_NAMES.search(title) or cls._NOT_GAME_NAMES.search(title):
             return False
         if NON_GAME_PATTERNS.search(title):
+            return False
+        if cls._is_generic_title(title):
             return False
         return True
 

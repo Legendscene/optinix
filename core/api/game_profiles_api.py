@@ -21,7 +21,12 @@ def list_profiles():
 
 @game_profiles_bp.route('/api/game-profiles/installed', methods=['GET'])
 def installed_games():
-    """Games actually installed on this PC (real scan), split by profile coverage."""
+    """Games verified on this PC, split by profile coverage.
+
+    `matched` contains verified installs only; `unverified` carries records
+    whose installation could not be proven (stale/moved paths, name-only
+    registry entries) for diagnostics — never as installed games.
+    """
     try:
         from ..installed_games import scan_installed_games
         engine = _get_engine()
@@ -48,14 +53,18 @@ def detect_game():
     try:
         from ..installed_games import STEAM_APPID_FALLBACK
         engine = _get_engine()
-        game = engine.detect_running_game()
-        if game:
-            profile = engine.get_profile(game)
+        running = engine.detect_running_games()
+        if running:
+            hit = running[0]
+            profile = engine.get_profile(hit["id"])
             appid = STEAM_APPID_FALLBACK.get((profile.get("name", "") if profile else "").strip().lower())
             response = {
                 "detected": True,
-                "game_id": game,
-                "game_name": profile.get("name", game) if profile else game
+                "state": "running",
+                "verified": True,
+                "game_id": hit["id"],
+                "game_name": profile.get("name", hit["id"]) if profile else hit["id"],
+                "evidence": {"pid": hit.get("pid"), "exe": hit.get("exe")},
             }
             if appid:
                 response["appid"] = appid
@@ -74,6 +83,10 @@ def apply_profile():
             return jsonify({"error": "profile_id required"}), 400
         engine = _get_engine()
         results = engine.apply_profile(profile_id)
+        # A refusal is a failed preflight, not a successful apply with a
+        # message: the client can then render one honest state.
+        if results and all(not r.get("success") for r in results):
+            return jsonify({"results": results, "error": results[0].get("message", "Profile blocked")}), 409
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

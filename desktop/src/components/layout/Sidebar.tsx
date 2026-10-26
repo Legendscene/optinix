@@ -275,21 +275,30 @@ export function Sidebar({
                 <ShieldAlert size={13} className="shrink-0" />
               </div>
             ) : (
-              <div className="px-3 py-2.5 text-yellow bg-yellow-dim/40 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert size={13} className="shrink-0" />
-                  <span className="text-[11.5px] font-semibold">Limited mode</span>
+              /* Collapsed by default: the warning must be visible on every
+                 page without turning the rail's footer into a wall of text.
+                 The full explanation is one click away. */
+              <details className="group/limited border-b border-border bg-yellow-dim/35 text-yellow">
+                <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 list-none [&::-webkit-details-marker]:hidden">
+                  <ShieldAlert size={12} className="shrink-0" />
+                  <span className="text-[11px] font-semibold">Limited mode</span>
+                  <span className="ml-auto text-[10px] text-yellow/60 transition-transform group-open/limited:rotate-180">
+                    ⌄
+                  </span>
+                </summary>
+                <div className="px-3 pb-2.5 -mt-0.5">
+                  <p className="text-[10.5px] leading-[1.45] text-yellow/80">
+                    Not running as Administrator — steps that change system settings
+                    (startup, services, network, registry, most optimizers) are skipped.
+                    Monitoring, scanning and reports still work.
+                  </p>
+                  <p className="mt-1.5 text-[10.5px] leading-[1.45] text-yellow/80">
+                    Close Optinix and reopen it with{' '}
+                    <span className="font-medium text-yellow">Run as administrator</span>{' '}
+                    to unlock them.
+                  </p>
                 </div>
-                <p className="text-[11px] leading-[1.45] text-yellow/80 mt-1">
-                  Optinix isn’t running as Administrator, so the steps that change
-                  system settings — startup, services, network, registry and most
-                  optimizers — are skipped. Monitoring, scanning and reports still work.
-                </p>
-                <p className="text-[11px] leading-[1.45] text-yellow/80 mt-1.5">
-                  To unlock them, close Optinix and reopen it with{' '}
-                  <span className="font-medium text-yellow">Run as administrator</span>.
-                </p>
-              </div>
+              </details>
             )
           )}
 

@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Zap, Cpu, Thermometer, Gauge, Clock, Battery, SlidersHorizontal, Ban, Bolt } from 'lucide-react'
+import { Zap, Cpu, Thermometer, Gauge, Clock, Battery, SlidersHorizontal, Ban } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { MetricCard } from '../ui/MetricCard'
 import { ActionCard } from '../ui/ActionCard'
 import { Skeleton } from '../ui/Skeleton'
-import { PageHero } from '../ui/PageHero'
+import { PageHero } from '../ui/PageHero'
 import { cn } from '../../lib/utils'
 import { api } from '../../lib/api'
 import type { SystemInfo } from '../../types'
@@ -33,14 +33,6 @@ export function OverclockPage({ systemInfo }: { systemInfo: SystemInfo | null })
   const [powerPlan, setPowerPlan] = useState<string | null>(null)
   const [result, setResult] = useState<{ key: string; message: string; success: boolean } | null>(null)
 
-  const timings = useMemo(() => ({
-    baseClock: `${(100 + Math.random() * 400).toFixed(0)} MHz`,
-    memoryTimings: `CL${Math.floor(14 + Math.random() * 8)}-${Math.floor(14 + Math.random() * 8)}-${Math.floor(14 + Math.random() * 8)}-${Math.floor(28 + Math.random() * 16)}`,
-    bclk: `${(99.5 + Math.random() * 1).toFixed(1)} MHz`,
-    coreVoltage: `${(1.1 + Math.random() * 0.4).toFixed(3)}V`,
-    tdp: `${(65 + Math.random() * 160).toFixed(0)}W`,
-    powerLimit: `${(125 + Math.random() * 200).toFixed(0)}W`,
-  }), [])
 
   const runAction = async (key: string, fn: () => Promise<unknown>, successMsg: string) => {
     setLoadingAction(key)
@@ -85,14 +77,36 @@ export function OverclockPage({ systemInfo }: { systemInfo: SystemInfo | null })
         />
       </motion.div>
 
-      <motion.div variants={item} className="grid grid-cols-3 gap-4">
-        <MetricCard icon={<Cpu size={18} />} label="Base Clock" value={timings.baseClock} sub="Core frequency" />
-        <MetricCard icon={<Clock size={18} />} label="Memory Timings" value={timings.memoryTimings} sub="CAS-RAS-CMD-tRAS" />
-        <MetricCard icon={<Gauge size={18} />} label="BCLK" value={timings.bclk} sub="Base clock rate" />
-        <MetricCard icon={<Bolt size={18} />} label="Core Voltage" value={timings.coreVoltage} sub="Vcore" />
-        <MetricCard icon={<Thermometer size={18} />} label="TDP" value={timings.tdp} sub="Thermal design power" />
-        <MetricCard icon={<SlidersHorizontal size={18} />} label="Power Limit" value={timings.powerLimit} sub="PL1 limit" />
+      {/* Only readings the backend actually exposes. The old tile row invented
+          clock, BCLK, Vcore, TDP and memory timings with Math.random(). */}
+      <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <MetricCard icon={<Gauge size={18} />} label="CPU load" value={`${systemInfo.cpu.percent}%`} sub="Current utilisation" />
+        <MetricCard
+          icon={<Thermometer size={18} />}
+          label="CPU temp"
+          value={systemInfo.cpu.temperature != null ? `${systemInfo.cpu.temperature}°C` : '—'}
+          sub={systemInfo.cpu.temperature != null ? 'Processor' : 'No sensor exposed'}
+        />
+        <MetricCard icon={<Cpu size={18} />} label="Cores" value={`${systemInfo.cpu.physical}C / ${systemInfo.cpu.logical}T`} sub="Physical / logical" />
+        <MetricCard
+          icon={<Gauge size={18} />}
+          label="GPU load"
+          value={systemInfo.gpu?.usage != null ? `${systemInfo.gpu.usage}%` : '—'}
+          sub={systemInfo.gpu?.name || 'Not detected'}
+        />
+        <MetricCard
+          icon={<Thermometer size={18} />}
+          label="GPU temp"
+          value={systemInfo.gpu?.temperature != null ? `${systemInfo.gpu.temperature}°C` : '—'}
+          sub={systemInfo.gpu?.temperature != null ? 'Graphics card' : 'No sensor exposed'}
+        />
+        <MetricCard icon={<Clock size={18} />} label="Memory" value={`${systemInfo.memory.used_gb.toFixed(1)} / ${systemInfo.memory.total_gb.toFixed(0)} GB`} sub="In use" />
       </motion.div>
+
+      <p className="text-[11px] text-text-tertiary">
+        Core clock, voltage, power limit and memory timings are not exposed by the backend, so this
+        page shows no values for them.
+      </p>
 
       <motion.div variants={item}>
         <Card padding="lg">

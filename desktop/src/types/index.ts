@@ -399,10 +399,16 @@ export interface OverviewLastOptimization {
   benchmark_comparison: Record<string, { improved: boolean; delta: number; percent: number }> | null
 }
 
+export type GameEvidenceState = 'running' | 'verified_installed' | 'candidate' | 'missing' | 'unknown'
+
 export interface DetectedGame {
   id: string
   name: string
   description: string
+  /** Present on current backends: process evidence, not a profile lookup. */
+  state?: GameEvidenceState
+  verified?: boolean
+  evidence?: { pid: number | null; exe: string }
 }
 
 export interface Overview {
@@ -605,9 +611,24 @@ export interface GameScanProgress {
 /* What the installed-games scan returns: evidence about games actually on this
    PC, never an invented list. matched -> profile exists; others -> installed
    but no optimization profile for it yet. */
+/* Verified by the backend scan: `matched` is verified_installed only.
+   `unverified` carries stale/candidate records for diagnostics, never for
+   rendering as installed games. */
+export interface InstalledGameMatch {
+  profile_id: string
+  name?: string
+  source: string
+  appid?: number
+  status?: GameEvidenceState
+  install_path?: string
+  evidence?: string
+  reason?: string
+}
+
 export interface InstalledGamesSet {
-  matched: { profile_id: string; source: string; appid?: number }[]
-  others: { name: string; source: string; appid?: number }[]
+  matched: InstalledGameMatch[]
+  others: { name: string; source: string; appid?: number; status?: GameEvidenceState }[]
+  unverified?: InstalledGameMatch[]
 }
 
 export interface PingResult {

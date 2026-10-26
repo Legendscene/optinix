@@ -16,7 +16,6 @@ logger = get_logger("game_profiles")
 BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     "valorant": {
         "name": "Valorant",
-        "process_keywords": ["valorant", "val-client", "val-vg"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -31,7 +30,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "cs2": {
         "name": "Counter-Strike 2",
-        "process_keywords": ["cs2", "cs:go", "csgo"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -46,7 +44,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "fortnite": {
         "name": "Fortnite",
-        "process_keywords": ["fortniteclient", "fortnite"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -61,7 +58,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "apex": {
         "name": "Apex Legends",
-        "process_keywords": ["r5apex", "apex"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -76,7 +72,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "warzone": {
         "name": "Call of Duty: Warzone",
-        "process_keywords": ["modernwarfare", "warzone", "cod"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -91,7 +86,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "overwatch2": {
         "name": "Overwatch 2",
-        "process_keywords": ["overwatch", "ow2"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -106,7 +100,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "pubg": {
         "name": "PUBG: Battlegrounds",
-        "process_keywords": ["tslgame", "pubg"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -121,7 +114,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "rust": {
         "name": "Rust",
-        "process_keywords": ["rustclient", "rust"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -136,7 +128,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "minecraft": {
         "name": "Minecraft",
-        "process_keywords": ["minecraft", "javaw"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -151,7 +142,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "gta5": {
         "name": "Grand Theft Auto V",
-        "process_keywords": ["gta5", "gtav"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -166,7 +156,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "eldenring": {
         "name": "Elden Ring",
-        "process_keywords": ["eldenring", "elden ring"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -181,7 +170,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "cyberpunk": {
         "name": "Cyberpunk 2077",
-        "process_keywords": ["cyberpunk2077"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -196,7 +184,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "league": {
         "name": "League of Legends",
-        "process_keywords": ["league of legends", "lol"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -211,7 +198,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "dota2": {
         "name": "Dota 2",
-        "process_keywords": ["dota2", "dota 2"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -226,7 +212,6 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "rainbow6": {
         "name": "Rainbow Six Siege",
-        "process_keywords": ["rainbow6", "r6"],
         "priority": "high",
         "gpu_priority": True,
         "game_mode": True,
@@ -240,6 +225,60 @@ BUILTIN_PROFILES: Dict[str, Dict[str, Any]] = {
         "description": "Tactical FPS — minimal input lag"
     }
 }
+
+
+# Exact executable names that prove a game is the process being observed.
+#
+# This map replaced a substring scan over process name, path and command line.
+# That scan had "cod" as a Warzone keyword, which matches code.exe, vscode,
+# codebuff, any shell whose command line contains "code" — so machines that
+# never installed Call of Duty reported it as running. Identity is the
+# executable's own name now; nothing shorter, nothing fuzzier.
+#
+# A game absent from this map (Minecraft runs inside javaw.exe, for example)
+# is never reported as running: an unverifiable guess is not evidence.
+GAME_EXECUTABLES: Dict[str, tuple] = {
+    "valorant": ("valorant.exe", "valorant-win64-shipping.exe"),
+    "cs2": ("cs2.exe",),
+    "fortnite": (
+        "fortniteclient-win64-shipping.exe",
+        "fortniteclient-win32-shipping.exe",
+        "fortnitelauncher.exe",
+    ),
+    "apex": ("r5apex.exe", "r5apex_dx12.exe"),
+    "warzone": ("cod.exe", "warzone.exe", "modernwarfare.exe"),
+    "overwatch2": ("overwatch.exe",),
+    "pubg": ("tslgame.exe",),
+    "rust": ("rustclient.exe",),
+    "gta5": ("gta5.exe",),
+    "eldenring": ("eldenring.exe",),
+    "cyberpunk": ("cyberpunk2077.exe",),
+    "league": ("league of legends.exe",),
+    "dota2": ("dota2.exe",),
+    "rainbow6": ("rainbowsix.exe", "rainbowsix_vulkan.exe", "rainbowsix_dx11.exe"),
+}
+
+
+def _exe_game(name: str, exe: str) -> Optional[str]:
+    """The profile whose executable this is, or None.
+
+    `name` must match exactly; the exe path must exist so a process that only
+    borrowed a game's name cannot claim to be it.
+    """
+    key = (name or "").strip().lower()
+    if not key:
+        return None
+    game_id = next((gid for gid, exes in GAME_EXECUTABLES.items() if key in exes), None)
+    if not game_id:
+        return None
+    if not exe:
+        return None
+    try:
+        if not os.path.isfile(exe):
+            return None
+    except OSError:
+        return None
+    return game_id
 
 
 class GameProfiles:
@@ -314,27 +353,86 @@ class GameProfiles:
             logger.error(f"Failed to delete profile: {e}")
             return False
 
-    def detect_running_game(self) -> Optional[str]:
-        """Detect if a known game is currently running."""
+    def detect_running_games(self) -> List[Dict[str, Any]]:
+        """Known games actually running now, with the evidence for each.
+
+        Only an exact executable match on an existing file counts. Detection
+        is process evidence, never a profile or a launcher record; a process
+        whose executable cannot be resolved is skipped instead of guessed.
+        """
+        hits: List[Dict[str, Any]] = []
+        seen: set = set()
         try:
             import psutil
-            for proc in psutil.process_iter(['name', 'exe', 'cmdline']):
+            for proc in psutil.process_iter(['pid', 'name', 'exe']):
                 try:
                     info = proc.info
-                    name = (info.get('name') or '').lower()
-                    exe = (info.get('exe') or '').lower()
-                    cmdline = ' '.join(info.get('cmdline') or []).lower()
-
-                    for game_id, profile in BUILTIN_PROFILES.items():
-                        for keyword in profile.get('process_keywords', []):
-                            kw = keyword.lower()
-                            if kw in name or kw in exe or kw in cmdline:
-                                return game_id
+                    name = info.get('name') or ''
+                    exe = info.get('exe') or ''
+                    game_id = _exe_game(name, exe)
+                    if not game_id or game_id in seen:
+                        continue
+                    seen.add(game_id)
+                    hits.append({
+                        'id': game_id,
+                        'name': BUILTIN_PROFILES.get(game_id, {}).get('name', game_id),
+                        'pid': info.get('pid'),
+                        'exe': exe,
+                    })
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - detection must never break a page
             logger.error(f"Game detection failed: {e}")
-        return None
+        return hits
+
+    def detect_running_game(self) -> Optional[str]:
+        """Id of the first verified running game, or None."""
+        hits = self.detect_running_games()
+        return hits[0]['id'] if hits else None
+
+    def installation_evidence(self, profile_id: str) -> Dict[str, Any]:
+        """Can this profile's game be proven to exist on this PC?
+
+        Used before applying a profile, so a supported-but-absent title can
+        never be silently pre-tuned as if it were installed. Custom profiles
+        have no game identity to verify; they are explicit user data.
+        """
+        if profile_id not in BUILTIN_PROFILES:
+            return {"verified": True, "status": "custom", "reason": "Custom profile"}
+
+        for hit in self.detect_running_games():
+            if hit.get('id') == profile_id:
+                return {
+                    "verified": True,
+                    "status": "running",
+                    "reason": f"{hit.get('name', profile_id)} is running now ({hit.get('exe')}).",
+                }
+
+        try:
+            from .installed_games import scan_installed_games
+            scan = scan_installed_games(self.get_all_profiles())
+        except Exception as e:  # noqa: BLE001
+            return {"verified": False, "status": "unknown", "reason": f"Installation could not be verified: {e}"}
+
+        for match in scan.get("matched", []):
+            if match.get("profile_id") == profile_id:
+                return {
+                    "verified": True,
+                    "status": match.get("status", "verified_installed"),
+                    "reason": match.get("evidence", "Installation verified."),
+                }
+        for record in scan.get("unverified", []):
+            if record.get("profile_id") == profile_id:
+                return {
+                    "verified": False,
+                    "status": record.get("status", "missing"),
+                    "reason": record.get("reason") or "The installation could not be verified.",
+                }
+        return {
+            "verified": False,
+            "status": "missing",
+            "reason": "No installation of this game was found on this PC.",
+        }
 
     # Registry values a profile may change — snapshotted BEFORE any write so
     # Revert restores the user's actual previous values, not guessed defaults.
@@ -376,12 +474,25 @@ class GameProfiles:
         if not profile:
             return [{"success": False, "message": f"Profile '{profile_id}' not found"}]
 
+        # Revalidate the game immediately before changing anything. The UI
+        # only offers Apply for verified games, but the endpoint must hold
+        # that line on its own: a stale page or a direct request must not
+        # tune a machine for a game that is not installed.
+        evidence = self.installation_evidence(profile_id)
+        if not evidence["verified"]:
+            return [{
+                "success": False,
+                "message": (
+                    f"{profile.get('name', profile_id)} is not verified as installed — "
+                    f"{evidence['reason']} No system changes were made."
+                ),
+            }]
+
         results = []
         system = platform.system().lower()
 
         if system != "windows":
             return [{"success": False, "message": "Game profiles currently only support Windows"}]
-
         # Snapshot BEFORE any write so Revert can restore the user's real
         # previous values. A failed snapshot BLOCKS the apply: changing
         # system settings without a saved prior state would leave Revert

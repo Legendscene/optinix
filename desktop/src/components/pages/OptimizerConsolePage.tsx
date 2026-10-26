@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  CheckCircle2, Circle, CircleAlert, Loader2, ShieldAlert, XCircle,
+  CheckCircle2, Circle, CircleAlert, Loader2, Plus, ShieldAlert, XCircle,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { toolsInZone, groupsInZone } from '../../nav'
@@ -176,7 +176,9 @@ export function OptimizerConsolePage({ onNavigate, library }: OptimizerConsolePa
           <h3 className="font-display text-[13px] font-semibold uppercase tracking-[0.07em] text-text-secondary mb-3">
             Games
           </h3>
-          <p className="text-[10px] text-text-tertiary mt-1">Available optimization profiles — installation not verified</p>
+          <p className="text-[10px] text-text-tertiary mt-1">
+            Games verified on this PC — a profile is offered only when its installation is confirmed.
+          </p>
           {gamesSection.state === 'loading' && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {[0, 1, 2, 3].map((i) => <div key={i} className="surface-card aspect-[3/4] animate-pulse-subtle" />)}
@@ -208,6 +210,21 @@ export function OptimizerConsolePage({ onNavigate, library }: OptimizerConsolePa
                   />
                 ))}
                 {gamesSection.others.map((g) => <OtherGameCard key={g.name} game={g} />)}
+                {/* A single verified game used to leave a 4-column row with
+                    three holes in it. The row now ends on a real destination
+                    instead of empty track. */}
+                <button
+                  onClick={() => onNavigate('games')}
+                  className="group flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-[14px]
+                    border border-dashed border-border text-text-tertiary
+                    transition-colors hover:border-accent/40 hover:text-text"
+                >
+                  <Plus size={17} />
+                  <span className="text-[11.5px] font-medium">Browse library</span>
+                  <span className="max-w-[15ch] text-center text-[10.5px] leading-[1.4] text-text-tertiary">
+                    Every game Optinix verified on this PC
+                  </span>
+                </button>
               </div>
               {gamesSection.others.length > 0 && (
                 <p className="text-[11px] text-text-tertiary mt-2">
